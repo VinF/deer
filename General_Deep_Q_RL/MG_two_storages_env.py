@@ -14,10 +14,7 @@ class Env(object):
             rng - the numpy random number generator
             
         """
-        #self.market_price, self.min_market_price, self.max_market_price=MG_data.get_market_price()
-        #print "self.market_price: "+str(self.market_price[0:100])
-        #print self.min_market_price, self.max_market_price, self.market_price.shape
-        
+
         self.consumption, self.min_consumption, self.max_consumption=MG_data.get_consumption(365*24)
         print "self.consumption: " + str(self.consumption[0:100])
         print self.min_consumption, self.max_consumption, self.consumption.shape
@@ -28,19 +25,17 @@ class Env(object):
         print "self.production_train: " + str(self.production_train[0:100])
         print self.production_train.shape
 
-
         self.rng = rng
 
-        #self.battery_max_power=2.
         self.battery_size=20.
         self.battery_eta=0.9
         
         self.hydrogen_max_power=0.5
         self.hydrogen_eta=.65        
         
-        self.observation=[0. ,0.,0.,0.,0.]
+        self.observation=[0. ,0.,0.,0.,0.,0.,0.]
         self.num_actions=3
-        self.num_elements_in_batch=[1, 1,12,1,12] # [battery storage,   consumption_short, consumption_long, production_short, production_long]
+        self.num_elements_in_batch=[1, 1,12,1,12,1,1] # [battery storage,   consumption_short, consumption_long, production_short, production_long]
         
         
     def init(self, testing):
@@ -49,8 +44,8 @@ class Env(object):
            current observation (list of k elements)
         """
         ### Test 6
-        self.observation=[1., 0.,0.,0.,0.]
-        self.counter = 0 ## reinitialize counter after each epoch        
+        self.observation=[1., 0.,0.,0.,0.,0.,0.]
+        self.counter = 1        
         self.hydrogen_storage=0.
 
         return self.observation
@@ -64,7 +59,6 @@ class Env(object):
 
         reward = 0#self.ale.act(action)  #FIXME
         terminal=0
-        #rng = np.random.RandomState(123456)        
 
 
         ### Test
@@ -129,6 +123,8 @@ class Env(object):
         self.observation[2]=self.consumption[self.counter]
         self.observation[3]=self.production_train[self.counter]
         self.observation[4]=self.production_train[self.counter]
+        self.observation[5]=sum(self.production_train[self.counter:self.counter+24])/24.
+        self.observation[6]=sum(self.production_train[self.counter:self.counter+48])/48.
 
                     
         self.counter+=1

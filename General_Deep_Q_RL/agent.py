@@ -22,7 +22,7 @@ class NeuralAgent(object):
 
     def __init__(self, q_network, epsilon_start, epsilon_min,
                  epsilon_decay, replay_memory_size,
-                 replay_start_size, update_frequency, rng):
+                 replay_start_size, update_frequency, batch_size, rng):
 
         self.network = q_network
         self.epsilon_start = epsilon_start
@@ -31,6 +31,7 @@ class NeuralAgent(object):
         self.replay_memory_size = replay_memory_size
         self.replay_start_size = replay_start_size
         self.update_frequency = update_frequency
+        self.batch_size=batch_size
         self.rng = rng
         self.num_elements_in_batch = self.network.num_elements_in_batch
         self.num_actions = self.network.num_actions
@@ -54,7 +55,7 @@ class NeuralAgent(object):
         self.holdout_data = None
 
 
-    def start_episode(self, observation): #FIXMETEST
+    def start_episode(self, observation): #FIXMETT
         """
         This method is called once at the beginning of each episode.
         No reward is provided, because reward is only available after
@@ -90,8 +91,8 @@ class NeuralAgent(object):
            observation - A height x width numpy array
 
         Returns:
-           An integer action.
-
+           action - An integer action.
+           V - Estimated value function of current state
         """
 
         V=0
@@ -100,8 +101,7 @@ class NeuralAgent(object):
         if self.testing:
             if len(self.data_set_test) > self.replay_start_size:
                 action, V = self._choose_action(0., self.data_set_test.get_one_state(self.last_index_test))
-            else:
-                print "random action in testing"
+            else: # Still gathering initial data
                 action=0#self.rng.randint(0, self.num_actions)
 
         #NOT TESTING---------------------------
@@ -112,7 +112,7 @@ class NeuralAgent(object):
                                    self.epsilon - self.epsilon_rate)
                 
                 action, V = self._choose_action(self.epsilon, self.data_set.get_one_state(self.last_index) )
-            else: # Still gathering initial random data...
+            else: # Still gathering initial data
                 action=self.rng.randint(0, self.num_actions)
             
 
@@ -137,9 +137,10 @@ class NeuralAgent(object):
 
     def do_training(self):        
         """
-        Peforms training if self.step_counter is a multiple of self.update_frequency
+        Peforms training if self.step_counter is a multiple of self.update_frequency and if the size of the 
+        dataset is at least bigger than the size of a batch
         """
-        if self.step_counter % self.update_frequency == 0: #FIXME
+        if self.step_counter % self.update_frequency == 0 and len(self.data_set)>self.batch_size:
             loss = self._do_training() 
             self.loss_averages.append(loss)
 
@@ -189,8 +190,7 @@ class NeuralAgent(object):
     def finish_testing(self, epoch):
         self.testing = False
 
-        print "end testing:epoch, self.total_test_reward"
-        print epoch, self.total_test_reward
+        print "Testing score (epoch %d) is %d" % (epoch, self.total_test_reward)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ Author: Vincent Francois-Lavet
 """
 
 import numpy as np
-import time
 import theano
 import copy 
 
@@ -41,39 +40,9 @@ actions, and rewards.
         self.top = 0
         self.size = 0
 
-#    def add_sample(self, sample, action, reward, terminal):
-#        """Add a time step record.
-#
-#        Arguments:
-#            img -- observed image
-#            action -- action chosen by the agent
-#            reward -- reward received after taking the action
-#            terminal -- boolean indicating whether the episode ended
-#            after this time step
-#        """
-#        self.element=sample
-#                        
-#        if self.size < self.max_steps:
-#            self.elements.append(copy.copy(self.element))
-#        else:
-#            self.elements[self.top]=copy.copy(self.element)
-#        
-#        self.actions[self.top] = action
-#        self.rewards[self.top] = reward
-#        self.terminals[self.top] = terminal
-#
-#        if self.size == self.max_steps:
-#            self.bottom = (self.bottom + 1) % self.max_steps
-#        else:
-#            self.size += 1
-#            
-#        self.top = (self.top + 1) % self.max_steps
-#        
-#        return self.top-1
-
 
     def add_sample_1(self, sample):
-        """Add a time step record.
+        """Add the element in the time step record.
 
         Arguments:
             img -- observed image
@@ -101,7 +70,7 @@ actions, and rewards.
 
 
     def add_sample_2(self, index, action, reward, terminal):
-        """Add a time step record.
+        """Add the action taken, the reward and whether this is the end of an episode in the time step record.
 
         Arguments:
             index -- 
@@ -114,7 +83,7 @@ actions, and rewards.
         self.actions[index] = action
 
     def __len__(self):
-        """Return an approximate count of stored state transitions."""
+        """Return the count of stored state transitions."""
         # TODO: Properly account for indices which can't be used, as in
         # random_batch's check.
         return self.size

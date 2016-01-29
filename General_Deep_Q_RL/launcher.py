@@ -118,16 +118,8 @@ def process_args(args, defaults, description):
                         type=int, default=defaults.UPDATE_FREQUENCY,
                         help=('Number of actions before each SGD update. '+
                               '(default: %(default)s)'))
-    parser.add_argument('--replay-start-size', dest="replay_start_size",
-                        type=int, default=defaults.REPLAY_START_SIZE,
-                        help=('Number of random steps before training. ' +
-                              '(default: %(default)s)'))
     parser.add_argument('--nn-file', dest="nn_file", type=str, default=None,
                         help='Pickle file containing trained net.')
-    parser.add_argument('--max-start-nullops', dest="max_start_nullops",
-                        type=int, default=defaults.MAX_START_NULLOPS,
-                        help=('Maximum number of null-ops at the start ' +
-                              'of games. (default: %(default)s)'))
     parser.add_argument('--deterministic', dest="deterministic",
                         type=bool, default=defaults.DETERMINISTIC,
                         help=('Whether to use deterministic parameters ' +
@@ -183,15 +175,14 @@ def launch(args, defaults, description):
 #        handle = open(parameters.nn_file, 'r')
 #        network = cPickle.load(handle)
 
-
-
     my_agent = agent.NeuralAgent(my_network,
                                   parameters.epsilon_start,
                                   parameters.epsilon_min,
                                   parameters.epsilon_decay,
                                   parameters.replay_memory_size,
-                                  parameters.replay_start_size,
+                                  max(my_environment.num_elements_in_batch),
                                   parameters.update_frequency,
+                                  parameters.batch_size,
                                   rng)
 
 
@@ -202,7 +193,6 @@ def launch(args, defaults, description):
                                               parameters.steps_per_test,
                                               parameters.period_btw_summary_perfs,
                                               parameters.frame_skip,
-                                              parameters.max_start_nullops,
                                               rng)
 
 

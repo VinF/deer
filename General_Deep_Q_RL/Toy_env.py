@@ -1,7 +1,4 @@
 import numpy as np
-np.set_printoptions(threshold=np.nan)
-import time
-
 
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
@@ -16,17 +13,20 @@ class Env(object):
         """
         self.rng = rng
 
-        self.observation=[0,0] 
-        self.num_actions=2
-        self.num_elements_in_batch=[6,1]        
-
+        # Defining the type of environment
+        self.observation=[0,0] # At each time step, the observation is made up of two elements, each scalar
+        self.num_actions=2 # The environment allows two different actions to be taken at each time step
+        self.num_elements_in_batch=[6,1]  # We consider a belief state made up of an history of 
+                                          # - the last six for the first element obtained 
+                                          # - the last one for the second element
+                
+        # Building a price signal with some patterns
         self.price_signal=[]
         for i in range (1000):
             price=np.array([0.,0.,0.,-1.,0.,1.,0., 0., 0.])
             price+=self.rng.uniform(0, 3)
             
             self.price_signal.extend(price.tolist())
-        print self.price_signal
        
         self.price_signal_train=self.price_signal[:len(self.price_signal)/2]
         self.price_signal_valid=self.price_signal[len(self.price_signal)/2:]
@@ -34,24 +34,21 @@ class Env(object):
 
         
     def init(self, testing):
-        """ Reset environment
+        """ Reset environment for a new episode
         Arguments:
             testing - whether we are in test mode or train mode (boolean)  
         Returns:
             self.observation - current observation (list of k elements)
         """
         if(testing):
-            print "TESTING"
             self.prices=self.price_signal_valid
         else:
-            print "TRAINING"
             self.prices=self.price_signal_train
             
         
-        self.observation=[self.prices[0],0] # One observation is a list of k elements. An element is a matrix (list of list size:h*w), a vector (list size:w) or a float (size:1).
+        self.observation=[self.prices[0],0]
         
-        self.counter = 1 ## reinitialize counter after each epoch
-        
+        self.counter = 1     
 
         return self.observation
         
@@ -103,7 +100,7 @@ class Env(object):
         """
     
         print "Summary Perf"
-
+        
         prices=[]
         invest=[]
         for elems in test_data_set.elements[100:125]:
@@ -140,16 +137,12 @@ class Env(object):
         plt.show()
 
 
-
-        time.sleep(1)
         
-        
-        
-        
+                
 
 
 def main():
-    # Can be used for debug purposes when called directly
+    # Can be used for debug purposes
     rng = np.random.RandomState(123456)
     myenv=Env(rng)
     myenv.init(0)

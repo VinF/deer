@@ -2,11 +2,6 @@ import numpy as np
 import xlrd 
 import pandas as pd
 
-hours=24
-months=12
-days=30#30#*7+1
-size=days*hours
-#np.set_printoptions(threshold='nan')
 
 def get_production(start_timesteps,timesteps):        
     """ Obtain PV production
@@ -137,7 +132,7 @@ def read_excell(i,j):
     
 def get_prod_solar_BE(start_timesteps,timesteps):
     # Belgium
-    df = pd.read_csv("data/data_Belgium.txt", sep="\t", dtype={'Production': 'double'})
+    df = pd.read_csv("data/data_Belgium.csv", sep="\t", dtype={'Production': 'double'})
     df.Date = pd.to_datetime(df.Date)
     
     date = df['Date']
@@ -160,8 +155,8 @@ def get_prod_solar_BE(start_timesteps,timesteps):
 
 
 def main():
-    timesteps=365*24#24*days*months
-    prod_solar_BE=get_prod_solar_BE(3*timesteps)
+    timesteps=365*24
+    prod_solar_BE=get_prod_solar_BE(0,3*timesteps)
     
     
 if __name__ == "__main__":

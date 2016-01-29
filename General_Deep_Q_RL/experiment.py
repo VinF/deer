@@ -16,7 +16,7 @@ import time
 class MGExperiment(object):
     def __init__(self, agent, environment, 
                  num_epochs, epoch_length, test_length,
-                 period_btw_summary_perfs, frame_skip, max_start_nullops, rng):
+                 period_btw_summary_perfs, frame_skip, rng):
         self.agent = agent
         self.environment = environment
         self.num_epochs = num_epochs
@@ -24,14 +24,14 @@ class MGExperiment(object):
         self.test_length = test_length
         self.period_btw_summary_perfs=period_btw_summary_perfs
         self.frame_skip = frame_skip
-
-        self.max_start_nullops = max_start_nullops
         self.rng = rng
 
     def run(self):
         """
         Run the desired number of training epochs, a testing epoch
-        is conducted after each training epoch.
+        is conducted after each training epoch and then the function
+        get_summary_perf of the environment is called for all epochs 
+        multiple of self.period_btw_summary_perfs
         """
         for epoch in range(1, self.num_epochs + 1):
             self.run_epoch(epoch, self.epoch_length)
@@ -42,7 +42,7 @@ class MGExperiment(object):
                 print epoch, self.test_length
                 self.run_epoch(epoch, self.test_length, True)
                 self.agent.finish_testing(epoch)
-                print "end testing"
+
                 if (epoch%self.period_btw_summary_perfs==0):
                     self.environment.get_summary_perf(self.agent.data_set_test)
 
@@ -55,43 +55,50 @@ class MGExperiment(object):
         epoch - the current epoch number
         num_steps - steps per epoch
         testing - True if this Epoch is used for testing and not training
-
         """
         if (self.agent.network.discount<0.99):
             self.agent.network.discount=1-(1-self.agent.network.discount)*self.agent.network.discount_inc
         self.agent.network.lr=self.agent.network.lr*self.agent.network.lr_dec
-            
-        print "self.agent.network.discount: "+str(self.agent.network.discount)
-        print "self.agent.network.lr: "+str(self.agent.network.lr)
-        print "self.agent.epsilon: "+str(self.agent.epsilon)
+        
+        if not testing:
+            print "Epoch: "+str(epoch)
+            print "Discount factor: "+str(self.agent.network.discount)
+            print "Learning rate: "+str(self.agent.network.lr)
+            print "Traning epsilon: "+str(self.agent.epsilon)
 
         steps_left = num_steps
         while steps_left > 0:
-            print "num_epoch:"+str(epoch)
             _, num_steps = self.run_episode(steps_left, testing)
             steps_left -= num_steps
 
     def _init_episode(self, testing):
-        """ This method resets the game, performs enough null
-        actions to ensure that the buffer (the dataset) is ready
+        """ Reset the environment and initialize the agent to start a new episode.
+        
+        Arguments:
+        testing - Whether we are in test mode or not (boolean)
+        
+        Return: 
+        observation - List of observed elements      
         """
 
         observation=self.environment.init(testing)
                 
         self.agent.start_episode(observation)
 
-        if self.max_start_nullops > 0:
-            for _ in range(self.max_start_nullops):
-                action=0#, V=self.agent.step(observation)
-                self.agent.add_sample_1(observation)                
-                reward, observation, terminal=self.environment.act(action, testing) # Null action
-                self.agent.add_sample_2(reward)
-                
-        return reward, observation, terminal
+        return observation
 
     def _step(self, action, testing):
-        """ Repeat one action the appopriate number of times and return
-        the summed reward. """
+        """ Repeat one action the appropriate number of times
+        
+        Arguments:
+        action - Action to be taken
+        testing - Whether we are in test mode or not (boolean)
+
+        Return: 
+        reward - Summed reward
+        observation - New observation (list of observed elements)     
+        terminal - Whether we are in a terminal state 
+        """
         
         reward = 0
         for _ in range(self.frame_skip):
@@ -103,16 +110,18 @@ class MGExperiment(object):
     def run_episode(self, max_steps, testing):
         """Run a single training episode.
 
-        The boolean terminal value returned indicates whether the
-        episode ended because the game ended or the agent died (True)
-        or because the maximum number of steps was reached (False).
-        Currently this value will be ignored.
+        Arguments:
+        max_steps - Maximum number os steps for the episode
+        testing - Whether we are in test mode or not (boolean)
 
-        Return: (terminal, num_steps)
-
+        Return: 
+        terminal - Boolean that indicates whether the episode ended 
+        because the game ended or the agent died (True) or because the 
+        maximum number of steps was reached (False).
+        num_steps - num steps of the episode
         """
 
-        reward, observation, terminal = self._init_episode(testing)
+        observation = self._init_episode(testing)
         V_set=[]
         num_steps = 0
         while True:
@@ -122,10 +131,6 @@ class MGExperiment(object):
             action, V = self.agent.step(observation)            
                         
             reward, observation, terminal = self._step(action, testing)
-            
-            #print "run_episode:action --> reward, observation, terminal"
-            #print str(action)+" --> "+str(reward)+", "+str(observation)+", "+str(terminal)
-                
 
             self.agent.add_sample_2(reward) ## NB : even if testing, it will just be a different queue
 
@@ -137,11 +142,8 @@ class MGExperiment(object):
             
             if terminal or num_steps >= max_steps:
                 if not testing:
-                    print "np.average(self.agent.loss_averages)"
-                    #print self.agent.loss_averages
-                    print np.average(self.agent.loss_averages)
-                    
-                    print np.average(V_set)
+                    print "Training loss (average bellman residual):"+str(np.average(self.agent.loss_averages))
+                    print "Training average V value:"+str(np.average(V_set))
                 
                 break
 

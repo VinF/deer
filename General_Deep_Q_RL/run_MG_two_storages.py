@@ -11,15 +11,15 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 365*24-5
+    STEPS_PER_EPOCH = 360*24
     EPOCHS = 1000
-    STEPS_PER_TEST = 365*24-5
+    STEPS_PER_TEST = 360*24
     PERIOD_BTW_SUMMARY_PERFS = 10
     
     # ----------------------
     # Environment Parameters
     # ----------------------
-    ENV_PATH = "MG_two_storages"
+    ENV_NAME = "MG_two_storages_env"
     FRAME_SKIP = 1#4
 
     # ----------------------
@@ -27,13 +27,13 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'deepmind_rmsprop'#'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = 0.0002#TOY_ENV:0.0002
-    LEARNING_RATE_DECAY = 1. #TOY_ENV:1.
-    DISCOUNT = 0.9#TOY_ENV:0.9
-    DISCOUNT_INC = 1.#TOY_ENV:1.#0.99
+    LEARNING_RATE = 0.0002
+    LEARNING_RATE_DECAY = 0.99
+    DISCOUNT = 0.9
+    DISCOUNT_INC = 0.99
     
-    RMS_DECAY = 0.9#.99 # (Rho)
-    RMS_EPSILON = 0.0001#.01
+    RMS_DECAY = 0.9
+    RMS_EPSILON = 0.0001
     MOMENTUM = 0 # Note that the "momentum" value mentioned in the Nature
                  # paper is not used in the same way as a traditional momentum
                  # term.  It is used to track gradient for the purpose of
@@ -48,9 +48,7 @@ class Defaults:
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     NETWORK_TYPE = "General_DQN_0"
-    FREEZE_INTERVAL = 1000#10000#10000
-    REPLAY_START_SIZE = 5#50000 --> that many action before using non random action
-    MAX_START_NULLOPS = 5#30
+    FREEZE_INTERVAL = 1000
     DETERMINISTIC = True
     CUDNN_DETERMINISTIC = False
 

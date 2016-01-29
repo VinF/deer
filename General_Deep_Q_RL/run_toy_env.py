@@ -48,8 +48,6 @@ class Defaults:
     BATCH_SIZE = 32
     NETWORK_TYPE = "General_DQN_0"
     FREEZE_INTERVAL = 1000
-    REPLAY_START_SIZE = 5 #--> that many action before using non random action
-    MAX_START_NULLOPS = 5
     DETERMINISTIC = True
     CUDNN_DETERMINISTIC = False
 
