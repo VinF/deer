@@ -14,23 +14,35 @@ class Env(object):
             rng - the numpy random number generator
             
         """
+        self.rng = rng
 
-        self.consumption, self.min_consumption, self.max_consumption=MG_data.get_consumption(365*24)
+        # Get consumption profile in [0,1]
+        self.consumption=np.load("data/example_determinist_prod_train.npy")[0:365*24]
+        self.min_consumption=min(self.consumption)
+        self.max_consumption=max(self.consumption)
+        
         print "self.consumption: " + str(self.consumption[0:100])
         print self.min_consumption, self.max_consumption, self.consumption.shape
 
-        self.production_train, self.min_production, self.max_production=MG_data.get_production(0,365*24)
-        self.production_valid, self.min_production_valid, self.max_production_valid=MG_data.get_production(365*24,365*24)
-        self.production_train=self.production_train*16000/1000 #(16KWp (80m^2) et en kWh)
-        print "self.production_train: " + str(self.production_train[0:100])
-        print self.production_train.shape
+        # Scale consumption profile in [0,2.7kW]
+        self.consumption=self.consumption*2.7
 
-        self.rng = rng
 
+        # Get production profile in W/Wp in [0,1]
+        self.production_train=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
+        self.production_valid=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
+        
+        print "self.production_train" + str(self.production_train[0:100])
+
+        # Scale production profile : 10KWp (50m^2) et en kWh
+        self.production_train=self.production_train*10000/1000
+        self.production_valid=self.production_train*10000/1000
+        
+        
         self.battery_size=20.
         self.battery_eta=0.9
         
-        self.hydrogen_max_power=0.5
+        self.hydrogen_max_power=1.
         self.hydrogen_eta=.65        
         
         self.observation=[0. ,0.,0.,0.,0.,0.,0.]
