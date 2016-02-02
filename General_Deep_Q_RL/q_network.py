@@ -333,7 +333,11 @@ class DeepQLearner:
         """
         Build a network consistent with each type of inputs
         """
-        from lasagne.layers import cuda_convnet
+        if ("gpu" in theano.config.device):
+            from lasagne.layers.cuda_convnet import Conv2DCCLayer
+            conv2DFunc = Conv2DCCLayer
+        else:
+            conv2DFunc = lasagne.layers.Conv2DLayer
 
         l_outs_conv=[]
         for i, element_shape in enumerate( zip(num_elements_in_batch, shapes) ):
@@ -345,7 +349,7 @@ class DeepQLearner:
                     input_var=inputs[i],
                 )
                 
-                l_conv1 = cuda_convnet.Conv2DCCLayer(
+                l_conv1 = conv2DFunc(
                     l_in,
                     num_filters=32,
                     filter_size=(1, 1),#filter_size=(8, 8),
@@ -356,7 +360,7 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 
-                l_conv2 = cuda_convnet.Conv2DCCLayer(
+                l_conv2 = conv2DFunc(
                     l_conv1,
                     num_filters=64,
                     filter_size=(1, 1),#filter_size=(4, 4),
@@ -367,7 +371,7 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 
-                l_conv3 = cuda_convnet.Conv2DCCLayer(
+                l_conv3 = conv2DFunc(
                     l_conv2,
                     num_filters=64,
                     filter_size=(3, 3),
@@ -386,7 +390,7 @@ class DeepQLearner:
                     input_var=inputs[i].reshape((batch_size, 1, element_shape[0], element_shape[1][0])),
                 )
                 
-                l_conv1 = cuda_convnet.Conv2DCCLayer(
+                l_conv1 = conv2DFunc(
                     l_in,
                     num_filters=32,
                     filter_size=(1, 1),#filter_size=(8, 8),
@@ -397,7 +401,7 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 
-                l_conv2 = cuda_convnet.Conv2DCCLayer(
+                l_conv2 = conv2DFunc(
                     l_conv1,
                     num_filters=64,
                     filter_size=(1, 1),#filter_size=(4, 4),
@@ -408,7 +412,7 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 
-                l_conv3 = cuda_convnet.Conv2DCCLayer(
+                l_conv3 = conv2DFunc(
                     l_conv2,
                     num_filters=64,
                     filter_size=(1, 1),
