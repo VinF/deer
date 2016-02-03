@@ -124,9 +124,9 @@ class NeuralAgent(object):
 
     def add_sample_1(self, observation):
         if not self.testing:
-            self.last_index=self.data_set.add_sample_1(observation)
+            self.last_index=self.data_set.store_observation(observation)
         else:
-            self.last_index_test=self.data_set_test.add_sample_1(observation)
+            self.last_index_test=self.data_set_test.store_observation(observation)
 
     def add_sample_2(self, reward):
         if not self.testing:
