@@ -13,7 +13,7 @@ class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, and rewards.
 
     """
-    def __init__(self, history_sizes, random_state, max_steps=1000):
+    def __init__(self, randomState, maxSize=1000):
         """Construct a DataSet.
 
         Arguments:
@@ -22,19 +22,18 @@ class DataSet(object):
             max_steps - 
 
         """
-        self._history_sizes = history_sizes
         self._size = size
         self._states    = np.zeros(size, dtype='object')
         self._actions   = np.zeros(size, dtype='int32')
         self._rewards   = np.zeros(size, dtype=theano.config.floatX)
         self._terminals = np.zeros(size, dtype='bool')
 
-        if (random_state == None):
-            self._random_state = np.random.RandomState()
+        if (randomState == None):
+            self._randomState = np.random.RandomState()
         else:
-            self._random_state = random_state
+            self._randomState = randomState
 
-        self._n_elems  = 0
+        self._nElems  = 0
         self._current = 0
         self._lastInsertedStateIndex = 0
 
@@ -45,7 +44,7 @@ class DataSet(object):
         """
 
 
-    def random_batch(self, batch_size):
+    def randomBatch(self, batch_size):
         """Return corresponding states, actions, rewards, terminal status, and next_states for batch_size randomly chosen state transitions.
         Note that if terminal[-1] == True, then next_states[-1] == None.
         
@@ -64,7 +63,7 @@ class DataSet(object):
         """
         start, end = _randomSlice(batch_size)
         if (end < start):
-            end += self._n_elems
+            end += self._nElems
 
         actions   = self._actions.take(range(start, end), mode='wrap')
         rewards   = self._rewards.take(range(start, end), mode='wrap')
@@ -86,7 +85,7 @@ class DataSet(object):
         Might thus be different than what nStates returns.
 
         """
-        return self._n_elems
+        return self._nElems
 
     def lastRecordedState(self):
         """Return the last state inserted in this data set, either using addState or addSample.
@@ -131,8 +130,8 @@ class DataSet(object):
         self._current += 1
         if (self._current >= self._size):
             self._current = 0
-        if (self._n_elems < self._size):
-            self._n_elems += 1
+        if (self._nElems < self._size):
+            self._nElems += 1
 
 
     def addSample(self, state, action, reward, isTerminal):
@@ -162,12 +161,12 @@ class DataSet(object):
             size - The size of the slice.
 
         """
-        if (size > self._n_elems):
+        if (size > self._nElems):
             raise SliceError("Not enough elements in the buffer to sustain a slice of size " + size)
 
         slice = np.zeros(size, dtype=_buffer.dtype)
 
-        start = self._random_state.randint(0, self._n_elems)
+        start = self._randomState.randint(0, self._nElems)
         end   = start + size
         
         # Check if slice is valid wrt mask
@@ -180,7 +179,7 @@ class DataSet(object):
                     break;
 
                 i += 1
-                if (i >= self._n_elems):
+                if (i >= self._nElems):
                     i = 0
             
             if (processed < size - 1):
@@ -189,40 +188,13 @@ class DataSet(object):
                 start = end - size
                 if (start < 0):
                     startWrapped = True
-                    start = self._n_elems + start
+                    start = self._nElems + start
                 if (startWrapped and start <= firstTry):
                     raise SliceError("Could not find a slice of size " + size)
             else:
                 # else slice was ok: return it
                 return start, end # self._buffer.take(range(start, end), mode='wrap')
-        
-class CircularBuffer(object):
-    """A circular buffer of objects.
 
-    """
-    def __init__(self, size, type=None, random_state=None):
-        """Construct a circular buffer.
-
-        Arguments:
-            size - The maximum number of elements in the buffer before new elements erase the oldest one.
-			type - The type of the numpy array underlying this circular buffer. 'None' is for using a python list.
-            random_state - A numpy.random.RandomState object or None for the default numpy RandomState.
-
-        """
-        self._size = size
-
-        if (type == None):
-            self._buffer = np.zeros(size, dtype='object')
-        else:
-            self._buffer = np.zeros(size, dtype=type)
-
-        if (random_state == None):
-            self._random_state = np.random.RandomState()
-        else:
-            self._random_state = random_state
-
-        self._n_elems  = 0
-        self._current = 0
         
 class SliceError(LookupError):
     """Exception raised for errors when getting slices from CircularBuffers.
