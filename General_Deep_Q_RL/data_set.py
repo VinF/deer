@@ -13,20 +13,22 @@ class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, and rewards.
 
     """
-    def __init__(self, randomState, maxSize=1000):
+    def __init__(self, history_sizes, randomState, maxSize=1000):
         """Construct a DataSet.
 
         Arguments:
-            num_elements_in_batch - 
-            rng - initialized numpy random number generator, used to
-            max_steps - 
+            history_sizes - For each input i, history_sizes[i] is the size of the history for this input.
+            randomState - Numpy random number generator. If None, a new one is created with default numpy seed.
+            maxSize - The maximum size of this buffer.
 
         """
+        self._historySizes = history_sizes
+        self._maxHistorySize = np.max(history_sizes)
         self._size = size
-        self._states    = np.zeros(size, dtype='object')
-        self._actions   = np.zeros(size, dtype='int32')
-        self._rewards   = np.zeros(size, dtype=theano.config.floatX)
-        self._terminals = np.zeros(size, dtype='bool')
+        self._observations = np.zeros(size, dtype='object')
+        self._actions      = np.zeros(size, dtype='int32')
+        self._rewards      = np.zeros(size, dtype=theano.config.floatX)
+        self._terminals    = np.zeros(size, dtype='bool')
 
         if (randomState == None):
             self._randomState = np.random.RandomState()
@@ -35,13 +37,6 @@ class DataSet(object):
 
         self._nElems  = 0
         self._current = 0
-        self._lastInsertedStateIndex = 0
-
-
-    def nStates(self):
-        """Return the number of *states* in this data set. Might be different than what nElems returns.
-
-        """
 
 
     def randomBatch(self, batch_size):
@@ -52,8 +47,8 @@ class DataSet(object):
             batch_size - Number of elements in the batch
 
         Returns:
-            states - A list of size batch_size, where each element is an ndarray(dtype='object') of size 'number of inputs'. For each input i, 
-                     this element observation[i] is a 3D matrix where first dimension denotes the history index (if no history, = 1), and the 
+            states - A list of size batch_size, where each element is an ndarray(dtype='object') 'A' of size 'number of inputs'. For each input i, 
+                     A[i] is a 3D matrix where first dimension denotes the history index (if no history, = 1), and the 
                      two others can be used to represent actual data.
             actions - The actions taken in each of those states.
             rewards - The rewards obtained for taking these actions in those states.
@@ -61,21 +56,28 @@ class DataSet(object):
             terminal - Whether these actions lead to terminal states.
 
         """
-        start, end = _randomSlice(batch_size)
+        start, end = _randomSlice(batch_size + self._maxHistorySize)
+        start += self._maxHistorySize
         if (end < start):
             end += self._nElems
 
+        
         actions   = self._actions.take(range(start, end), mode='wrap')
         rewards   = self._rewards.take(range(start, end), mode='wrap')
         terminals = self._terminals.take(range(start, end), mode='wrap')
 
-        states = self._states.take(range(start, end), mode='wrap')
-        if (terminals[-1]):
-            next_states = np.zeros_like(states)
-            next_states[0:-1] = states[1:]
-            next_states[-1] = None
-        else:
-            next_states = self._states.take(range(start+1, end+1), mode='wrap')
+        states = [None] * batch_size
+        for i in range(batch_size):
+            states[i] = np.zeros(len(self._historySizes), dtype='object')
+            for j in range(len(self._historySizes)):
+                states[i][j] = self._observations.take(range(start+i-self._historySizes[j], end), mode='wrap')
+                
+        next_states = [None] * batch_size
+        next_states[0:-1] = states[1:]
+        if (terminals[-1] == False):
+            next_states[-1] = np.zeros(len(self._historySizes), dtype='object')
+            for j in range(len(self._historySizes)):
+                next_states[-1][j] = self._observations.take(range(end+1-self._historySizes[j], end+1), mode='wrap')
 
         return states, actions, rewards, next_states, terminals
        
@@ -87,28 +89,19 @@ class DataSet(object):
         """
         return self._nElems
 
-    def lastRecordedState(self):
-        """Return the last state inserted in this data set, either using addState or addSample.
 
-        """
-        return self._states[self._lastInsertedStateIndex];
-
-
-    def addState(self, state):
+    def addObservation(self, observation):
         """Store an observation in the dataset. If the buffer is full, it uses a least recently used (LRU) approach 
         to replace an old element by the new one. Note that two subsequent calls to this function is prohibited; they
         should be interleaved with a call to addActionRewardTerminal.
 
         Arguments:
-            state - An ndarray(dtype='object') whose length is the number of inputs.
-                    For each input (so for each i in 0 <= i < M), observation[i] is a 3D matrix where 
-                    first dimension denotes the history index (if no history, = 1), and the two others 
-                    can be used to represent actual data.
+            observation - An ndarray(dtype='object') whose length is the number of inputs.
+                          For each input i, observation[i] is a 2D matrix that represents the actual data.
 
         """
         
-        self._states[self._current] = state
-        self._lastInsertedStateIndex = self._current
+        self._observations[self._current] = observation
 
 
     def addActionRewardTerminal(self, action, reward, isTerminal):
@@ -134,21 +127,20 @@ class DataSet(object):
             self._nElems += 1
 
 
-    def addSample(self, state, action, reward, isTerminal):
-        """Store a (state, action, reward, isTerminal) in the dataset. 
-        Equivalent to 'addState(state); addActionRewardTerminal(action, reward, isTerminal)'.
+    def addSample(self, observation, action, reward, isTerminal):
+        """Store a (observation, action, reward, isTerminal) in the dataset. 
+        Equivalent to 'addState(observation); addActionRewardTerminal(action, reward, isTerminal)'.
 
         Arguments:
-            state - An ndarray(dtype='object') whose length is the number of inputs.
-                    For each input (so for each i in 0 <= i < M), observation[i] is a 3D matrix where 
-                    first dimension denotes the history index (if no history, = 1), and the two others 
-                    can be used to represent actual data.
+            observation - An ndarray(dtype='object') whose length is the number of inputs.
+                          For each input (so for each i in 0 <= i < M), observation[i] is a 2D matrix that represents 
+                          actual data.
             action - The id of the action taken in the last inserted state using addState.
             reward - The reward associated to taking 'action' in the last inserted state using addState.
             isTerminal - Tells whether 'action' lead to a terminal state (i.e. whether the tuple (state, action, reward, isTerminal) marks the end of a trajectory).
 
         """
-        addState(state)
+        addState(observation)
         addActionRewardTerminal(action, reward, isTerminal)
         
 
@@ -192,7 +184,7 @@ class DataSet(object):
                 if (startWrapped and start <= firstTry):
                     raise SliceError("Could not find a slice of size " + size)
             else:
-                # else slice was ok: return it
+                # else slice was ok according to mask
                 return start, end # self._buffer.take(range(start, end), mode='wrap')
 
         
