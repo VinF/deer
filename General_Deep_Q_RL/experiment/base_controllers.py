@@ -49,7 +49,7 @@ class LearningRateController(Controller):
             return
 
         self._epochCount = 0
-        agent.SetLearningRate(self._initLr)
+        agent.setLearningRate(self._initLr)
         self._lr = self._initLr * self._lrDecay
 
     def OnEpochEnd(self, agent):
@@ -58,7 +58,7 @@ class LearningRateController(Controller):
 
         self._epochCount += 1
         if self._periodicity <= 1 or self._epochCount % self._periodicity == 0:
-            agent.SetLearningRate(self._lr)
+            agent.setLearningRate(self._lr)
             self._lr *= self._lrDecay
 
 
@@ -125,13 +125,13 @@ class EpsilonController(Controller):
 
     def _reset(self, agent):
         self._count = 0
-        agent.SetEpsilon(self._initE)
+        agent.setEpsilon(self._initE)
         self._e = max(self._e - self._eDecay, self._eMin)
 
     def _update(self, agent):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
-            agent.SetEpsilon(self._e)
+            agent.setEpsilon(self._e)
             self._e = max(self._e - self._eDecay, self._eMin)
 
 
@@ -152,7 +152,7 @@ class DiscountFactorController(Controller):
             return
 
         self._epochCount = 0
-        agent.SetDiscountFactor(self._initDF)
+        agent.setDiscountFactor(self._initDF)
         if (self._initDF < 0.99):
             self._df = 1 - (1 - self._initDF) * self._dfGrowth
         else:
@@ -165,7 +165,7 @@ class DiscountFactorController(Controller):
         self._epochCount += 1
         if self._periodicity <= 1 or self._epochCount % self._periodicity == 0:
             if (self._df < 0.99):
-                agent.SetDiscountFactor(self._df)
+                agent.setDiscountFactor(self._df)
                 self._df = 1 - (1 - self._df) * self._dfGrowth
 
 
