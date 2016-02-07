@@ -10,7 +10,7 @@ class Controller(object):
     def __init__(self):
         self._active = True
 
-    def SetActive(self, active):
+    def setActive(self, active):
         self._active = active
 
     def OnStart(self, agent):
