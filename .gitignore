@@ -1,2 +1,4 @@
 *.pyc
 *.pyproj
+/.vs/General_Deep_Q_RL/v14
+/General_Deep_Q_RL.sln
