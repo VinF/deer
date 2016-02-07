@@ -95,32 +95,32 @@ class EpsilonController(Controller):
         if (self._active == False):
             return
 
-        _reset(agent)
+        self._reset(agent)
 
     def OnEpisodeEnd(self, agent, terminalReached, successful):
         if (self._active == False):
             return
 
-        if _resetOnEpisode:
-            _reset(agent)
-        elif _onEpisode:
-            _update(agent)
+        if self._resetOnEpisode:
+           self. _reset(agent)
+        elif self._onEpisode:
+            self._update(agent)
 
     def OnEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        if _resetOnEpoch:
-            _reset(agent)
-        elif _onEpoch:
-            _update(agent)
+        if self._resetOnEpoch:
+            self._reset(agent)
+        elif self._onEpoch:
+            self._update(agent)
 
     def OnActionChosen(self, agent, action):
         if (self._active == False):
             return
 
         if _onAction:
-            _update(agent)
+            self._update(agent)
 
 
     def _reset(self, agent):
