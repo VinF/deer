@@ -66,12 +66,14 @@ class EpsilonController(Controller):
     """A controller that modifies the probability of taking a random action periodically.
 
     Arguments:
-        ...
-        resetEvery - After what type of event epsilon should be reset to initial value ('none', 'episode', 'epoch').
+        initialE - Start epsilon
+        eDecays - How many steps of "evaluateOn" are necessary for epsilon to reach eMin
+        eMin - End epsilon
         evaluateOn - After what type of event epsilon shoud be updated periodically ('action', 'episode', 'epoch').
-        ...
+        periodicity - How many steps of "evaluateOn" are necessary before an update of epsilon
+        resetEvery - After what type of event epsilon should be reset to initial value ('none', 'episode', 'epoch').
     """
-    def __init__(self, initialE, eDecays, eMin, resetEvery='none', evaluateOn='action', periodicity=1):
+    def __init__(self, initialE, eDecays, eMin, evaluateOn='action', periodicity=1, resetEvery='none'):
         super(Controller, self).__init__()
         self._count = 0
         self._initE = initialE
