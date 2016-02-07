@@ -62,6 +62,77 @@ class LearningRateController(Controller):
             self._lr *= self._lrDecay
 
 
+class EpsilonController(Controller):
+    """A controller that modifies the probability of taking a random action periodically.
+
+    Arguments:
+        ...
+        resetEvery - After what type of event epsilon should be reset to initial value ('none', 'episode', 'epoch').
+        evaluateOn - After what type of event epsilon shoud be updated periodically ('action', 'episode', 'epoch').
+        ...
+    """
+    def __init__(self, initialE, eDecays, eMin, resetEvery='none', evaluateOn='action', periodicity=1):
+        super(Controller, self).__init__()
+        self._count = 0
+        self._initE = initialE
+        self._e = initialE
+        self._eMin = eMin
+        self._eDecay = (initialE - eMin) / eDecays
+        self._periodicity = periodicity
+
+        self._onAction = 'action' == evaluateOn
+        self._onEpisode = 'episode' == evaluateOn
+        self._onEpoch = 'epoch' == evaluateOn
+        if not self._onAction and not self._onEpisode and not self._onEpoch:
+            self._onAction = True
+
+        self._resetOnEpisode = 'episode' == resetEvery
+        self._resetOnEpoch = 'epoch' == resetEvery
+
+    def OnStart(self, agent):
+        if (self._active == False):
+            return
+
+        _reset(agent)
+
+    def OnEpisodeEnd(self, agent, terminalReached, successful):
+        if (self._active == False):
+            return
+
+        if _resetOnEpisode:
+            _reset(agent)
+        elif _onEpisode:
+            _update(agent)
+
+    def OnEpochEnd(self, agent):
+        if (self._active == False):
+            return
+
+        if _resetOnEpoch:
+            _reset(agent)
+        elif _onEpoch:
+            _update(agent)
+
+    def OnActionChosen(self, agent, action):
+        if (self._active == False):
+            return
+
+        if _onAction:
+            _update(agent)
+
+
+    def _reset(self, agent):
+        self._count = 0
+        agent.SetEpsilon(self._initE)
+        self._e = max(self._e - self._eDecay, self._eMin)
+
+    def _update(self, agent):
+        self._count += 1
+        if self._periodicity <= 1 or self._count % self._periodicity == 0:
+            agent.SetEpsilon(self._e)
+            self._e = max(self._e - self._eDecay, self._eMin)
+
+
 class DiscountFactorController(Controller):
     """A controller that modifies the qnetwork discount periodically.
 
