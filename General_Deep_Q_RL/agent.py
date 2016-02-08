@@ -3,8 +3,7 @@ The NeuralAgent class wraps a deep Q-network for training and testing
 in any given environment.
 
 Modifications: Vincent Francois-Lavet
-
-Insipired from Nathan Sprague (https://github.com/spragunr/deep_q_rl)
+Contributor: David Taralla
 """
 
 import os
@@ -15,183 +14,224 @@ import numpy as np
 import data_set
 import copy
 import sys
+import experiment.base_controllers as controllers
+from warnings import warn
 sys.setrecursionlimit(10000)
 
 
 class NeuralAgent(object):
 
-    def __init__(self, q_network, epsilon_start, epsilon_min,
-                 epsilon_decay, replay_memory_size,
-                 replay_start_size, update_frequency, batch_size, rng):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
 
-        self.network = q_network
-        self.epsilon_start = epsilon_start
-        self.epsilon_min = epsilon_min
-        self.epsilon_decay = epsilon_decay
-        self.replay_memory_size = replay_memory_size
-        self.replay_start_size = replay_start_size
-        self.update_frequency = update_frequency
-        self.batch_size=batch_size
-        self.rng = rng
-        self.num_elements_in_batch = self.network.num_elements_in_batch
-        self.num_actions = self.network.num_actions
+        self._controllers = []
+        self._environment = environment
+        self._network = q_network
+        self._epsilon = 1
+        self._replayMemorySize = replay_memory_size
+        self._replayMemoryStartSize = replay_start_size
+        self._batchSize = batch_size
+        self._frameSkip = frameSkip
+        self._randomState = randomState
+        self._dataSet = data_set.DataSet(q_network.num_elements_in_batch, maxSize=replay_memory_size, randomState=randomState)
+        self._dataSetTest = None # Will be created by startTesting() when necessary
+        self._isTestingModeOn = False
+        self._testEpochsLength = 0
+        self._totalTestReward = 0
+        self._trainingLossAverages = []
+        self._VsOnLastEpisode = []
+        self._inEpisode = False
 
-        self.data_set = data_set.DataSet(self.num_elements_in_batch,
-                                             rng=rng,
-                                             max_steps=self.replay_memory_size)
-        self.data_set_test = data_set.DataSet(self.num_elements_in_batch,
-                                             rng=rng,
-                                             max_steps=self.replay_memory_size) #max(self.num_elements_in_batch)+32 ) #FIXME--> a smaller one
+    def setControllersActive(self, toDisable, active):
+        for i in toDisable:
+            self._controllers[i].setActive(active)
 
-        self.epsilon = self.epsilon_start
-        if self.epsilon_decay != 0:
-            self.epsilon_rate = ((self.epsilon_start - self.epsilon_min) /
-                                 self.epsilon_decay)
+    def setEpsilon(self, e):
+        self._epsilon = e
+
+    def setLearningRate(self, lr):
+        self._network.lr = lr
+
+    def setDiscountFactor(self, df):
+        self._network.discount = df
+
+    def avgBellmanResidual(self):
+        return np.average(self._trainingLossAverages)
+
+    def avgEpisodeVValue(self):
+        return np.average(self._VsOnLastEpisode)
+    
+    def totalRewardOverLastTest(self):
+        return self._totalTestReward
+
+    def attach(self, controller):
+        if (isinstance(controller, controllers.Controller)):
+            self._controllers.append(controller)
         else:
-            self.epsilon_rate = 0
+            raise TypeError("The object you try to attach is not a Controller.")
 
-        self.testing = False
+    def detach(self, controllerIdx):
+        return self._controllers.pop(controllerIdx)
 
-        self.holdout_data = None
+    def train(self):
+        try:
+            states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
+            loss = self._network.train(states, actions, rewards, next_states, terminals)
+            self._trainingLossAverages.append(loss)
+        except data_set.SliceError as e:
+            warn("Training not done - " + e, AgentWarning)
 
+    def run(self, nEpochs, epochLength):
+        for c in self._controllers: c.OnStart(self)
+        for _ in range(nEpochs):
+            if self._isTestingModeOn:
+                while self._testEpochsLength > 0:
+                    self._testEpochsLength = self._runEpisode(self._testEpochsLength)
+            else:
+                length = epochLength
+                while length > 0:
+                    length = self._runEpisode(length)
 
-    def start_episode(self, observation): #FIXMETT
-        """
-        This method is called once at the beginning of each episode.
-        No reward is provided, because reward is only available after
-        an action has been taken.
-
-        Arguments:
-           observation - height x width numpy array
-
-        Returns:
-           An integer action
-        """
-
-        self.step_counter = 0
-
-        # We report the mean loss for every epoch.
-        if self.testing:
-            self.test_loss_averages = []            
-        if not self.testing:
-            self.loss_averages = []
-
-        self.start_time = time.time()
-
-        self.last_action = 0
-        self.last_state = copy.copy(observation)
-
-
-    def step(self, state):
-        """
-        This method is called each time step.
-
-        Arguments:
-           reward      - Real valued reward.
-           observation - A height x width numpy array
-
-        Returns:
-           action - An integer action.
-           V - Estimated value function of current state
-        """
-
-        V=0
-        self.step_counter += 1
-        #TESTING---------------------------
-        if self.testing:
-            if len(self.data_set_test) > self.replay_start_size:
-                action, V = self._choose_action(0., self.data_set_test.get_one_state(self.last_index_test))
-            else: # Still gathering initial data
-                action=0#self.rng.randint(0, self.num_actions)
-
-        #NOT TESTING---------------------------
-        else:
-
-            if len(self.data_set) > self.replay_start_size:
-                self.epsilon = max(self.epsilon_min,
-                                   self.epsilon - self.epsilon_rate)
-                
-                action, V = self._choose_action(self.epsilon, self.data_set.get_one_state(self.last_index) )
-            else: # Still gathering initial data
-                action=self.rng.randint(0, self.num_actions)
+            for c in self._controllers: c.OnEpochEnd(self)
             
 
-        self.last_action = copy.copy(action)
-        self.last_state = copy.copy(state)
+
+    def _runEpisode(self, maxSteps):
+        self._inEpisode = True
+        self._environment.reset(self._isTestingModeOn)
         
-        return action, V
+        self._trainingLossAverages = []
+        self._VsOnLastEpisode = []
+        while maxSteps > 0:
+            maxSteps -= 1
 
+            V, action, reward = self._step()
+            self._VsOnLastEpisode.append(V)
+            isTerminal = self._environment.inTerminalState()
+            if self._isTestingModeOn:
+                self._totalTestReward += reward
 
-    def add_sample_1(self, observation):
-        if not self.testing:
-            self.last_index=self.data_set.store_observation(observation)
-        else:
-            self.last_index_test=self.data_set_test.store_observation(observation)
+            self._addSample(self._environment.state(), action, reward, isTerminal)
+            for c in self._controllers: c.OnActionTaken(self)
+            
+            if isTerminal:
+                break
+            
+        self._inEpisode = False
+        for c in self._controllers: c.OnEpisodeEnd(self, isTerminal, self._environment.isSuccess())
+        return maxSteps
 
-    def add_sample_2(self, reward):
-        if not self.testing:
-            self.data_set.add_sample_2(self.last_index, self.last_action, reward, False)
-        else:
-            self.data_set_test.add_sample_2(self.last_index_test, self.last_action, reward, False)
-            self.total_test_reward+=reward
-
-    def do_training(self):        
+        
+    def _step(self):
         """
-        Peforms training if self.step_counter is a multiple of self.update_frequency and if the size of the 
-        dataset is at least bigger than the size of a batch
-        """
-        if self.step_counter % self.update_frequency == 0 and len(self.data_set)>self.batch_size:
-            loss = self._do_training() 
-            self.loss_averages.append(loss)
+        This method is called at each time step. If the agent is currently in testing mode, and if its *test* replay 
+        memory has enough samples, it will select the best action it can. If there are not enough samples, FIXME.
+        In the case the agent is not in testing mode, if its replay memory has enough samples, it will select the best 
+        action it can with probability 1-CurrentEpsilon and a random action otherwise. If there are not enough samples, 
+        it will always select a random action.
 
-    def _choose_action(self, epsilon, state):
+        Arguments:
+           state - An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
+                   input.historySize x "shape of a given ponctual observation for this input".
+
+        Returns:
+           action - The id of the action selected by the agent.
+           V - Estimated value function of current state.
         """
-        Add the most recent data to the data set and choose
+        
+        action, V = self._chooseAction()        
+        reward = 0
+        for _ in range(self._frameSkip):
+            reward += self._environment.act(action)
+            if self._environment.inTerminalState():
+                break
+
+        return V, action, reward
+
+    def _addSample(self, ponctualObs, action, reward, isTerminal):
+        self._dataSet.addSample(ponctualObs, action, reward, isTerminal)
+
+
+    def _chooseAction(self, epsilon):
+        """
+        Get the action chosen by the agent regarding epsilon greedy parameter and current state. It will be a random
+        action with probability epsilon and the believed-best action otherwise.
 
         Arguments:
            epsilon - float, exploration of the epsilon greedy
-           state - a list of k elements for ONE belief state (e.g. 2D obs --> element is num_element*w*h)
+           state - An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
+                   input.historySize x "shape of a given ponctual observation for this input".
 
         Returns:
+           action - The id of the chosen action
            An integer - action based on the current policy
         """
-
-        if self.rng.rand() < epsilon: # Random action
-            action = self.rng.randint(0, self.num_actions)
-        else: # Select best action according to the agent
-            action = self.network.choose_best_action(state)
-
-        return action, max(self.network.q_vals(state))
-
-    def _do_training(self):
-        """
-        Returns the average loss for the current batch.
-        May be overridden if a subclass needs to train the network
-        differently.
         
-        
-        """
-        states, actions, rewards, next_states, terminals = \
-                                self.data_set.random_batch(
-                                    self.network.batch_size)
+        state = self._environment.state()
+        if self._isTestingModeOn:
+            if self._dataSetTest.nElems() > self._replayMemoryStartSize:
+                # Use gathered data to choose action
+                action = self._network.choose_best_action(state)
+                V = max(self._network.q_vals(state))
+            else:
+                # Still gathering initial data: choose dummy action
+                action = 0 #self.rng.randint(0, self.num_actions) #TODO: ask vincent if =0 is not a bug?
+                V = 0
+        else:
+            if self._dataSet.nElems() > self._replayMemoryStartSize:
+                # e-Greedy policy
+                if self._randomState.rand() < epsilon:
+                    action = self._randomState.randint(0, self._environment.num_actions)
+                    V = 0
+                else:
+                    action = self._network.choose_best_action(state)
+                    V = max(self._network.q_vals(state))
+            else:
+                # Still gathering initial data: choose dummy action
+                action = self._randomState.randint(0, self._environment.num_actions)
+                V = 0
+                
+        for c in self._controllers: c.OnActionChosen(self, action)
+        return action, V
 
-        return self.network.train(states, actions, rewards,
-                                  next_states, terminals)
+
+    def startTesting(self, epochLength):
+        if self._isTestingModeOn:
+            warn("Testing mode is already ON.", AgentWarning)
+        if self._inEpisode:
+            raise AgentError("Trying to start testing while current episode is not yet finished. This method can be "
+                             "called only *between* episodes.")
+
+        self._isTestingModeOn = True
+        self._testEpochsLength = epochLength
+        self._totalTestReward = 0
 
 
-    def start_testing(self):
-        self.testing = True
-        self.total_test_reward = 0
-        # Reinit data_set_test
-        self.data_set_test = data_set.DataSet(self.num_elements_in_batch,
-                                             rng=self.rng,
-                                             max_steps=self.replay_memory_size) #max(self.num_elements_in_batch)+32 ) #FIXME--> a smaller one
+    def endTesting(self):
+        if not self._isTestingModeOn:
+            warn("Testing mode was not ON.", AgentWarning)
+        self._isTestingModeOn = False
 
-    def finish_testing(self, epoch):
-        self.testing = False
+ 
+class AgentError(RuntimeError):
+    """Exception raised for errors when calling the various Agent methods at wrong times.
 
-        print "Testing score (epoch %d) is %d" % (epoch, self.total_test_reward)
+    Attributes:
+        expr -- input expression in which the error occurred
+        msg  -- explanation of the error
+    """
 
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+
+class AgentWarning(RuntimeWarning):
+    """Warning issued of the various Agent methods.
+
+    Attributes:
+        expr -- input expression in which the error occurred
+        msg  -- explanation of the error
+    """
 
 if __name__ == "__main__":
     pass
