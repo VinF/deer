@@ -31,6 +31,9 @@ class Controller(object):
     def OnActionChosen(self, agent, action):
         pass
 
+    def OnActionTaken(self, agent):
+        pass
+
 
 class LearningRateController(Controller):
     """A controller that modifies the learning rate periodically.
@@ -119,7 +122,7 @@ class EpsilonController(Controller):
         if (self._active == False):
             return
 
-        if _onAction:
+        if self._onAction:
             self._update(agent)
 
 
@@ -201,6 +204,57 @@ class InterleavedTestEpochController(Controller):
         elif mod == 1:
             agent.endTesting()
             agent.setControllersActive(self._toDisable, True)
+
+
+class TrainerController(Controller):
+    """A controller that make the agent train on its current database periodically.
+
+    Arguments:
+        evaluateOn - After what type of event the agent shoud be trained periodically ('action', 'episode', 'epoch').
+        periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
+    """
+    def __init__(self, evaluateOn='action', periodicity=1):
+        super(Controller, self).__init__()
+        self._count = 0
+        self._periodicity = periodicity
+
+        self._onAction = 'action' == evaluateOn
+        self._onEpisode = 'episode' == evaluateOn
+        self._onEpoch = 'epoch' == evaluateOn
+        if not self._onAction and not self._onEpisode and not self._onEpoch:
+            self._onAction = True
+
+    def OnStart(self, agent):
+        if (self._active == False):
+            return
+        
+        self._count = 0
+
+    def OnEpisodeEnd(self, agent, terminalReached, successful):
+        if (self._active == False):
+            return
+
+        if self._onEpisode:
+            self._update(agent)
+
+    def OnEpochEnd(self, agent):
+        if (self._active == False):
+            return
+
+        if self._onEpoch:
+            self._update(agent)
+
+    def OnActionTaken(self, agent, action):
+        if (self._active == False):
+            return
+
+        if self._onAction:
+            self._update(agent)
+
+    def _update(self, agent):
+        self._count += 1
+        if self._periodicity <= 1 or self._count % self._periodicity == 0:
+            agent.train()
 
 
 
