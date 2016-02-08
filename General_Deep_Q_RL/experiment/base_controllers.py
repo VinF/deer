@@ -1,10 +1,12 @@
-"""This class should be the base class of any controller you would want to define. 
+"""This file defines the base Controller class and some presets controllers that you can use for controlling 
+the training and the various parameters of your agents.
 
 Author: Vincent Francois-Lavet, David Taralla
 """
 
 class Controller(object):
-    """A base controller that does nothing when receiving the various signals emitted by an agent.
+    """A base controller that does nothing when receiving the various signals emitted by an agent. This class should 
+    be the base class of any controller you would want to define.
     """
 
     def __init__(self):
@@ -176,11 +178,12 @@ class InterleavedTestEpochController(Controller):
     """A controller that interleaves a test epoch between training epochs of the agent.
 
     """
-    def __init__(self, epochLength, controllersToDisable=[], periodicity=2):
+    def __init__(self, epochLength, controllersToDisable=[], periodicity=2, showScore=True):
         super(Controller, self).__init__()
         self._epochCount = 0
         self._epochLength = epochLength
         self._toDisable = controllersToDisable
+        self._showScore = showScore
         if periodicity <= 2:
             self._periodicity = 2
         else:
@@ -202,6 +205,7 @@ class InterleavedTestEpochController(Controller):
             agent.startTesting(self._epochLength)
             agent.setControllersActive(self._toDisable, False)
         elif mod == 1:
+            if self._showScore: print "Testing score is {}".format(agent.totalRewardOverLastTest())
             agent.endTesting()
             agent.setControllersActive(self._toDisable, True)
 
@@ -213,10 +217,12 @@ class TrainerController(Controller):
         evaluateOn - After what type of event the agent shoud be trained periodically ('action', 'episode', 'epoch').
         periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
     """
-    def __init__(self, evaluateOn='action', periodicity=1):
+    def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
         super(Controller, self).__init__()
         self._count = 0
         self._periodicity = periodicity
+        self._showAvgBellmanResidual = showAvgBellmanResidual
+        self._showEpisodeAvgVValue = showEpisodeAvgVValue
 
         self._onAction = 'action' == evaluateOn
         self._onEpisode = 'episode' == evaluateOn
@@ -233,6 +239,8 @@ class TrainerController(Controller):
     def OnEpisodeEnd(self, agent, terminalReached, successful):
         if (self._active == False):
             return
+
+        if self._showEpisodeAvgVValue: print "Episode average V value: {}".format(agent.avgEpisodeVValue())
 
         if self._onEpisode:
             self._update(agent)
@@ -255,6 +263,7 @@ class TrainerController(Controller):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.train()
+            if self._showAvgBellmanResidual: print "Training loss (average bellman residual): {}".format(agent.avgBellmanResidual())
 
 
 
