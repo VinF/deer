@@ -3,7 +3,7 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 import theano
-from environment import Environment
+from base_classes import Environment
 
 class MyEnv(Environment):
     def __init__(self, rng):
@@ -157,7 +157,7 @@ class MyEnv(Environment):
 def main():
     # Can be used for debug purposes
     rng = np.random.RandomState(123456)
-    myenv=Env(rng)
+    myenv = MyEnv(rng)
     myenv.reset(False)
     
     myenv.act(1, False)
