@@ -291,7 +291,7 @@ class DataSet(object):
                          all trajectories are too short).
         """
 
-        rndValidIndices = np.zeros(batch_size)
+        rndValidIndices = np.zeros(batch_size, dtype='int32')
         for i in range(batch_size): # TODO: multithread this loop?
             rndValidIndices[i] = self._randomValidStateIndex()
             
