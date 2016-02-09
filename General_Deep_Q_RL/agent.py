@@ -352,51 +352,6 @@ class DataSet(object):
         return self._nElems
 
 
-    def addPonctualObservation(self, ponctualObs):
-        """Store an observation in the dataset. If the buffer is full, it uses a least recently used (LRU) approach 
-        to replace an old element by the new one. Note that two subsequent calls to this function is prohibited; they
-        should be interleaved with a call to addActionRewardTerminal.
-
-        Arguments:
-            ponctualObs - An ndarray(dtype='object') whose length is the number of inputs.
-                          For each input i, ponctualObs[i] is a 2D matrix that represents the actual data.
-
-        """
-
-        # Initialize the observations container if necessary
-        if (self._nElems == 0):
-            for i in range(len(self._historySizes)):
-                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
-        
-        # Store observations
-        for i in range(len(self._historySizes)):
-            self._observations[i] = np.roll(self._observations[i], -1)
-            self._observations[i][-1] = ponctualObs[i]
-
-
-    def addActionRewardTerminal(self, action, reward, isTerminal):
-        """Store the (action, reward, isTerminal) tuple relative to the last inserted state (through addState) in the 
-        dataset.
-        Note that two subsequent calls to this function is prohibited; they should be interleaved with a call to addState.
-
-        Arguments:
-            action - The id of the action taken in the last inserted state using addState.
-            reward - The reward associated to taking 'action' in the last inserted state using addState.
-            isTerminal - Tells whether 'action' lead to a terminal state (i.e. whether the tuple (state, action, reward, 
-                         isTerminal) marks the end of a trajectory).
-
-        """
-        self._actions = np.roll(self._actions, -1)
-        self._rewards = np.roll(self._rewards, -1)
-        self._terminals = np.roll(self._terminals, -1)
-        self._actions[-1] = action;
-        self._rewards[-1] = reward;
-        self._terminals[-1] = isTerminal;
-
-        if (self._nElems < self._size):
-            self._nElems += 1
-
-
     def addSample(self, ponctualObs, action, reward, isTerminal):
         """Store a (state, action, reward, isTerminal) in the dataset. 
         Equivalent to 'addState(state); addActionRewardTerminal(action, reward, isTerminal)'.
@@ -409,8 +364,26 @@ class DataSet(object):
             isTerminal - Tells whether 'action' lead to a terminal state (i.e. whether the tuple (state, action, reward, isTerminal) marks the end of a trajectory).
 
         """
-        addState(ponctualObs)
-        addActionRewardTerminal(action, reward, isTerminal)
+        # Initialize the observations container if necessary
+        if (self._nElems == 0):
+            for i in range(len(self._historySizes)):
+                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
+        
+        # Store observations
+        for i in range(len(self._historySizes)):
+            self._observations[i] = np.roll(self._observations[i], -1)
+            self._observations[i][-1] = ponctualObs[i]
+        
+        # Store rest of sample
+        self._actions = np.roll(self._actions, -1)
+        self._rewards = np.roll(self._rewards, -1)
+        self._terminals = np.roll(self._terminals, -1)
+        self._actions[-1] = action;
+        self._rewards[-1] = reward;
+        self._terminals[-1] = isTerminal;
+
+        if (self._nElems < self._size):
+            self._nElems += 1
         
 
     def _randomSlice(self, size):
