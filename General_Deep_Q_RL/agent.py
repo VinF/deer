@@ -102,7 +102,7 @@ class NeuralAgent(object):
             loss = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
         except SliceError as e:
-            warn("Training not done - " + e, AgentWarning)
+            warn("Training not done - " + str(e), AgentWarning)
 
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.OnStart(self)
@@ -318,8 +318,12 @@ class DataSet(object):
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
-        index = self._randomState.randint(self._maxHistorySize-1, self._nElems)
-        
+        try:
+            index = self._randomState.randint(self._maxHistorySize-1, self._nElems)
+        except ValueError:
+            raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
+                             "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
+
         # Check if slice is valid wrt terminals
         firsTry = index
         startWrapped = False
