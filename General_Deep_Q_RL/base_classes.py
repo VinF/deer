@@ -26,5 +26,27 @@ class Environment(object):
     def summarizePerformance(self, test_data_set):
         pass
 
+class QNetwork(object):        
+    def train(self, states, actions, rewards, nextStates, terminals):
+        raise NotImplementedError()
+
+    def chooseBestAction(self, state):
+        raise NotImplementedError()
+
+    def qValues(self, state):
+        raise NotImplementedError()
+
+    def setLearningRate(self, lr):
+        raise NotImplementedError()
+
+    def setDiscountFactor(self, df):
+        raise NotImplementedError()
+
+    def learningRate(self):
+        raise NotImplementedError()
+
+    def discountFactor(self):
+        raise NotImplementedError()
+
 if __name__ == "__main__":
     pass
