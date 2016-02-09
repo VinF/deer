@@ -74,8 +74,8 @@ class MyQNetwork(QNetwork):
                 states.append( T.matrix("%s_%s" % ("state", i)) )
                 next_states.append( T.matrix("%s_%s" % ("next_state", i)) )
                 
-            self.states_shared.append(theano.shared(np.zeros(batchSize + dim, dtype=theano.config.floatX) , borrow=False))
-            self.next_states_shared.append(theano.shared(np.zeros(batchSize + dim, dtype=theano.config.floatX) , borrow=False))
+            self.states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
+            self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
         
         print "Number of observations per state: {}".format(len(self.states_shared))
         print "For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions)
