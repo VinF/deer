@@ -185,7 +185,7 @@ def launch(args, defaults, description):
     agent.run(parameters.epochs, parameters.steps_per_epoch)
 
 def testQNetworkAPIUse(envModule):
-    import unittest as ut
+    import unittests as ut
     rng = np.random.RandomState(0)
 
     # Instantiate environment
