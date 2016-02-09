@@ -36,7 +36,7 @@ class LearningRateController(Controller):
 
     """
     def __init__(self, initialLearningRate, learningRateDecay, periodicity=1):
-        super(Controller, self).__init__()
+        super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initLr = initialLearningRate
         self._lr = initialLearningRate
@@ -73,7 +73,7 @@ class EpsilonController(Controller):
         resetEvery - After what type of event epsilon should be reset to initial value ('none', 'episode', 'epoch').
     """
     def __init__(self, initialE, eDecays, eMin, evaluateOn='action', periodicity=1, resetEvery='none'):
-        super(Controller, self).__init__()
+        super(self.__class__, self).__init__()
         self._count = 0
         self._initE = initialE
         self._e = initialE
@@ -139,7 +139,7 @@ class DiscountFactorController(Controller):
 
     """
     def __init__(self, initialDiscountFactor, discountFactorGrowth, periodicity=1):
-        super(Controller, self).__init__()
+        super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initDF = initialDiscountFactor
         self._df = initialDiscountFactor
@@ -173,7 +173,7 @@ class InterleavedTestEpochController(Controller):
 
     """
     def __init__(self, epochLength, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=1):
-        super(Controller, self).__init__()
+        super(self.__class__, self).__init__()
         self._epochCount = 0
         self._epochLength = epochLength
         self._toDisable = controllersToDisable
@@ -221,7 +221,7 @@ class TrainerController(Controller):
         periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
     """
     def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
-        super(Controller, self).__init__()
+        super(self.__class__, self).__init__()
         self._count = 0
         self._periodicity = periodicity
         self._showAvgBellmanResidual = showAvgBellmanResidual
