@@ -272,6 +272,12 @@ class DataSet(object):
 
         self._nElems  = 0
 
+    def slice(self, fromIndex, toIndex):
+        ret = np.zeros_like(self._observations)
+        for input in range(len(self._observations)):
+            ret[input] = self._observations[input][fromIndex:toIndex]
+
+        return ret
 
     def randomBatch(self, batch_size):
         """Return corresponding states, actions, rewards, terminal status, and next_states for batch_size randomly 
