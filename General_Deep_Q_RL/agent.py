@@ -207,14 +207,14 @@ class NeuralAgent(object):
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
                 if self._randomState.rand() < self._epsilon:
-                    action = self._randomState.randint(0, self._environment.num_actions)
+                    action = self._randomState.randint(0, self._environment.nActions())
                     V = 0
                 else:
                     action = self._network.chooseBestAction(state)
                     V = max(self._network.qValues(state))
             else:
                 # Still gathering initial data: choose dummy action
-                action = self._randomState.randint(0, self._environment.num_actions)
+                action = self._randomState.randint(0, self._environment.nActions())
                 V = 0
                 
         for c in self._controllers: c.OnActionChosen(self, action)
