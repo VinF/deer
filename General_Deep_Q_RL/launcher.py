@@ -9,14 +9,9 @@ import argparse
 import logging
 import cPickle
 import numpy as np
-import theano
 
-import experiment
 from agent import NeuralAgent
 import experiment.base_controllers as bc
-
-
-import q_network
 from base_classes import Environment, QNetwork
 
 def process_args(args, defaults, description):
@@ -138,6 +133,8 @@ def launch(args, defaults, description):
     """
     Execute a complete run with new API.
     """
+    import q_network
+    import theano
 
     logging.basicConfig(level=logging.INFO)
     parameters = process_args(args, defaults, description)
@@ -172,7 +169,7 @@ def launch(args, defaults, description):
         env,
         qnetwork,
         parameters.replay_memory_size,
-        max(my_environment.batchDimensions()[0]),
+        max(env.batchDimensions()[0]),
         parameters.batch_size,
         parameters.frame_skip,
         rng)
@@ -187,7 +184,37 @@ def launch(args, defaults, description):
     # Run the experiment
     agent.run(parameters.epochs, parameters.steps_per_epoch)
 
+def testQNetworkAPIUse(envModule):
+    import unittest as ut
+
+    # Instantiate environment
+    env = __import__(envModule).MyEnv(rng)
+    if not isinstance(env, Environment):
+        raise TypeError("The supplied environment does not subclass base_classes.Environment")
+
+    # Instantiate qnetwork
+    qnetwork = ut.MyQNetwork(env, 10)
+    
+    # Instantiate agent
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        32,
+        max(env.batchDimensions()[0]),
+        10,
+        0,
+        np.random.RandomState(0))
+
+    # Bind controllers to the agent
+    agent.attach(bc.TrainerController())
+    agent.attach(bc.LearningRateController(0.5, 0.1))
+    agent.attach(bc.DiscountFactorController(0.2, 0.1))
+    agent.attach(bc.EpsilonController(0.9, 0.1, 0.2))
+    agent.attach(bc.InterleavedTestEpochController(20, [0, 1, 2, 3], summarizeEvery=20))
+    
+    # Run the experiment
+    agent.run(5, 64)
 
 
 if __name__ == '__main__':
-    pass
+    testQNetworkAPIUse("Toy_env")
