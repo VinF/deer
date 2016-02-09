@@ -252,7 +252,7 @@ class DataSet(object):
             maxSize - The maximum size of this buffer.
 
         """
-        self._historySizes = history_sizes
+        self._batchDimensions = history_sizes
         self._maxHistorySize = np.max(history_sizes)
         self._size = maxSize
         self._observations = np.zeros(len(history_sizes), dtype='object') # One list per input; will be initialized at 
@@ -299,17 +299,17 @@ class DataSet(object):
         actions   = self._actions[rndValidIndices]
         rewards   = self._rewards[rndValidIndices]
         terminals = self._terminals[rndValidIndices]
-        states = np.zeros(len(history_sizes), dtype='object')
+        states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
 
-        for input in range(len(_historySizes)):
-            states[input] = np.zeros((batch_size, self._historySizes[input],) + np.array(state[i]).shape)
+        for input in range(len(self._batchDimensions)):
+            states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             for i in range(batch_size):
-                states[input][i] = self._observations[input][rndValidIndices[i]-self._historySizes[input]:rndValidIndices[i]]
+                states[input][i] = self._observations[input][rndValidIndices[i]-self._batchDimensions[input][0]:rndValidIndices[i]]
                 if rndValidIndices[i] >= self._nElems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input][rndValidIndices[i]+1-self._historySizes[input]:rndValidIndices[i]+1]
+                    next_states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
 
         
         return states, actions, rewards, next_states, terminals
@@ -368,10 +368,10 @@ class DataSet(object):
         # Initialize the observations container if necessary
         if (self._nElems == 0):
             for i in range(len(ponctualObs)):
-                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
+                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape, dtype=ponctualObs.dtype)
         
         # Store observations
-        for i in range(len(self._historySizes)):
+        for i in range(len(self._batchDimensions)):
             if (self._observations[i].ndim == 2):
                 self._observations[i] = np.roll(self._observations[i], -1, axis=0)
             else:
