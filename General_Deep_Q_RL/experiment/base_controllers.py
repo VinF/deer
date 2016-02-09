@@ -242,11 +242,12 @@ class TrainerController(Controller):
     def OnEpisodeEnd(self, agent, terminalReached, successful):
         if (self._active == False):
             return
-
-        if self._showEpisodeAvgVValue: print "Episode average V value: {}".format(agent.avgEpisodeVValue())
-
+        
         if self._onEpisode:
             self._update(agent)
+
+        if self._showAvgBellmanResidual: print "Episode average bellman residual): {}".format(agent.avgBellmanResidual())
+        if self._showEpisodeAvgVValue: print "Episode average V value: {}".format(agent.avgEpisodeVValue())
 
     def OnEpochEnd(self, agent):
         if (self._active == False):
@@ -266,7 +267,6 @@ class TrainerController(Controller):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.train()
-            if self._showAvgBellmanResidual: print "Training loss (average bellman residual): {}".format(agent.avgBellmanResidual())
 
 
 
