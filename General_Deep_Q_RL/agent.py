@@ -259,9 +259,9 @@ class DataSet(object):
         self._maxHistorySize = np.max(history_sizes)
         self._size = maxSize
         self._observations = np.zeros(len(history_sizes), dtype='object') # One list per input; will be initialized at 
-        self._actions      = np.zeros(size, dtype='int32')                # first call of addState
-        self._rewards      = np.zeros(size, dtype=config.floatX)
-        self._terminals    = np.zeros(size, dtype='bool')
+        self._actions      = np.zeros(maxSize, dtype='int32')             # first call of addState
+        self._rewards      = np.zeros(maxSize, dtype=config.floatX)
+        self._terminals    = np.zeros(maxSize, dtype='bool')
 
         if (randomState == None):
             self._randomState = np.random.RandomState()
