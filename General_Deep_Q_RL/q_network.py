@@ -447,7 +447,7 @@ class MyQNetwork(QNetwork):
                 else:
                     # Building here for 1D simple
                     l_in = lasagne.layers.InputLayer(
-                        shape=(self._batchSize, 1, element_shape[0]), 
+                        shape=(self._batchSize, 1) + dim, 
                         input_var=inputs[i].reshape((self._batchSize, 1, element_shape[0])),
                     )
                                 
