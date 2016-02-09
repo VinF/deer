@@ -49,7 +49,7 @@ class MyEnv(Environment):
             self.prices = self._priceSignalTrain
             
         
-        self._lastPonctualObservation = [np.array([self.prices[0], 0, 0]), 0]
+        self._lastPonctualObservation = [self.prices[0], 0]
         for i in range(len(self._lastPonctualObservation)):
             self._state[i] = np.zeros_like(self._state[i])
             self._state[i][-1] = self._lastPonctualObservation[i]
