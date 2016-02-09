@@ -13,6 +13,7 @@ import theano
 import theano.tensor as T
 from updates import deepmind_rmsprop
 from base_classes import QNetwork
+from IPython import embed
 
 class MyQNetwork(QNetwork):
     """
@@ -222,37 +223,17 @@ class MyQNetwork(QNetwork):
         Returns: average loss of the batch training
         """
         
-        for i, x in enumerate(self.states_shared):
-
-            swap_states_val=np.array(np.array(states_val)[:,:,i])
+        for i in range(len(self.states_shared)):
+            self.states_shared[i].set_value(states_val[i])
             
-            for j,swap_states_val1 in enumerate(swap_states_val[0,:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=1)                    
-                    break
-                
-            swap_states_val=np.asarray( swap_states_val.tolist() , dtype=theano.config.floatX)
-                            
-            self.states_shared[i].set_value(swap_states_val)
-
-        for i, x in enumerate(self.next_states_shared):
-            swap_states_val=np.array(np.array(next_states_val)[:,:,i])
-            
-            for j,swap_states_val1 in enumerate(swap_states_val[0,:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=1)                    
-                    break
-                
-            swap_states_val=np.asarray( swap_states_val.tolist() , dtype=theano.config.floatX)
-                            
-            self.next_states_shared[i].set_value( swap_states_val )
+        for i in range(len(self.states_shared)):
+            self.next_states_shared[i].set_value(next_states_val[i])
 
         
-        self.actions_shared.set_value(actions_val)
-        self.rewards_shared.set_value(rewards_val)
-        self.terminals_shared.set_value(terminals_val)
-        if (self.freeze_interval > 0 and
-            self.update_counter % self.freeze_interval == 0):
+        self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
+        self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
+        self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
+        if self.freeze_interval > 0 and self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
             
         loss, _ = self._train(self._df, self._lr)
@@ -267,20 +248,10 @@ class MyQNetwork(QNetwork):
 
         Returns:
            The q value for the provided belief state
-        """        
-        for i, x in enumerate(self.states_shared):            
-            swap_states_val=np.array(np.array(state_val)[:,i])
-
-            for j,swap_states_val1 in enumerate(swap_states_val[:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=0)                    
-                    break
-                
-            swap_states_val=np.asarray(swap_states_val.tolist(), dtype=theano.config.floatX)
-
-            aa=self.states_shared[i].get_value()
-            aa[0]=swap_states_val
-                            
+        """ 
+        for i in range(len(self.states_shared)):
+            aa = self.states_shared[i].get_value()
+            aa[0] = state_val[i]
             self.states_shared[i].set_value(aa)
         
         return self._q_vals()[0]
