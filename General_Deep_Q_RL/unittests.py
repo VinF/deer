@@ -33,11 +33,11 @@ class MyQNetwork(QNetwork):
         return 0.42
 
     def chooseBestAction(self, state):
-        _checkState(state)
+        self._checkState(state)
         return 0
 
     def qValues(self, state):
-        _checkState(state)
+        self._checkState(state)
         return [0]
 
     def setLearningRate(self, lr):
