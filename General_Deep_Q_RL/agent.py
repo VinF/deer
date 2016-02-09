@@ -296,7 +296,7 @@ class DataSet(object):
 
         rndValidIndices = np.zeros(batch_size)
         for i in range(batch_size): # TODO: multithread this loop?
-            rndValidIndices[i] = _randomValidStateIndex()
+            rndValidIndices[i] = self._randomValidStateIndex()
             
         
         actions   = self._actions[rndValidIndices]
