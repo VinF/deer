@@ -173,7 +173,7 @@ class NeuralAgent(object):
         action, V = self._chooseAction()        
         reward = 0
         for _ in range(self._frameSkip):
-            reward += self._environment.act(action)
+            reward += self._environment.act(action, self._inTestingMode)
             if self._environment.inTerminalState():
                 break
 

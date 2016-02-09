@@ -4,6 +4,7 @@ import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 import theano
 from base_classes import Environment
+from IPython import embed
 
 class MyEnv(Environment):
     def __init__(self, rng):
@@ -74,7 +75,7 @@ class MyEnv(Environment):
         if (action == 1 and self._lastPonctualObservation[1] == 0):
             reward = -self.prices[self._counter-1] - 0.5
 
-        self._lastPonctualObservation[0] = [self.prices[self._counter], action, action]
+        self._lastPonctualObservation[0] = self.prices[self._counter]
         self._lastPonctualObservation[1] = action        
         for i in range(len(self._lastPonctualObservation)):
             if (self._state[i].ndim == 2):
@@ -83,7 +84,7 @@ class MyEnv(Environment):
                 self._state[i] = np.roll(self._state[i], -1)
             self._state[i][-1] = self._lastPonctualObservation[i]
 
-        self._counter +=1
+        self._counter += 1
 
         return reward
 
