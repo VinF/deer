@@ -195,14 +195,8 @@ class NeuralAgent(object):
         
         state = self._environment.state()
         if self._inTestingMode:
-            if self._dataSetTest.nElems() > self._replayMemoryStartSize:
-                # Use gathered data to choose action
-                action = self._network.chooseBestAction(state)
-                V = max(self._network.qValues(state))
-            else:
-                # Still gathering initial data: choose dummy action
-                action = 0 #self.rng.randint(0, self.num_actions) #TODO: ask vincent if =0 is not a bug?
-                V = 0
+            action = self._network.chooseBestAction(state)
+            V = max(self._network.qValues(state))
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
