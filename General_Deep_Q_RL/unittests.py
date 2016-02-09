@@ -67,12 +67,12 @@ class MyQNetwork(QNetwork):
         # state should be nObservations * env.batchDimensions[i]
         dims = self._env.batchDimensions()
 
-        if len(states) != len(dims):
-            raise UnitTestError("{} != {}".format(len(states), len(dims)))
+        if len(state) != len(dims):
+            raise UnitTestError("{} != {}".format(len(state), len(dims)))
 
-        for i in range(len(states)):
-            if states[i].shape != dims[i]:
-                raise UnitTestError("Observation {}: {} != {}".format(i, states[i].shape, dims[i]))
+        for i in range(len(state)):
+            if state[i].shape != dims[i]:
+                raise UnitTestError("Observation {}: {} != {}".format(i, state[i].shape, dims[i]))
 
 
 
