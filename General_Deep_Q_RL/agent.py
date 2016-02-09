@@ -97,6 +97,9 @@ class NeuralAgent(object):
         self._environment.summarizePerformance(self._dataSetTest)
 
     def train(self):
+        if self._dataSet.nElems() < self._replayMemoryStartSize:
+            return
+
         try:
             states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
             loss = self._network.train(states, actions, rewards, next_states, terminals)
