@@ -199,8 +199,13 @@ class MyQNetwork(QNetwork):
 
     def setDiscountFactor(self, df):
         self._df = df
-            
 
+    def learningRate(self):
+        return self._lr
+
+    def discountFactor(self):
+        return self._df
+            
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
         Train one batch.
