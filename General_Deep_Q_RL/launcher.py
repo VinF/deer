@@ -186,6 +186,7 @@ def launch(args, defaults, description):
 
 def testQNetworkAPIUse(envModule):
     import unittest as ut
+    rng = np.random.RandomState(0)
 
     # Instantiate environment
     env = __import__(envModule).MyEnv(rng)
@@ -203,7 +204,7 @@ def testQNetworkAPIUse(envModule):
         max(env.batchDimensions()[0]),
         10,
         0,
-        np.random.RandomState(0))
+        rng)
 
     # Bind controllers to the agent
     agent.attach(bc.TrainerController())
