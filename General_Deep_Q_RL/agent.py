@@ -257,7 +257,7 @@ class DataSet(object):
         """
         self._historySizes = history_sizes
         self._maxHistorySize = np.max(history_sizes)
-        self._size = size
+        self._size = maxSize
         self._observations = np.zeros(len(history_sizes), dtype='object') # One list per input; will be initialized at 
         self._actions      = np.zeros(size, dtype='int32')                # first call of addState
         self._rewards      = np.zeros(size, dtype=config.floatX)
