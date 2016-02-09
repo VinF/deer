@@ -255,7 +255,7 @@ class TrainerController(Controller):
         if self._onEpoch:
             self._update(agent)
 
-    def OnActionTaken(self, agent, action):
+    def OnActionTaken(self, agent):
         if (self._active == False):
             return
 
