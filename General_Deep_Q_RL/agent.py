@@ -178,7 +178,7 @@ class NeuralAgent(object):
             self._dataSet.addSample(ponctualObs, action, reward, isTerminal)
 
 
-    def _chooseAction(self, epsilon):
+    def _chooseAction(self):
         """
         Get the action chosen by the agent regarding epsilon greedy parameter and current state. It will be a random
         action with probability epsilon and the believed-best action otherwise.
@@ -206,7 +206,7 @@ class NeuralAgent(object):
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
-                if self._randomState.rand() < epsilon:
+                if self._randomState.rand() < self._epsilon:
                     action = self._randomState.randint(0, self._environment.num_actions)
                     V = 0
                 else:
