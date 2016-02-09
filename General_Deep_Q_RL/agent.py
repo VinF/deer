@@ -22,7 +22,6 @@ sys.setrecursionlimit(10000)
 class NeuralAgent(object):
 
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
-
         self._controllers = []
         self._environment = environment
         self._network = q_network
