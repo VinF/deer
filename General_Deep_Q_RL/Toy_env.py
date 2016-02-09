@@ -98,14 +98,10 @@ class MyEnv(Environment):
     
         print "Summary Perf"
         
-        prices=[]
-        invest=[]
-        for elems in test_data_set.elements[100:125]:
-            prices.append(elems[0])
-            invest.append(elems[1])
+        elems = test_data_set.slice(100, 125)
+        prices = elems[0]
+        invest = elems[1]
         
-        prices=np.array(prices)
-        invest=np.array(invest)
         steps=np.arange(25)
         steps_long=np.arange(250)/10.
         

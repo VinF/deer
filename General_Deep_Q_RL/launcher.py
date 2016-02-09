@@ -175,7 +175,7 @@ def launch(args, defaults, description):
         rng)
 
     # Bind controllers to the agent
-    agent.attach(bc.TrainerController())
+    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
     agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc))
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
@@ -200,14 +200,14 @@ def testQNetworkAPIUse(envModule):
     agent = NeuralAgent(
         env,
         qnetwork,
-        32,
+        150,
         max(env.batchDimensions()[0]),
         10,
         0,
         rng)
 
     # Bind controllers to the agent
-    agent.attach(bc.TrainerController())
+    agent.attach(bc.TrainerController(periodicity=10))
     agent.attach(bc.LearningRateController(0.5, 0.1))
     agent.attach(bc.DiscountFactorController(0.2, 0.1))
     agent.attach(bc.EpsilonController(0.9, 0.1, 0.2))
