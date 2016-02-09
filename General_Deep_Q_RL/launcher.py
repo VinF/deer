@@ -12,10 +12,12 @@ import numpy as np
 import theano
 
 import experiment
-import agent
+from agent import NeuralAgent
+import experiment.base_controllers as bc
 
 
 import q_network
+from base_classes import Environment, QNetwork
 
 def process_args(args, defaults, description):
     """
@@ -132,71 +134,58 @@ def process_args(args, defaults, description):
     return parameters
 
 
-
 def launch(args, defaults, description):
     """
-    Execute a complete training run.
+    Execute a complete run with new API.
     """
 
     logging.basicConfig(level=logging.INFO)
     parameters = process_args(args, defaults, description)
-
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Import environment class and instantiate it
-    my_env=__import__(parameters.env_name)
-    my_environment=my_env.Env(rng)    
+    # Instantiate environment
+    env = __import__(parameters.env_name).MyEnv(rng)
+    if not isinstance(env, Environment):
+        raise TypeError("The supplied environment does not subclass base_classes.Environment")
 
+    # Instantiate qnetwork
+    qnetwork = q_network.MyQNetwork(
+        env,
+        parameters.rms_decay,
+        parameters.rms_epsilon,
+        parameters.momentum,
+        parameters.clip_delta,
+        parameters.freeze_interval,
+        parameters.batch_size,
+        parameters.network_type,
+        parameters.update_rule,
+        parameters.batch_accumulator,
+        rng)
+    if not isinstance(qnetwork, QNetwork):
+        raise TypeError("The supplied q-network does not subclass base_classes.QNetwork")
+    
+    # Instantiate agent
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        parameters.replay_memory_size,
+        max(my_environment.batchDimensions()[0]),
+        parameters.batch_size,
+        parameters.frame_skip,
+        rng)
 
-    # If no trained network yet
-    if parameters.nn_file is None:
-        my_network = q_network.DeepQLearner(my_environment,
-                                         my_environment.num_actions,                                         
-                                         parameters.discount,
-                                         parameters.discount_inc,
-                                         parameters.learning_rate,
-                                         parameters.learning_rate_decay,
-                                         parameters.rms_decay,
-                                         parameters.rms_epsilon,
-                                         parameters.momentum,
-                                         parameters.clip_delta,
-                                         parameters.freeze_interval,
-                                         parameters.batch_size,
-                                         parameters.network_type,
-                                         parameters.update_rule,
-                                         parameters.batch_accumulator,
-                                         rng)
-
-
-#    else: # FIXME
-#        handle = open(parameters.nn_file, 'r')
-#        network = cPickle.load(handle)
-
-    my_agent = agent.NeuralAgent(my_network,
-                                  parameters.epsilon_start,
-                                  parameters.epsilon_min,
-                                  parameters.epsilon_decay,
-                                  parameters.replay_memory_size,
-                                  max(my_environment.num_elements_in_batch),
-                                  parameters.update_frequency,
-                                  parameters.batch_size,
-                                  rng)
-
-
-
-    my_experiment = experiment.MGExperiment(my_agent, my_environment,
-                                              parameters.epochs,
-                                              parameters.steps_per_epoch,
-                                              parameters.steps_per_test,
-                                              parameters.period_btw_summary_perfs,
-                                              parameters.frame_skip,
-                                              rng)
-
-
-    my_experiment.run()
+    # Bind controllers to the agent
+    agent.attach(bc.TrainerController())
+    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
+    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc))
+    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
+    agent.attach(bc.InterleavedTestEpochController(parameters.steps_per_test, [0, 1, 2, 3], summarizeEvery=parameters.period_btw_summary_perfs))
+    
+    # Run the experiment
+    agent.run(parameters.epochs, parameters.steps_per_epoch)
 
 
 
