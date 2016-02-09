@@ -24,12 +24,6 @@ class Controller(object):
     def OnEpochEnd(self, agent):
         pass
 
-    def OnBeforeTraining(self, agent):
-        pass
-
-    def OnEndTraining(self, agent):
-        pass
-
     def OnActionChosen(self, agent, action):
         pass
 
