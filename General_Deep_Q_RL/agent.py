@@ -57,9 +57,13 @@ class NeuralAgent(object):
         self._network.setDiscountFactor(df)
 
     def avgBellmanResidual(self):
+        if (len(self._trainingLossAverages) == 0):
+            return -1
         return np.average(self._trainingLossAverages)
 
     def avgEpisodeVValue(self):
+        if (len(self._VsOnLastEpisode) == 0):
+            return -1
         return np.average(self._VsOnLastEpisode)
     
     def totalRewardOverLastTest(self):
