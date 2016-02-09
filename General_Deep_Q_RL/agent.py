@@ -47,10 +47,10 @@ class NeuralAgent(object):
         self._epsilon = e
 
     def setLearningRate(self, lr):
-        self._network.lr = lr
+        self._network.setLearningRate(lr)
 
     def setDiscountFactor(self, df):
-        self._network.discount = df
+        self._network.setDiscountFactor(df)
 
     def avgBellmanResidual(self):
         return np.average(self._trainingLossAverages)
