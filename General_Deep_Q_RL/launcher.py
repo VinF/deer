@@ -203,7 +203,7 @@ def testQNetworkAPIUse(envModule):
         150,
         max(env.batchDimensions()[0]),
         10,
-        0,
+        1,
         rng)
 
     # Bind controllers to the agent
