@@ -172,22 +172,27 @@ class InterleavedTestEpochController(Controller):
     """A controller that interleaves a test epoch between training epochs of the agent.
 
     """
-    def __init__(self, epochLength, controllersToDisable=[], periodicity=2, showScore=True):
+    def __init__(self, epochLength, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=1):
         super(Controller, self).__init__()
         self._epochCount = 0
         self._epochLength = epochLength
         self._toDisable = controllersToDisable
         self._showScore = showScore
+        self._summarizeEvery = summarizeEvery
         if periodicity <= 2:
             self._periodicity = 2
         else:
             self._periodicity = periodicity
+
+        self._summaryCounter = 0
+        self._summaryPeriodicity = summarizeEvery
 
     def OnStart(self, agent):
         if (self._active == False):
             return
 
         self._epochCount = 0
+        self._summaryCounter = 0
 
     def OnEpochEnd(self, agent):
         if (self._active == False):
@@ -199,7 +204,11 @@ class InterleavedTestEpochController(Controller):
             agent.startTesting(self._epochLength)
             agent.setControllersActive(self._toDisable, False)
         elif mod == 1:
-            if self._showScore: print "Testing score is {}".format(agent.totalRewardOverLastTest())
+            if self._showScore:
+                print "Testing score is {}".format(agent.totalRewardOverLastTest())
+            if self._summaryPeriodicity > 0 and self._summaryCounter % self._summaryPeriodicity == 0:
+                agent.summarizeTestPerformance()
+            self._summaryCounter += 1
             agent.endTesting()
             agent.setControllersActive(self._toDisable, True)
 
