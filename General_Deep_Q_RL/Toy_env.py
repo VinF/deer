@@ -136,6 +136,9 @@ class MyEnv(Environment):
     def batchDimensions(self):
         return self._batchDimensions
 
+    def nActions(self):
+        return self._nActions
+
     def inTerminalState(self):
         return False
 

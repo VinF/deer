@@ -11,6 +11,9 @@ class Environment(object):
     def batchDimensions(self):
         raise NotImplementedError()
 
+    def nActions(self):
+        raise NotImplementedError()
+
     def inTerminalState(self):
         raise NotImplementedError()
 
