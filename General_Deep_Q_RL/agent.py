@@ -366,12 +366,15 @@ class DataSet(object):
         """
         # Initialize the observations container if necessary
         if (self._nElems == 0):
-            for i in range(len(self._historySizes)):
+            for i in range(len(ponctualObs)):
                 self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
         
         # Store observations
         for i in range(len(self._historySizes)):
-            self._observations[i] = np.roll(self._observations[i], -1)
+            if (self._observations[i].ndim == 2):
+                self._observations[i] = np.roll(self._observations[i], -1, axis=0)
+            else:
+                self._observations[i] = np.roll(self._observations[i], -1)
             self._observations[i][-1] = ponctualObs[i]
         
         # Store rest of sample
