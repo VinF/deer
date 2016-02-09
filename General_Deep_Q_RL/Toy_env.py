@@ -3,8 +3,9 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 import theano
+from environment import Environment
 
-class Env(object):
+class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment
 
