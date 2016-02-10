@@ -149,7 +149,7 @@ class NeuralAgent(object):
                 break
             
         self._inEpisode = False
-        for c in self._controllers: c.OnEpisodeEnd(self, isTerminal, self._environment.isSuccess())
+        for c in self._controllers: c.OnEpisodeEnd(self, isTerminal, reward)
         return maxSteps
 
         

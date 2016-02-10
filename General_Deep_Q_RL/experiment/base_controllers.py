@@ -18,7 +18,7 @@ class Controller(object):
     def OnStart(self, agent):
         pass
 
-    def OnEpisodeEnd(self, agent, terminalReached, successful):
+    def OnEpisodeEnd(self, agent, terminalReached, reward):
         pass
 
     def OnEpochEnd(self, agent):
@@ -96,7 +96,7 @@ class EpsilonController(Controller):
 
         self._reset(agent)
 
-    def OnEpisodeEnd(self, agent, terminalReached, successful):
+    def OnEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
 
@@ -239,7 +239,7 @@ class TrainerController(Controller):
         
         self._count = 0
 
-    def OnEpisodeEnd(self, agent, terminalReached, successful):
+    def OnEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
         

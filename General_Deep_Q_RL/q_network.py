@@ -173,10 +173,10 @@ class MyQNetwork(QNetwork):
             updates = deepmind_rmsprop(loss, params, thelr, self.rho,
                                        self.rms_epsilon)
         elif update_rule == 'rmsprop':
-            updates = lasagne.updates.rmsprop(loss, params, self._lr, self.rho,
+            updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,
                                               self.rms_epsilon)
         elif update_rule == 'sgd':
-            updates = lasagne.updates.sgd(loss, params, self._lr)
+            updates = lasagne.updates.sgd(loss, params, thelr)
         else:
             raise ValueError("Unrecognized update: {}".format(update_rule))
 
@@ -303,7 +303,7 @@ class MyQNetwork(QNetwork):
             if len(dim) == 3: 
                 # Building here for 3D
                 l_in = lasagne.layers.InputLayer(
-                    shape=self._batchSize + dim, 
+                    shape=(self._batchSize,) + dim, # add "1" in shape?
                     input_var=inputs[i],
                 )
                 
