@@ -327,7 +327,7 @@ class DataSet(object):
             next_states[input] = np.zeros_like(states[input])
             for i in range(batch_size):
                 states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
-                if rndValidIndices[i] >= self._nElems - 1 or terminals[i]:
+                if rndValidIndices[i] >= self._size - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
                     next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]

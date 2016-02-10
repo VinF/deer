@@ -303,7 +303,7 @@ class MyQNetwork(QNetwork):
             if len(dim) == 3: 
                 # Building here for 3D
                 l_in = lasagne.layers.InputLayer(
-                    shape=(self._batchSize,) + dim, # add "1" in shape?
+                    shape=(self._batchSize,) + dim, 
                     input_var=inputs[i],
                 )
                 
