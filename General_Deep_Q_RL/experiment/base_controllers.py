@@ -125,13 +125,14 @@ class EpsilonController(Controller):
     def _reset(self, agent):
         self._count = 0
         agent.setEpsilon(self._initE)
-        self._e = max(self._e - self._eDecay, self._eMin)
+        self._e = self._initE
 
     def _update(self, agent):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.setEpsilon(self._e)
             self._e = max(self._e - self._eDecay, self._eMin)
+
 
 
 class DiscountFactorController(Controller):
@@ -267,7 +268,61 @@ class TrainerController(Controller):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.train()
+            
 
+class VerboseController(Controller):
+    """A controller that make the agent train on its current database periodically.
+
+    Arguments:
+        evaluateOn - After what type of event the agent shoud be trained periodically ('action', 'episode', 'epoch').
+        periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
+    """
+    def __init__(self, evaluateOn='epoch', periodicity=1):
+        super(self.__class__, self).__init__()
+        self._count = 0
+        self._periodicity = periodicity
+        self._string = evaluateOn
+
+        self._onAction = 'action' == evaluateOn
+        self._onEpisode = 'episode' == evaluateOn
+        self._onEpoch = 'epoch' == evaluateOn
+        if not self._onAction and not self._onEpisode and not self._onEpoch:
+            self._onEpoch = True
+
+    def OnStart(self, agent):
+        if (self._active == False):
+            return
+        
+        self._count = 0
+
+    def OnEpisodeEnd(self, agent, terminalReached, reward):
+        if (self._active == False):
+            return
+        
+        if self._onEpisode:
+            self._print(agent)
+
+    def OnEpochEnd(self, agent):
+        if (self._active == False):
+            return
+
+        if self._onEpoch:
+            self._print(agent)
+
+    def OnActionTaken(self, agent):
+        if (self._active == False):
+            return
+
+        if self._onAction:
+            self._print(agent)
+
+    def _print(self, agent):
+        if self._periodicity <= 1 or self._count % self._periodicity == 0:
+            print "{} {}:".format(self._string, self._count + 1)
+            print "Learning rate: {}".format(agent.learningRate())
+            print "Discount factor: {}".format(agent.dicountFactor())
+            print "Epsilon: {}".format(agent.epsilon())
+        self._count += 1
 
 
 if __name__ == "__main__":
