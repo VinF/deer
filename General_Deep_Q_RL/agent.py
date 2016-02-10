@@ -324,11 +324,14 @@ class DataSet(object):
                     next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
 
         
+        embed()
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
+        lowerBound = self._size - self._nElems
+        index_lowerBound = lowerBound + self._maxHistorySize - 1
         try:
-            index = self._randomState.randint(self._maxHistorySize-1, self._nElems)
+            index = self._randomState.randint(index_lowerBound, self._size)
         except ValueError:
             raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
                              "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
@@ -338,19 +341,21 @@ class DataSet(object):
         startWrapped = False
         while True:
             i = index-1
-            for processed in range(1, self._maxHistorySize):
-                if (i < 0 or self._terminals[i]):
+            processed = 0
+            for _ in range(self._maxHistorySize-1):
+                if (i < lowerBound or self._terminals[i]):
                     break;
 
                 i -= 1
+                processed += 1
             
             if (processed < self._maxHistorySize - 1):
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
-                if (index < 0):
+                if (index < index_lowerBound):
                     startWrapped = True
-                    index = self._nElems - 1
-                if (startWrapped and start <= firstTry):
+                    index = self._size - 1
+                if (startWrapped and index <= firstTry):
                     raise SliceError("Could not find a state with full histories")
             else:
                 # else index was ok according to terminals
