@@ -322,15 +322,16 @@ class DataSet(object):
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
 
+        lowerBound = self._size - self._nElems
         for input in range(len(self._batchDimensions)):
             states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(batch_size):
                 states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
-                if rndValidIndices[i] >= self._size - 1 or terminals[i]:
+                if rndValidIndices[i] <= lowerBound or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
+                    next_states[input][i] = self._observations[input][rndValidIndices[i]-self._batchDimensions[input][0]:rndValidIndices[i]]
 
         
         return states, actions, rewards, next_states, terminals
