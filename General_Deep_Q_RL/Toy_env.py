@@ -55,7 +55,6 @@ class MyEnv(Environment):
             self._state[i] = np.zeros_like(self._state[i])
             self._state[i][-1] = self._lastPonctualObservation[i]
 
-        
         self._counter = 1
         
         
@@ -85,7 +84,7 @@ class MyEnv(Environment):
             self._state[i][-1] = self._lastPonctualObservation[i]
 
         self._counter += 1
-
+        
         return reward
 
 
@@ -99,7 +98,7 @@ class MyEnv(Environment):
     
         print "Summary Perf"
         
-        elems = test_data_set.slice(100, 125)
+        elems = test_data_set.slice(-125, -100)
         prices = elems[0]
         invest = elems[1]
         
