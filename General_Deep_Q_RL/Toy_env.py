@@ -98,12 +98,12 @@ class MyEnv(Environment):
     
         print "Summary Perf"
         
-        elems = test_data_set.slice(-125, -100)
+        elems = test_data_set.slice(-test_data_set.nElems(), -1)
         prices = elems[0]
         invest = elems[1]
         
-        steps=np.arange(25)
-        steps_long=np.arange(250)/10.
+        steps=np.arange(len(prices))
+        steps_long=np.arange(len(prices)*10)/10.
         
         print steps,invest,prices
         host = host_subplot(111, axes_class=AA.Axes)
