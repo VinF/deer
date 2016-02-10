@@ -320,7 +320,7 @@ class VerboseController(Controller):
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             print "{} {}:".format(self._string, self._count + 1)
             print "Learning rate: {}".format(agent.learningRate())
-            print "Discount factor: {}".format(agent.dicountFactor())
+            print "Discount factor: {}".format(agent.discountFactor())
             print "Epsilon: {}".format(agent.epsilon())
         self._count += 1
 
