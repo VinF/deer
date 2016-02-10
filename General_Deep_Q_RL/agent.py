@@ -145,13 +145,14 @@ class NeuralAgent(object):
         while maxSteps > 0:
             maxSteps -= 1
 
+            obs = self._environment.observe()
             V, action, reward = self._step()
             self._VsOnLastEpisode.append(V)
             isTerminal = self._environment.inTerminalState()
             if self._inTestingMode:
                 self._totalTestReward += reward
 
-            self._addSample(self._environment.observe(), action, reward, isTerminal)
+            self._addSample(obs, action, reward, isTerminal)
             for c in self._controllers: c.OnActionTaken(self)
             
             if isTerminal:
