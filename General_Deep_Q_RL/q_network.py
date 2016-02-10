@@ -42,10 +42,8 @@ class MyQNetwork(QNetwork):
         self._batchDimensions = self._environment.batchDimensions()
         self._nActions = self._environment.nActions()
         self._df = 0
-        self._dfGrowth = 0
         self.rho = rho
         self._lr = 0
-        self._lrDecay = 0
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.clip_delta = clip_delta
