@@ -50,11 +50,20 @@ class NeuralAgent(object):
     def setEpsilon(self, e):
         self._epsilon = e
 
+    def epsilon(self):
+        return self._epsilon
+
     def setLearningRate(self, lr):
         self._network.setLearningRate(lr)
 
+    def learningRate(self):
+        return self._network.learningRate()
+
     def setDiscountFactor(self, df):
         self._network.setDiscountFactor(df)
+
+    def discountFactor(self):
+        return self._network.discountFactor()
 
     def avgBellmanResidual(self):
         if (len(self._trainingLossAverages) == 0):
