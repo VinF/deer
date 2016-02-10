@@ -333,7 +333,6 @@ class DataSet(object):
                     next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
 
         
-        embed()
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
