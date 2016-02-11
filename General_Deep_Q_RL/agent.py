@@ -317,9 +317,9 @@ class DataSet(object):
             rndValidIndices[i] = self._randomValidStateIndex()
             
         
-        actions   = self._actions[rndValidIndices]
-        rewards   = self._rewards[rndValidIndices]
-        terminals = self._terminals[rndValidIndices]
+        actions   = self._actions[rndValidIndices-1]
+        rewards   = self._rewards[rndValidIndices-1]
+        terminals = self._terminals[rndValidIndices-1]
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
 
@@ -328,13 +328,12 @@ class DataSet(object):
             states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(batch_size):
-                states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
+                states[input][i] = self._observations[input][rndValidIndices[i]-self._batchDimensions[input][0]:rndValidIndices[i]]
                 if rndValidIndices[i] <= lowerBound or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input][rndValidIndices[i]-self._batchDimensions[input][0]:rndValidIndices[i]]
+                    next_states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
 
-        
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
@@ -365,7 +364,7 @@ class DataSet(object):
                 if (index < index_lowerBound):
                     startWrapped = True
                     index = self._size - 1
-                if (startWrapped and index <= firstTry):
+                if (startWrapped and index <= firsTry):
                     raise SliceError("Could not find a state with full histories")
             else:
                 # else index was ok according to terminals
@@ -456,7 +455,7 @@ class DataSet(object):
                     startWrapped = True
                     end = self._nElems
                     start = end - size
-                if (startWrapped and start <= firstTry):
+                if (startWrapped and start <= firsTry):
                     raise SliceError("Could not find a slice of size " + size)
             else:
                 # else slice was ok according to mask
