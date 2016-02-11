@@ -317,22 +317,21 @@ class DataSet(object):
             rndValidIndices[i] = self._randomValidStateIndex()
             
         
-        actions   = self._actions[rndValidIndices-1]
-        rewards   = self._rewards[rndValidIndices-1]
-        terminals = self._terminals[rndValidIndices-1]
+        actions   = self._actions[rndValidIndices]
+        rewards   = self._rewards[rndValidIndices]
+        terminals = self._terminals[rndValidIndices]
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
-
-        lowerBound = self._size - self._nElems
+        
         for input in range(len(self._batchDimensions)):
             states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(batch_size):
-                states[input][i] = self._observations[input][rndValidIndices[i]-self._batchDimensions[input][0]:rndValidIndices[i]]
-                if rndValidIndices[i] <= lowerBound or terminals[i]:
+                states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
+                if rndValidIndices[i] >= self._size - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
+                    next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
 
         return states, actions, rewards, next_states, terminals
 
@@ -346,7 +345,7 @@ class DataSet(object):
                              "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
 
         # Check if slice is valid wrt terminals
-        firsTry = index
+        firstTry = index
         startWrapped = False
         while True:
             i = index-1
@@ -364,7 +363,7 @@ class DataSet(object):
                 if (index < index_lowerBound):
                     startWrapped = True
                     index = self._size - 1
-                if (startWrapped and index <= firsTry):
+                if (startWrapped and index <= firstTry):
                     raise SliceError("Could not find a state with full histories")
             else:
                 # else index was ok according to terminals
@@ -414,52 +413,6 @@ class DataSet(object):
 
         if (self._nElems < self._size):
             self._nElems += 1
-        
-
-    def _randomSlice(self, size):
-        """Get start and end indices of a random contiguous batch from the dataset. Two objects at i and j are 
-        considered "contiguous" if
-        1) they are next to each other in the dataset, i.e. at position i and j=i+1
-        2) self._terminals[i] == False.
-
-        Arguments:
-            size - The size of the slice.
-
-        """
-        if (size > self._nElems):
-            raise SliceError("Not enough elements in the buffer to sustain a slice of size " + size)
-
-        slice = np.zeros(size, dtype=_buffer.dtype)
-
-        start = self._randomState.randint(0, self._nElems - size)
-        end   = start + size
-        
-        # Check if slice is valid wrt terminals
-        firsTry = start
-        startWrapped = False
-        while True:
-            i = start
-            for processed in range(size):
-                if (self._terminals[i]):
-                    break;
-
-                i += 1
-                if (i >= self._nElems):
-                    i = 0
-            
-            if (processed < size - 1):
-                # if we stopped prematurely, shift slice to the left and try again
-                end   = i + 1
-                start = end - size
-                if (start < 0):
-                    startWrapped = True
-                    end = self._nElems
-                    start = end - size
-                if (startWrapped and start <= firsTry):
-                    raise SliceError("Could not find a slice of size " + size)
-            else:
-                # else slice was ok according to mask
-                return start, end
 
         
 class SliceError(LookupError):
