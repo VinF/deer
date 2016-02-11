@@ -30,6 +30,7 @@ class Defaults:
     LEARNING_RATE_DECAY = 1.
     DISCOUNT = 0.9
     DISCOUNT_INC = 1.
+    DISCOUNT_MAX = 0.99
     
     RMS_DECAY = 0.9#.99 # (Rho)
     RMS_EPSILON = 0.0001#.01

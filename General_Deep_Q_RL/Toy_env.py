@@ -128,9 +128,6 @@ class MyEnv(Environment):
     def inTerminalState(self):
         return False
 
-    def isSuccess(self):
-        return True
-
     def observe(self):
         return np.array(self._lastPonctualObservation)
 

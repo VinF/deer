@@ -313,7 +313,7 @@ class MyQNetwork(QNetwork):
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(), # Defaults to Glorot
                     b=lasagne.init.Constant(.0),
-                    dimshuffle=True
+                    #dimshuffle=True
                 )
                 
                 l_conv2 = conv2DFunc(
@@ -324,7 +324,7 @@ class MyQNetwork(QNetwork):
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
                     b=lasagne.init.Constant(.0),
-                    dimshuffle=True
+                    #dimshuffle=True
                 )
                 
                 l_conv3 = conv2DFunc(
@@ -335,12 +335,12 @@ class MyQNetwork(QNetwork):
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
                     b=lasagne.init.Constant(.0),
-                    dimshuffle=True
+                    #dimshuffle=True
                 )
                 l_outs_conv.append(l_conv3)
                 
             # - observation[i] is a VECTOR -
-            elif len(dim) == 2:
+            elif len(dim) == 2 and dim[0] > 3:
                 # Building here for  2D
                 l_in = lasagne.layers.InputLayer(
                     shape=(self._batchSize, 1) + dim, 
@@ -349,40 +349,29 @@ class MyQNetwork(QNetwork):
                 
                 l_conv1 = conv2DFunc(
                     l_in,
-                    num_filters=32,
-                    filter_size=(1, 1),#filter_size=(8, 8),
+                    num_filters=16,
+                    filter_size=(2, 1),#filter_size=(8, 8),
                     stride=(1, 1),#stride=(4, 4),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(), # Defaults to Glorot
                     b=lasagne.init.Constant(.0),
-                    dimshuffle=True
+                    #dimshuffle=True
                 )
                 
                 l_conv2 = conv2DFunc(
                     l_conv1,
-                    num_filters=64,
-                    filter_size=(1, 1),#filter_size=(4, 4),
-                    stride=(1, 1),#stride=(2, 2),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0),
-                    dimshuffle=True
-                )
-                
-                l_conv3 = conv2DFunc(
-                    l_conv2,
-                    num_filters=64,
-                    filter_size=(1, 1),
+                    num_filters=16,
+                    filter_size=(2, 2),
                     stride=(1, 1),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
                     b=lasagne.init.Constant(.0),
-                    dimshuffle=True
+                    #dimshuffle=True
                 )
-                l_outs_conv.append(l_conv3)
+                l_outs_conv.append(l_conv2)
                 
             # - observation[i] is a SCALAR -
-            elif len(dim) == 1:
+            else:
                 if dim[0] > 3:
                     # Building here for  1D
                     l_in = lasagne.layers.InputLayer(

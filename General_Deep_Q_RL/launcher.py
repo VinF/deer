@@ -82,9 +82,11 @@ def process_args(args, defaults, description):
                         help=('Max absolute value for Q-update delta value. ' +
                               '(default: %(default)s)'))
     parser.add_argument('--discount', type=float, default=defaults.DISCOUNT,
-                        help='Discount rate')
+                        help='Discount rate init')
     parser.add_argument('--discount_inc', type=float, default=defaults.DISCOUNT_INC,
                         help='Discount rate')
+    parser.add_argument('--discount_max', type=float, default=defaults.DISCOUNT_MAX,
+                        help='Discount rate max')
     parser.add_argument('--epsilon-start', dest="epsilon_start",
                         type=float, default=defaults.EPSILON_START,
                         help=('Starting value for epsilon. ' +
@@ -178,7 +180,7 @@ def launch(args, defaults, description):
     agent.attach(bc.VerboseController())
     agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
-    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc))
+    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
     agent.attach(bc.InterleavedTestEpochController(parameters.steps_per_test, [0, 1, 2, 3, 4], summarizeEvery=parameters.period_btw_summary_perfs))
     

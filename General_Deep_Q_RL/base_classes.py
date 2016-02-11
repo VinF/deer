@@ -32,9 +32,6 @@ class Environment(object):
     def inTerminalState(self):
         raise NotImplementedError()
 
-    def isSuccess(self):
-        raise NotImplementedError()
-
     def observe(self):
         raise NotImplementedError()
 

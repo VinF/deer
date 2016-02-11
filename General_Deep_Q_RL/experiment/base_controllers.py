@@ -139,12 +139,13 @@ class DiscountFactorController(Controller):
     """A controller that modifies the qnetwork discount periodically.
 
     """
-    def __init__(self, initialDiscountFactor, discountFactorGrowth, periodicity=1):
+    def __init__(self, initialDiscountFactor, discountFactorGrowth, discountFactorMax=0.99, periodicity=1):
         super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initDF = initialDiscountFactor
         self._df = initialDiscountFactor
         self._dfGrowth = discountFactorGrowth
+        self._dfMax = discountFactorGrowth
         self._periodicity = periodicity
 
     def OnStart(self, agent):
@@ -153,7 +154,7 @@ class DiscountFactorController(Controller):
 
         self._epochCount = 0
         agent.setDiscountFactor(self._initDF)
-        if (self._initDF < 0.99):
+        if (self._initDF < self._dfMax):
             self._df = 1 - (1 - self._initDF) * self._dfGrowth
         else:
             self._df = self._initDF

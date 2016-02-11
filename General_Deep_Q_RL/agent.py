@@ -268,7 +268,7 @@ class DataSet(object):
 
         """
         self._batchDimensions = history_sizes
-        self._maxHistorySize = np.max(history_sizes)
+        self._maxHistorySize = np.max([history_sizes[i][0] for i in range (len(history_sizes))])
         self._size = maxSize
         self._observations = np.zeros(len(history_sizes), dtype='object') # One list per input; will be initialized at 
         self._actions      = np.zeros(maxSize, dtype='int32')             # first call of addState
@@ -393,7 +393,7 @@ class DataSet(object):
         # Initialize the observations container if necessary
         if (self._nElems == 0):
             for i in range(len(ponctualObs)):
-                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape, dtype=ponctualObs.dtype)
+                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
         
         # Store observations
         for i in range(len(self._batchDimensions)):
