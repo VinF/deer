@@ -13,18 +13,15 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        self._randomState = rng
-
         # Defining the type of environment
-        self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
         self._nActions = 2                     # The environment allows two different actions to be taken at each time step
-        self._batchDimensions = [(6,), (1,)] # We consider a belief state made up of an history of 
-                                             # - the last six for the first element obtained 
-                                             # - the last one for the second element
-        self._state = []
-        for i in range(len(self._batchDimensions)):
-            dim = self._batchDimensions[i] + np.array(self._lastPonctualObservation[i]).shape
-            self._state.append(np.zeros(dim, dtype=theano.config.floatX))
+        self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
+        self._batchDimensions = [(6,), (1,)]   # We consider a belief state made up of an history of 
+                                               # - the last six for the first element obtained 
+                                               # - the last one for the second element
+        self._initState()
+        
+        self._randomState = rng
                 
         # Building a price signal with some patterns
         self._priceSignal=[]
@@ -51,9 +48,7 @@ class MyEnv(Environment):
             
         
         self._lastPonctualObservation = [self.prices[0], 0]
-        for i in range(len(self._lastPonctualObservation)):
-            self._state[i] = np.zeros_like(self._state[i])
-            self._state[i][-1] = self._lastPonctualObservation[i]
+        self._initState()
 
         self._counter = 1
         
@@ -75,13 +70,8 @@ class MyEnv(Environment):
             reward = -self.prices[self._counter-1] - 0.5
 
         self._lastPonctualObservation[0] = self.prices[self._counter]
-        self._lastPonctualObservation[1] = action        
-        for i in range(len(self._lastPonctualObservation)):
-            if (self._state[i].ndim == 2):
-                self._state[i] = np.roll(self._state[i], -1, axis=0)
-            else:
-                self._state[i] = np.roll(self._state[i], -1)
-            self._state[i][-1] = self._lastPonctualObservation[i]
+        self._lastPonctualObservation[1] = action
+        self._updateState()
 
         self._counter += 1
         
@@ -143,9 +133,6 @@ class MyEnv(Environment):
 
     def observe(self):
         return np.array(self._lastPonctualObservation)
-
-    def state(self):
-        return self._state
 
                 
 

@@ -1,7 +1,22 @@
-class Environment(object):
-    def __init__(self, rng):
-        raise NotImplementedError()
-                
+from theano import config
+import numpy as np
+
+class Environment(object):                
+    def _initState(self):
+        self._state = []
+        batchDims = self.batchDimensions()
+        for i in range(len(batchDims)):
+            self._state.append(np.zeros(batchDims[i], dtype=config.floatX))
+    
+    def _updateState(self):
+        obs = self.observe()
+        for i in range(len(obs)):
+            if (self._state[i].ndim == 2):
+                self._state[i] = np.roll(self._state[i], -1, axis=0)
+            else:
+                self._state[i] = np.roll(self._state[i], -1)
+            self._state[i][-1] = obs[i]
+            
     def reset(self, testing):
         raise NotImplementedError()
         
@@ -24,7 +39,7 @@ class Environment(object):
         raise NotImplementedError()
 
     def state(self):
-        raise NotImplementedError()
+        return self._state
 
     def summarizePerformance(self, test_data_set):
         pass
