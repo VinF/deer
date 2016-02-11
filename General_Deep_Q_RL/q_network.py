@@ -1,11 +1,10 @@
 """
 Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
 
-Author: Vincent Francois-Lavet
+Author: Vincent Francois-Lavet, David Taralla
 
 Inspired from "Human-level control through deep reinforcement learning",
-Nature, 518(7540):529-533, February 2015 and the implementation of Nathan 
-Sprague (https://github.com/spragunr/deep_q_rl)
+Nature, 518(7540):529-533, February 2015
 """
 
 import lasagne
@@ -13,17 +12,16 @@ import numpy as np
 import theano
 import theano.tensor as T
 from updates import deepmind_rmsprop
+from base_classes import QNetwork
+from IPython import embed
 
-class DeepQLearner:
+class MyQNetwork(QNetwork):
     """
     Deep Q-learning network using Lasagne.
     """
 
-    def __init__(self, environment, 
-                 num_actions, discount, discount_inc, learning_rate, learning_rate_decay, rho,
-                 rms_epsilon, momentum, clip_delta, freeze_interval,
-                 batch_size, network_type, update_rule,
-                 batch_accumulator, rng, frame_scale=255.0):
+    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
+                 update_rule, batch_accumulator, randomState, frame_scale=255.0):
         """ Initialize environment
 
         Arguments:
@@ -38,23 +36,21 @@ class DeepQLearner:
             ...           
         """
 
-        self.environment=environment
+        self._environment = environment
         
-        self.num_elements_in_batch = self.environment.num_elements_in_batch
-        self.num_actions = num_actions
-        self.batch_size = batch_size
-        self.discount = discount
-        self.discount_inc = discount_inc
+        self._batchSize = batchSize
+        self._batchDimensions = self._environment.batchDimensions()
+        self._nActions = self._environment.nActions()
+        self._df = 0
         self.rho = rho
-        self.lr = learning_rate
-        self.lr_dec = learning_rate_decay
+        self._lr = 0
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
-        self.rng = rng
+        self._randomState = randomState
         
-        lasagne.random.set_rng(self.rng)
+        lasagne.random.set_rng(self._randomState)
 
         self.update_counter = 0
         
@@ -63,41 +59,25 @@ class DeepQLearner:
         next_states=[] # idem than states at t+1 
         self.states_shared=[] # list of shared variable for each of the k element in the belief state
         self.next_states_shared=[] # idem that self.states_shared at t+1
-        shapes=[]
 
-        
-        for i,(element,num_element) in enumerate( zip(self.environment.observation, self.num_elements_in_batch) ):
-            element=np.array(element)
+        for i, dim in enumerate(self._batchDimensions):
+            if len(dim) == 3:
+                states.append(T.tensor4("%s_%s" % ("state", i)))
+                next_states.append(T.tensor4("%s_%s" % ("next_state", i)))
 
-            if (element.ndim==2):
-                states.append( T.tensor4("%s_%s" % ("state", i)) )
-                next_states.append( T.tensor4("%s_%s" % ("next_state", i)) )
+            elif len(dim) == 2:
+                states.append(T.tensor3("%s_%s" % ("state", i)))
+                next_states.append(T.tensor3("%s_%s" % ("next_state", i)))
                 
-                shapes.append(element.shape)
-                self.states_shared.append( theano.shared( np.zeros((batch_size, num_element, element.shape[0], element.shape[1]), dtype=theano.config.floatX) , borrow=False) )
-                self.next_states_shared.append( theano.shared( np.zeros((batch_size, num_element, element.shape[0], element.shape[1]), dtype=theano.config.floatX) , borrow=False) )
-
-            if (element.ndim==1):
-                
-                states.append( T.tensor3("%s_%s" % ("state", i)) )
-                next_states.append( T.tensor3("%s_%s" % ("next_state", i)) )
-                
-                shapes.append(element.shape)
-                self.states_shared.append( theano.shared( np.zeros((batch_size, num_element, element.shape[0]), dtype=theano.config.floatX) , borrow=False) )
-                self.next_states_shared.append( theano.shared( np.zeros((batch_size, num_element, element.shape[0]), dtype=theano.config.floatX) , borrow=False) )
-
-            if (element.ndim==0):                
+            elif len(dim) == 1:            
                 states.append( T.matrix("%s_%s" % ("state", i)) )
                 next_states.append( T.matrix("%s_%s" % ("next_state", i)) )
-
-                shapes.append((1,))
-                self.states_shared.append( theano.shared( np.zeros((batch_size, num_element), dtype=theano.config.floatX) , borrow=False) )
-                self.next_states_shared.append( theano.shared( np.zeros((batch_size, num_element), dtype=theano.config.floatX) , borrow=False) )
-
+                
+            self.states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
+            self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
         
-        print "Number of elements for the state: "+str(len(self.states_shared))
-        print "Shape of each of the elements: "+str(shapes)
-        print "History to consider for each element: "+str(self.num_elements_in_batch) 
+        print "Number of observations per state: {}".format(len(self.states_shared))
+        print "For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions)
                 
         rewards = T.col('rewards')
         actions = T.icol('actions')
@@ -105,26 +85,24 @@ class DeepQLearner:
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        self.l_out, self.l_outs_conv, shape_after_conv = self.build_network(network_type, self.num_elements_in_batch, shapes,
-                                        num_actions, batch_size, states)#_shared)
+        self.l_out, self.l_outs_conv, shape_after_conv = self._build(network_type, states)
         
         print "Number of neurons after spatial and temporal convolution layers: "+str(shape_after_conv)
 
         if self.freeze_interval > 0:
-            self.next_l_out, self.next_l_outs_conv, shape_after_conv = self.build_network(network_type, self.num_elements_in_batch, shapes,
-                                                 num_actions, batch_size, next_states)
-            self.reset_q_hat()
+            self.next_l_out, self.next_l_outs_conv, shape_after_conv = self._build(network_type, next_states)
+            self._resetQHat()
 
         self.rewards_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype=theano.config.floatX),
+            np.zeros((batchSize, 1), dtype=theano.config.floatX),
             broadcastable=(False, True))
 
         self.actions_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype='int32'),
+            np.zeros((batchSize, 1), dtype='int32'),
             broadcastable=(False, True))
 
         self.terminals_shared = theano.shared(
-            np.zeros((batch_size, 1), dtype='int32'),
+            np.zeros((batchSize, 1), dtype='int32'),
             broadcastable=(False, True))
 
 
@@ -143,7 +121,7 @@ class DeepQLearner:
         
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
-        q_val=q_vals[T.arange(batch_size), actions.reshape((-1,))].reshape((-1, 1))
+        q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
 
         diff = target - q_val
 
@@ -193,10 +171,10 @@ class DeepQLearner:
             updates = deepmind_rmsprop(loss, params, thelr, self.rho,
                                        self.rms_epsilon)
         elif update_rule == 'rmsprop':
-            updates = lasagne.updates.rmsprop(loss, params, self.lr, self.rho,
+            updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,
                                               self.rms_epsilon)
         elif update_rule == 'sgd':
-            updates = lasagne.updates.sgd(loss, params, self.lr)
+            updates = lasagne.updates.sgd(loss, params, thelr)
         else:
             raise ValueError("Unrecognized update: {}".format(update_rule))
 
@@ -215,15 +193,18 @@ class DeepQLearner:
                                       givens=givens2,
                                       on_unused_input='warn')
 
-    def build_network(self, network_type, num_elements_in_batch, shapes,
-                      output_dim, batch_size, inputs):
-        if network_type == "General_DQN_0":
-            return self.build_my_network(num_elements_in_batch, shapes,
-                                             output_dim, batch_size, inputs)
-        else:
-            raise ValueError("Unrecognized network: {}".format(network_type))
-            
+    def setLearningRate(self, lr):
+        self._lr = lr
 
+    def setDiscountFactor(self, df):
+        self._df = df
+
+    def learningRate(self):
+        return self._lr
+
+    def discountFactor(self):
+        return self._df
+            
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
         Train one batch.
@@ -240,44 +221,24 @@ class DeepQLearner:
         Returns: average loss of the batch training
         """
         
-        for i, x in enumerate(self.states_shared):
-
-            swap_states_val=np.array(np.array(states_val)[:,:,i])
+        for i in range(len(self.states_shared)):
+            self.states_shared[i].set_value(states_val[i])
             
-            for j,swap_states_val1 in enumerate(swap_states_val[0,:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=1)                    
-                    break
-                
-            swap_states_val=np.asarray( swap_states_val.tolist() , dtype=theano.config.floatX)
-                            
-            self.states_shared[i].set_value(swap_states_val)
-
-        for i, x in enumerate(self.next_states_shared):
-            swap_states_val=np.array(np.array(next_states_val)[:,:,i])
-            
-            for j,swap_states_val1 in enumerate(swap_states_val[0,:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=1)                    
-                    break
-                
-            swap_states_val=np.asarray( swap_states_val.tolist() , dtype=theano.config.floatX)
-                            
-            self.next_states_shared[i].set_value( swap_states_val )
+        for i in range(len(self.states_shared)):
+            self.next_states_shared[i].set_value(next_states_val[i])
 
         
-        self.actions_shared.set_value(actions_val)
-        self.rewards_shared.set_value(rewards_val)
-        self.terminals_shared.set_value(terminals_val)
-        if (self.freeze_interval > 0 and
-            self.update_counter % self.freeze_interval == 0):
-            self.reset_q_hat()
+        self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
+        self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
+        self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
+        if self.freeze_interval > 0 and self.update_counter % self.freeze_interval == 0:
+            self._resetQHat()
             
-        loss, _ = self._train(self.discount, self.lr)
+        loss, _ = self._train(self._df, self._lr)
         self.update_counter += 1
         return np.sqrt(loss)
 
-    def q_vals(self, state_val):
+    def qValues(self, state_val):
         """ Get the q value for one belief state
 
         Arguments:
@@ -285,25 +246,15 @@ class DeepQLearner:
 
         Returns:
            The q value for the provided belief state
-        """        
-        for i, x in enumerate(self.states_shared):            
-            swap_states_val=np.array(np.array(state_val)[:,i])
-
-            for j,swap_states_val1 in enumerate(swap_states_val[:]):
-                if(swap_states_val1==None):
-                    swap_states_val=np.delete(swap_states_val,np.s_[j:],axis=0)                    
-                    break
-                
-            swap_states_val=np.asarray( swap_states_val.tolist() , dtype=theano.config.floatX)
-
-            aa=self.states_shared[i].get_value()
-            aa[0]=swap_states_val
-                            
+        """ 
+        for i in range(len(self.states_shared)):
+            aa = self.states_shared[i].get_value()
+            aa[0] = state_val[i]
             self.states_shared[i].set_value(aa)
         
         return self._q_vals()[0]
 
-    def choose_best_action(self, states):
+    def chooseBestAction(self, states):
         """ Get the best action for a batch of states
 
         Arguments:
@@ -312,11 +263,17 @@ class DeepQLearner:
         Returns:
            The q value for the provided belief state
         """        
-        q_vals = self.q_vals(states)
+        q_vals = self.qValues(states)
 
         return np.argmax(q_vals)
+        
+    def _build(self, network_type, inputs):
+        if network_type == "General_DQN_0":
+            return self._buildG_DQN_0(inputs)
+        else:
+            raise ValueError("Unrecognized network: {}".format(network_type))
 
-    def reset_q_hat(self):
+    def _resetQHat(self):
         all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
         
         all_params_conv=[]
@@ -328,8 +285,7 @@ class DeepQLearner:
             lasagne.layers.helper.set_all_param_values(self.next_l_outs_conv[i], param_conv)        
         
 
-    def build_my_network(self, num_elements_in_batch, shapes, 
-                             output_dim, batch_size, inputs):
+    def _buildG_DQN_0(self, inputs):
         """
         Build a network consistent with each type of inputs
         """
@@ -340,12 +296,12 @@ class DeepQLearner:
             conv2DFunc = lasagne.layers.Conv2DLayer
 
         l_outs_conv=[]
-        for i, element_shape in enumerate( zip(num_elements_in_batch, shapes) ):
-            
-            if(len(element_shape[1])>1): #frames
+        for i, dim in enumerate(self._batchDimensions):
+            # - observation[i] is a FRAME -
+            if len(dim) == 3: 
                 # Building here for 3D
                 l_in = lasagne.layers.InputLayer(
-                    shape=(batch_size, element_shape[0], element_shape[1][0], element_shape[1][1]), 
+                    shape=(self._batchSize,) + dim, 
                     input_var=inputs[i],
                 )
                 
@@ -382,12 +338,13 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 l_outs_conv.append(l_conv3)
-
-            elif(element_shape[1][0]>1): # vectors
+                
+            # - observation[i] is a VECTOR -
+            elif len(dim) == 2:
                 # Building here for  2D
                 l_in = lasagne.layers.InputLayer(
-                    shape=(batch_size, 1, element_shape[0], element_shape[1][0]), 
-                    input_var=inputs[i].reshape((batch_size, 1, element_shape[0], element_shape[1][0])),
+                    shape=(self._batchSize, 1) + dim, 
+                    input_var=inputs[i].reshape((self._batchSize, 1) + dim),
                 )
                 
                 l_conv1 = conv2DFunc(
@@ -423,61 +380,62 @@ class DeepQLearner:
                     dimshuffle=True
                 )
                 l_outs_conv.append(l_conv3)
-
-            elif(element_shape[1][0]==1 and element_shape[0]>3):
-                # Building here for  1D
-                l_in = lasagne.layers.InputLayer(
-                    shape=(batch_size, 1, element_shape[0]), 
-                    input_var=inputs[i].reshape((batch_size, 1, element_shape[0])),
-                )
                 
-                l_conv1 = lasagne.layers.Conv1DLayer(
-                    l_in,
-                    num_filters=8,#32,
-                    filter_size=2,#filter_size=(8, 8),
-                    stride=1,#stride=(4, 4),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(), # Defaults to Glorot
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
-                )
+            # - observation[i] is a SCALAR -
+            elif len(dim) == 1:
+                if dim[0] > 3:
+                    # Building here for  1D
+                    l_in = lasagne.layers.InputLayer(
+                        shape=(self._batchSize, 1) + dim, 
+                        input_var=inputs[i].reshape((self._batchSize, 1) + dim),
+                    )
                 
-                l_conv2 = lasagne.layers.Conv1DLayer(
-                    l_conv1,
-                    num_filters=8,#64,
-                    filter_size=2,#filter_size=(4, 4),
-                    stride=1,#stride=(2, 2),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
-                )
+                    l_conv1 = lasagne.layers.Conv1DLayer(
+                        l_in,
+                        num_filters=8,#32,
+                        filter_size=2,#filter_size=(8, 8),
+                        stride=1,#stride=(4, 4),
+                        nonlinearity=lasagne.nonlinearities.rectify,
+                        W=lasagne.init.HeUniform(), # Defaults to Glorot
+                        b=lasagne.init.Constant(.0),
+                        #dimshuffle=True
+                    )
                 
-                l_outs_conv.append(l_conv2)
-            
-            elif(element_shape[1][0]==1 and element_shape[0]<=3):
-                # Building here for 1D simple
-                l_in = lasagne.layers.InputLayer(
-                    shape=(batch_size, 1, element_shape[0]), 
-                    input_var=inputs[i].reshape((batch_size, 1, element_shape[0])),
-                )
+                    l_conv2 = lasagne.layers.Conv1DLayer(
+                        l_conv1,
+                        num_filters=8,#64,
+                        filter_size=2,#filter_size=(4, 4),
+                        stride=1,#stride=(2, 2),
+                        nonlinearity=lasagne.nonlinearities.rectify,
+                        W=lasagne.init.HeUniform(),
+                        b=lasagne.init.Constant(.0),
+                        #dimshuffle=True
+                    )
+                
+                    l_outs_conv.append(l_conv2)
+                else:
+                    # Building here for 1D simple
+                    l_in = lasagne.layers.InputLayer(
+                        shape=(self._batchSize, 1) + dim, 
+                        input_var=inputs[i].reshape((self._batchSize, 1) + dim),
+                    )
                                 
-                l_outs_conv.append(l_in)
+                    l_outs_conv.append(l_in)
         
         ## Custom merge of layers
         ## NB : l_output_conv=lasagne.layers.MergeLayer(l_outs_conv) gives NOT IMPLEMENTED ERROR
-        output_conv=lasagne.layers.get_output(l_outs_conv[0]).flatten().reshape(( batch_size,np.prod(l_outs_conv[0].output_shape[1:]) ))       
-        shapes=[np.prod(l_outs_conv[0].output_shape[1:])]
+        output_conv = lasagne.layers.get_output(l_outs_conv[0]).flatten().reshape((self._batchSize, np.prod(l_outs_conv[0].output_shape[1:])))       
+        shapes = [np.prod(l_outs_conv[0].output_shape[1:])]
         
         if (len(l_outs_conv)>1):
             for l_out_conv in l_outs_conv[1:]:
-                output_conv=T.concatenate(( output_conv , lasagne.layers.get_output(l_out_conv).flatten().reshape(( batch_size,np.prod(l_out_conv.output_shape[1:]) )) ) , axis=1)
-                shapes.append(np.prod( l_out_conv.output_shape[1:] ))
+                output_conv=T.concatenate((output_conv, lasagne.layers.get_output(l_out_conv).flatten().reshape((self._batchSize, np.prod(l_out_conv.output_shape[1:])))) , axis=1)
+                shapes.append(np.prod(l_out_conv.output_shape[1:]))
         
-        shape=sum(shapes)
+        shape = sum(shapes)
         
         l_output_conv = lasagne.layers.InputLayer(
-            shape=( [batch_size, shape] ), 
+            shape=([self._batchSize, shape]), 
             input_var=output_conv,
         )
 
@@ -500,13 +458,13 @@ class DeepQLearner:
 
         l_out = lasagne.layers.DenseLayer(
             l_hidden2,
-            num_units=output_dim,
+            num_units=self._nActions,
             nonlinearity=None,
             W=lasagne.init.HeUniform(),
             b=lasagne.init.Constant(.0)
         )
 
-        return l_out,l_outs_conv,shapes
+        return l_out, l_outs_conv, shapes
 
 
 if __name__ == '__main__':

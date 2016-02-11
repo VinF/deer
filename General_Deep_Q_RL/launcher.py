@@ -9,13 +9,10 @@ import argparse
 import logging
 import cPickle
 import numpy as np
-import theano
 
-import experiment
-import agent
-
-
-import q_network
+from agent import NeuralAgent
+import experiment.base_controllers as bc
+from base_classes import Environment, QNetwork
 
 def process_args(args, defaults, description):
     """
@@ -132,73 +129,94 @@ def process_args(args, defaults, description):
     return parameters
 
 
-
 def launch(args, defaults, description):
     """
-    Execute a complete training run.
+    Execute a complete run with new API.
     """
+    import q_network
+    import theano
 
     logging.basicConfig(level=logging.INFO)
     parameters = process_args(args, defaults, description)
-
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Import environment class and instantiate it
-    my_env=__import__(parameters.env_name)
-    my_environment=my_env.Env(rng)    
+    # Instantiate environment
+    env = __import__(parameters.env_name).MyEnv(rng)
+    if not isinstance(env, Environment):
+        raise TypeError("The supplied environment does not subclass base_classes.Environment")
 
+    # Instantiate qnetwork
+    qnetwork = q_network.MyQNetwork(
+        env,
+        parameters.rms_decay,
+        parameters.rms_epsilon,
+        parameters.momentum,
+        parameters.clip_delta,
+        parameters.freeze_interval,
+        parameters.batch_size,
+        parameters.network_type,
+        parameters.update_rule,
+        parameters.batch_accumulator,
+        rng)
+    if not isinstance(qnetwork, QNetwork):
+        raise TypeError("The supplied q-network does not subclass base_classes.QNetwork")
+    
+    # Instantiate agent
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        parameters.replay_memory_size,
+        max(env.batchDimensions()[0]),
+        parameters.batch_size,
+        parameters.frame_skip,
+        rng)
 
-    # If no trained network yet
-    if parameters.nn_file is None:
-        my_network = q_network.DeepQLearner(my_environment,
-                                         my_environment.num_actions,                                         
-                                         parameters.discount,
-                                         parameters.discount_inc,
-                                         parameters.learning_rate,
-                                         parameters.learning_rate_decay,
-                                         parameters.rms_decay,
-                                         parameters.rms_epsilon,
-                                         parameters.momentum,
-                                         parameters.clip_delta,
-                                         parameters.freeze_interval,
-                                         parameters.batch_size,
-                                         parameters.network_type,
-                                         parameters.update_rule,
-                                         parameters.batch_accumulator,
-                                         rng)
+    # Bind controllers to the agent
+    agent.attach(bc.VerboseController())
+    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
+    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
+    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc))
+    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
+    agent.attach(bc.InterleavedTestEpochController(parameters.steps_per_test, [0, 1, 2, 3, 4], summarizeEvery=parameters.period_btw_summary_perfs))
+    
+    # Run the experiment
+    agent.run(parameters.epochs, parameters.steps_per_epoch)
 
+def testQNetworkAPIUse(envModule):
+    import unittests as ut
+    rng = np.random.RandomState(0)
 
-#    else: # FIXME
-#        handle = open(parameters.nn_file, 'r')
-#        network = cPickle.load(handle)
+    # Instantiate environment
+    env = __import__(envModule).MyEnv(rng)
+    if not isinstance(env, Environment):
+        raise TypeError("The supplied environment does not subclass base_classes.Environment")
 
-    my_agent = agent.NeuralAgent(my_network,
-                                  parameters.epsilon_start,
-                                  parameters.epsilon_min,
-                                  parameters.epsilon_decay,
-                                  parameters.replay_memory_size,
-                                  max(my_environment.num_elements_in_batch),
-                                  parameters.update_frequency,
-                                  parameters.batch_size,
-                                  rng)
+    # Instantiate qnetwork
+    qnetwork = ut.MyQNetwork(env, 10)
+    
+    # Instantiate agent
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        150,
+        max(env.batchDimensions()[0]),
+        10,
+        1,
+        rng)
 
-
-
-    my_experiment = experiment.MGExperiment(my_agent, my_environment,
-                                              parameters.epochs,
-                                              parameters.steps_per_epoch,
-                                              parameters.steps_per_test,
-                                              parameters.period_btw_summary_perfs,
-                                              parameters.frame_skip,
-                                              rng)
-
-
-    my_experiment.run()
-
+    # Bind controllers to the agent
+    agent.attach(bc.TrainerController(periodicity=10))
+    agent.attach(bc.LearningRateController(0.5, 0.1))
+    agent.attach(bc.DiscountFactorController(0.2, 0.1))
+    agent.attach(bc.EpsilonController(0.9, 0.1, 0.2))
+    agent.attach(bc.InterleavedTestEpochController(20, [0, 1, 2, 3], summarizeEvery=20))
+    
+    # Run the experiment
+    agent.run(5, 64)
 
 
 if __name__ == '__main__':
-    pass
+    testQNetworkAPIUse("Toy_env")

@@ -1,56 +1,56 @@
 import numpy as np
-
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
+import theano
+from base_classes import Environment
+from IPython import embed
 
-class Env(object):
+class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment
 
         Arguments:
             rng - the numpy random number generator            
         """
-        self.rng = rng
-
         # Defining the type of environment
-        self.observation=[0,0] # At each time step, the observation is made up of two elements, each scalar
-        self.num_actions=2 # The environment allows two different actions to be taken at each time step
-        self.num_elements_in_batch=[6,1]  # We consider a belief state made up of an history of 
-                                          # - the last six for the first element obtained 
-                                          # - the last one for the second element
+        self._nActions = 2                     # The environment allows two different actions to be taken at each time step
+        self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
+        self._batchDimensions = [(6,), (1,)]   # We consider a belief state made up of an history of 
+                                               # - the last six for the first element obtained 
+                                               # - the last one for the second element
+        self._initState()
+        
+        self._randomState = rng
                 
         # Building a price signal with some patterns
-        self.price_signal=[]
+        self._priceSignal=[]
         for i in range (1000):
-            price=np.array([0.,0.,0.,-1.,0.,1.,0., 0., 0.])
-            price+=self.rng.uniform(0, 3)
-            
-            self.price_signal.extend(price.tolist())
+            price = np.array([0.,0.,0.,-1.,0.,1.,0., 0., 0.])
+            price += self._randomState.uniform(0, 3)
+            self._priceSignal.extend(price.tolist())
        
-        self.price_signal_train=self.price_signal[:len(self.price_signal)/2]
-        self.price_signal_valid=self.price_signal[len(self.price_signal)/2:]
+        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)/2]
+        self._priceSignalValid = self._priceSignal[len(self._priceSignal)/2:]
+        self._prices = None
+        self._counter = 1
+                
+    def reset(self, testing):
+        """ Reset environment for a new episode.
 
-
-        
-    def init(self, testing):
-        """ Reset environment for a new episode
         Arguments:
             testing - whether we are in test mode or train mode (boolean)  
-        Returns:
-            self.observation - current observation (list of k elements)
         """
-        if(testing):
-            self.prices=self.price_signal_valid
+        if testing:
+            self.prices = self._priceSignalValid
         else:
-            self.prices=self.price_signal_train
+            self.prices = self._priceSignalTrain
             
         
-        self.observation=[self.prices[0],0]
-        
-        self.counter = 1     
+        self._lastPonctualObservation = [self.prices[0], 0]
+        self._initState()
 
-        return self.observation
+        self._counter = 1
         
         
     def act(self, action, testing):
@@ -61,38 +61,25 @@ class Env(object):
             testing - whether we are in test mode or train mode (boolean)  
         Returns:
            reward - obtained reward for this transition
-           self.observation - new observation
-           terminal - whether this is the end of an episode (boolean)
         """
-        #print "NEW STEP"
-
         reward = 0
-        terminal=0
         
-        if (action==0 and self.observation[1]==1):
-            reward=self.prices[self.counter-1]
-            reward-=0.5    
-        if (action==1 and self.observation[1]==0):
-            reward=-self.prices[self.counter-1]        
-            reward-=0.5    
+        if (action == 0 and self._lastPonctualObservation[1] == 1):
+            reward = self.prices[self._counter-1] - 0.5
+        if (action == 1 and self._lastPonctualObservation[1] == 0):
+            reward = -self.prices[self._counter-1] - 0.5
 
-        if (action==0):
-            self.observation[1]=0
-        if (action==1):
-            self.observation[1]=1
+        self._lastPonctualObservation[0] = self.prices[self._counter]
+        self._lastPonctualObservation[1] = action
+        self._updateState()
 
-        self.observation[0]=self.prices[self.counter]
-                    
-
-        self.counter +=1
-
-        return reward, self.observation, terminal
+        self._counter += 1
+        
+        return reward
 
 
 
-
-
-    def get_summary_perf(self, test_data_set):
+    def summarizePerformance(self, test_data_set):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
         Arguments:
@@ -101,16 +88,12 @@ class Env(object):
     
         print "Summary Perf"
         
-        prices=[]
-        invest=[]
-        for elems in test_data_set.elements[100:125]:
-            prices.append(elems[0])
-            invest.append(elems[1])
+        elems = test_data_set.slice(-test_data_set.nElems(), -1)
+        prices = elems[0]
+        invest = elems[1]
         
-        prices=np.array(prices)
-        invest=np.array(invest)
-        steps=np.arange(25)
-        steps_long=np.arange(250)/10.
+        steps=np.arange(len(prices))
+        steps_long=np.arange(len(prices)*10)/10.
         
         print steps,invest,prices
         host = host_subplot(111, axes_class=AA.Axes)
@@ -136,22 +119,37 @@ class Env(object):
         plt.draw()
         plt.show()
 
+    def batchDimensions(self):
+        return self._batchDimensions
 
-        
+    def nActions(self):
+        return self._nActions
+
+    def inTerminalState(self):
+        return False
+
+    def isSuccess(self):
+        return True
+
+    def observe(self):
+        return np.array(self._lastPonctualObservation)
+
                 
 
 
 def main():
     # Can be used for debug purposes
     rng = np.random.RandomState(123456)
-    myenv=Env(rng)
-    myenv.init(0)
+    myenv = MyEnv(rng)
+    myenv.reset(False)
     
-    print myenv.act(1, False)
-    print myenv.act(1, False)
-    print myenv.act(0, False)
-    print myenv.act(0, False)
-    print myenv.act(1, False)
+    myenv.act(1, False)
+    myenv.act(1, False)
+    myenv.act(0, False)
+    myenv.act(0, False)
+    myenv.act(1, False)
+
+    print myenv._state
     
 if __name__ == "__main__":
     main()
