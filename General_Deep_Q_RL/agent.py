@@ -15,10 +15,9 @@ import numpy as np
 import copy
 import sys
 import experiment.base_controllers as controllers
+import utils as ut
 from warnings import warn
-from IPython import embed 
-sys.setrecursionlimit(10000)
-
+from IPython import embed
 
 class NeuralAgent(object):
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
@@ -133,7 +132,6 @@ class NeuralAgent(object):
                     length = self._runEpisode(length)
 
             for c in self._controllers: c.OnEpochEnd(self)
-            
 
 
     def _runEpisode(self, maxSteps):
@@ -179,7 +177,7 @@ class NeuralAgent(object):
            action - The id of the action selected by the agent.
            V - Estimated value function of current state.
         """
-        
+
         action, V = self._chooseAction()        
         reward = 0
         for _ in range(self._frameSkip):
@@ -313,6 +311,7 @@ class DataSet(object):
         """
 
         rndValidIndices = np.zeros(batch_size, dtype='int32')
+
         for i in range(batch_size): # TODO: multithread this loop?
             rndValidIndices[i] = self._randomValidStateIndex()
             
@@ -397,19 +396,12 @@ class DataSet(object):
         
         # Store observations
         for i in range(len(self._batchDimensions)):
-            if (self._observations[i].ndim == 2):
-                self._observations[i] = np.roll(self._observations[i], -1, axis=0)
-            else:
-                self._observations[i] = np.roll(self._observations[i], -1)
-            self._observations[i][-1] = ponctualObs[i]
+            ut.appendCircular(self._observations[i], ponctualObs[i])
         
         # Store rest of sample
-        self._actions = np.roll(self._actions, -1)
-        self._rewards = np.roll(self._rewards, -1)
-        self._terminals = np.roll(self._terminals, -1)
-        self._actions[-1] = action;
-        self._rewards[-1] = reward;
-        self._terminals[-1] = isTerminal;
+        ut.appendCircular(self._actions, action)
+        ut.appendCircular(self._rewards, reward)
+        ut.appendCircular(self._terminals, isTerminal)
 
         if (self._nElems < self._size):
             self._nElems += 1

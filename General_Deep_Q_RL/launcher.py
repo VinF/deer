@@ -186,6 +186,7 @@ def launch(args, defaults, description):
     
     # Run the experiment
     agent.run(parameters.epochs, parameters.steps_per_epoch)
+    #agent.run(1, parameters.steps_per_epoch)
 
 def testQNetworkAPIUse(envModule):
     import unittests as ut
