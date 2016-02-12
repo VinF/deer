@@ -27,7 +27,7 @@ class MyEnv(Environment):
 
         # Get consumption profile in [0,1]
         self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
-        # Scale consumption profile in [0,2.7kW]
+        # Scale consumption profile in [0,1.7kW]
         self.consumption=self.consumption_norm*1.7
 
         self.min_consumption=min(self.consumption)
@@ -42,8 +42,8 @@ class MyEnv(Environment):
         self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
         #self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
         # Scale production profile : 12KWp (60m^2) et en kWh
-        self.production_train=self.production_train_norm*12000/1000
-        self.production_valid=self.production_train_norm*12000/1000
+        self.production_train=self.production_train_norm*12000./1000.
+        self.production_valid=self.production_train_norm*12000./1000.
         #self.production_test=self.production_train_norm*12000/1000
 
         self.min_production=min(self.production_train)
@@ -88,7 +88,7 @@ class MyEnv(Environment):
         reward = 0#self.ale.act(action)  #FIXME
         terminal=0
 
-        true_demand=self.consumption[self.counter]-self.production_train[self.counter]
+        true_demand=self.consumption[self.counter-1]-self.production[self.counter-1]
         
         if (action==0):
             ## Energy is taken out of the hydrogen reserve
@@ -235,27 +235,32 @@ class MyEnv(Environment):
 
 def main():
     rng = np.random.RandomState(123456)
-    myenv=Env(rng)
+    myenv=MyEnv(rng)
 
-    print "market price"
+    myenv.reset(False)
+    #print "market price"
 
     #aa, minaa,maxaa=get_market_price()
     #print aa[0:100], minaa,maxaa    
 
-    print "consumption"
-    aa, minaa,maxaa=MG_data.get_consumption(100)
-    print aa[0:100], minaa,maxaa
+    #print "consumption"
+    #aa, minaa,maxaa=MG_data.get_consumption(100)
+    #print aa[0:100], minaa,maxaa
     
-    print "production"
-    aa, minaa,maxaa=MG_data.get_production(0,100)
-    aa, minaa,maxaa=MG_data.get_production(365*24,100)
-    print aa[0:100], minaa,maxaa
+    #print "production"
+    #aa, minaa,maxaa=MG_data.get_production(0,100)
+    #aa, minaa,maxaa=MG_data.get_production(365*24,100)
+    #print aa[0:100], minaa,maxaa
     
     
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
     print myenv.act(1, False)
-    print myenv.act(1, False)
+    print myenv.observe()
     print myenv.act(0, False)
-    print myenv.act(0, False)
+    print myenv.observe()
+    
     
 if __name__ == "__main__":
     main()
