@@ -1,5 +1,4 @@
 import numpy as np
-import MG_data
 np.set_printoptions(threshold=np.nan)
 
 from mpl_toolkits.axes_grid1 import host_subplot
@@ -238,19 +237,6 @@ def main():
     myenv=MyEnv(rng)
 
     myenv.reset(False)
-    #print "market price"
-
-    #aa, minaa,maxaa=get_market_price()
-    #print aa[0:100], minaa,maxaa    
-
-    #print "consumption"
-    #aa, minaa,maxaa=MG_data.get_consumption(100)
-    #print aa[0:100], minaa,maxaa
-    
-    #print "production"
-    #aa, minaa,maxaa=MG_data.get_production(0,100)
-    #aa, minaa,maxaa=MG_data.get_production(365*24,100)
-    #print aa[0:100], minaa,maxaa
     
     
     print myenv.observe()
