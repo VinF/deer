@@ -14,14 +14,10 @@ import logging
 import numpy as np
 import copy
 import sys
-from joblib import Parallel, delayed
 import experiment.base_controllers as controllers
 import utils as ut
 from warnings import warn
 from IPython import embed
-
-
-import cProfile, pstats, StringIO
 
 class NeuralAgent(object):
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
@@ -125,9 +121,6 @@ class NeuralAgent(object):
             warn("Training not done - " + str(e), AgentWarning)
 
     def run(self, nEpochs, epochLength):
-        pr = cProfile.Profile()
-        pr.enable()
-
         for c in self._controllers: c.OnStart(self)
         for _ in range(nEpochs):
             if self._inTestingMode:
@@ -139,13 +132,6 @@ class NeuralAgent(object):
                     length = self._runEpisode(length)
 
             for c in self._controllers: c.OnEpochEnd(self)
-            
-        pr.disable()
-        s = StringIO.StringIO()
-        sortby = 'cumulative'
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print s.getvalue()
 
 
     def _runEpisode(self, maxSteps):
