@@ -43,7 +43,7 @@ class MyEnv(Environment):
         #self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
         # Scale production profile : 12KWp (60m^2) et en kWh
         self.production_train=self.production_train_norm*12000./1000.
-        self.production_valid=self.production_train_norm*12000./1000.
+        self.production_valid=self.production_valid_norm*12000./1000.
         #self.production_test=self.production_train_norm*12000/1000
 
         self.min_production=min(self.production_train)
@@ -256,9 +256,27 @@ def main():
     print myenv.observe()
     print myenv.act(2, False)
     print myenv.observe()
-    print myenv.act(1, False)
+    print myenv.act(2, False)
     print myenv.observe()
     print myenv.act(0, False)
+    print myenv.observe()
+    print myenv.act(1, False)
+    print myenv.observe()
+    print myenv.act(1, False)
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
+    print myenv.act(2, False)
+    print myenv.observe()
+    print myenv.act(1, False)
+    print myenv.observe()
+    print myenv.act(1, False)
     print myenv.observe()
     
     
