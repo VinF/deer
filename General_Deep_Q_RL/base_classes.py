@@ -1,5 +1,6 @@
 from theano import config
 import numpy as np
+import utils as ut
 
 class Environment(object):                
     def _initState(self):
@@ -11,11 +12,7 @@ class Environment(object):
     def _updateState(self):
         obs = self.observe()
         for i in range(len(obs)):
-            if (self._state[i].ndim == 2):
-                self._state[i] = np.roll(self._state[i], -1, axis=0)
-            else:
-                self._state[i] = np.roll(self._state[i], -1)
-            self._state[i][-1] = obs[i]
+            ut.appendCircular(self._state[i], obs[i])
             
     def reset(self, testing):
         raise NotImplementedError()
