@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import theano
 from base_classes import Environment
 from IPython import embed
+import copy
 
 class MyEnv(Environment):
     def __init__(self, rng):
@@ -88,7 +89,7 @@ class MyEnv(Environment):
     
         print "Summary Perf"
         
-        elems = test_data_set.slice(-test_data_set.nElems(), -1)
+        elems, actions = test_data_set.slice(-test_data_set.nElems(), -1)
         prices = elems[0]
         invest = elems[1]
         

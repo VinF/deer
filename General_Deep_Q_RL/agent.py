@@ -282,10 +282,12 @@ class DataSet(object):
 
     def slice(self, fromIndex, toIndex):
         ret = np.zeros_like(self._observations)
+        acions = np.zeros_like(self._observations)
         for input in range(len(self._observations)):
             ret[input] = self._observations[input][fromIndex:toIndex]
+        actions = self._actions[fromIndex:toIndex]
 
-        return ret
+        return ret, actions
 
     def randomBatch(self, batch_size):
         """Return corresponding states, actions, rewards, terminal status, and next_states for batch_size randomly 
@@ -331,10 +333,11 @@ class DataSet(object):
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
                     next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
-
+        
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
+
         lowerBound = self._size - self._nElems
         index_lowerBound = lowerBound + self._maxHistorySize - 1
         try:
