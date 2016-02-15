@@ -441,7 +441,7 @@ class CircularBuffer(object):
         
         if end == sys.maxsize:
             return self._data[self._lb+start:self._ub]
-        elif self._lb + end >= self._ub:
+        elif self._lb + end > self._ub:
                 raise IndexError()
         else:
             return self._data[self._lb+start:self._lb+end]
