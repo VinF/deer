@@ -268,10 +268,13 @@ class DataSet(object):
         self._batchDimensions = history_sizes
         self._maxHistorySize = np.max([history_sizes[i][0] for i in range (len(history_sizes))])
         self._size = maxSize
-        self._observations = np.zeros(len(history_sizes), dtype='object') # One list per input; will be initialized at 
-        self._actions      = np.zeros(maxSize, dtype='int32')             # first call of addState
-        self._rewards      = np.zeros(maxSize, dtype=config.floatX)
-        self._terminals    = np.zeros(maxSize, dtype='bool')
+        self._actions      = CircularBuffer(maxSize, dtype="int32")
+        self._rewards      = CircularBuffer(maxSize)
+        self._terminals    = CircularBuffer(maxSize, dtype="bool")
+        self._observations = np.zeros(len(history_sizes), dtype='object')
+        # Initialize the observations container if necessary
+        for i in range(len(history_sizes)):
+            self._observations[i] = CircularBuffer(maxSize, elemShape=history_sizes[i][1:])
 
         if (randomState == None):
             self._randomState = np.random.RandomState()
@@ -283,7 +286,7 @@ class DataSet(object):
     def slice(self, fromIndex, toIndex):
         ret = np.zeros_like(self._observations)
         for input in range(len(self._observations)):
-            ret[input] = self._observations[input][fromIndex:toIndex]
+            ret[input] = self._observations[input].getSlice(fromIndex, toIndex)
 
         return ret
 
@@ -316,9 +319,9 @@ class DataSet(object):
             rndValidIndices[i] = self._randomValidStateIndex()
             
         
-        actions   = self._actions[rndValidIndices]
-        rewards   = self._rewards[rndValidIndices]
-        terminals = self._terminals[rndValidIndices]
+        actions   = self._actions.getSliceBySeq(rndValidIndices)
+        rewards   = self._rewards.getSliceBySeq(rndValidIndices)
+        terminals = self._terminals.getSliceBySeq(rndValidIndices)
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
         
@@ -326,19 +329,18 @@ class DataSet(object):
             states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(batch_size):
-                states[input][i] = self._observations[input][rndValidIndices[i]+1-self._batchDimensions[input][0]:rndValidIndices[i]+1]
-                if rndValidIndices[i] >= self._size - 1 or terminals[i]:
+                states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batchDimensions[input][0], rndValidIndices[i]+1)
+                if rndValidIndices[i] >= self._nElems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input][rndValidIndices[i]+2-self._batchDimensions[input][0]:rndValidIndices[i]+2]
+                    next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
 
         return states, actions, rewards, next_states, terminals
 
     def _randomValidStateIndex(self):
-        lowerBound = self._size - self._nElems
-        index_lowerBound = lowerBound + self._maxHistorySize - 1
+        index_lowerBound = self._maxHistorySize - 1
         try:
-            index = self._randomState.randint(index_lowerBound, self._size)
+            index = self._randomState.randint(index_lowerBound, self._nElems)
         except ValueError:
             raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
                              "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
@@ -350,7 +352,7 @@ class DataSet(object):
             i = index-1
             processed = 0
             for _ in range(self._maxHistorySize-1):
-                if (i < lowerBound or self._terminals[i]):
+                if (i < 0 or self._terminals[i]):
                     break;
 
                 i -= 1
@@ -361,7 +363,7 @@ class DataSet(object):
                 index = i
                 if (index < index_lowerBound):
                     startWrapped = True
-                    index = self._size - 1
+                    index = self._nElems - 1
                 if (startWrapped and index <= firstTry):
                     raise SliceError("Could not find a state with full histories")
             else:
@@ -388,25 +390,63 @@ class DataSet(object):
             reward - The reward associated to taking 'action' in the last inserted state using addState.
             isTerminal - Tells whether 'action' lead to a terminal state (i.e. whether the tuple (state, action, reward, isTerminal) marks the end of a trajectory).
 
-        """
-        # Initialize the observations container if necessary
-        if (self._nElems == 0):
-            for i in range(len(ponctualObs)):
-                self._observations[i] = np.zeros((self._size,) + np.array(ponctualObs[i]).shape)
-        
+        """        
         # Store observations
         for i in range(len(self._batchDimensions)):
-            ut.appendCircular(self._observations[i], ponctualObs[i])
+            self._observations[i].append(ponctualObs[i])
         
         # Store rest of sample
-        ut.appendCircular(self._actions, action)
-        ut.appendCircular(self._rewards, reward)
-        ut.appendCircular(self._terminals, isTerminal)
+        self._actions.append(action)
+        self._rewards.append(reward)
+        self._terminals.append(isTerminal)
 
         if (self._nElems < self._size):
             self._nElems += 1
 
         
+class CircularBuffer(object):
+    def __init__(self, size, elemShape=(), extension=0.1, dtype="float32"):
+        self._size = size
+        self._data = np.zeros((int(size+extension*size),) + elemShape, dtype=dtype)
+        self._lb   = 0
+        self._ub   = size
+        self._cur  = 0
+        self.dtype = dtype
+    
+    def append(self, obj):
+        if self._ub >= self._data.size:
+            self._data[0:self._size-1] = self._data[self._lb+1:]
+            self._lb  = 0
+            self._ub  = self._size
+            self._cur = self._size - 1
+
+        if self._cur >= self._size:
+            self._lb += 1
+            self._ub += 1
+
+        self._data[self._cur] = obj
+        self._cur += 1
+
+    def __getitem__(self, i):
+        if self._lb + i >= self._ub:
+            raise IndexError()
+        return self._data[self._lb + i]
+
+    def getSliceBySeq(self, seq):
+        return self._data[seq + self._lb]
+
+    def getSlice(self, start, end=sys.maxsize):
+        if self._lb + start >= self._ub:
+            raise IndexError()
+        
+        if end == sys.maxsize:
+            return self._data[self._lb+start:self._ub]
+        elif self._lb + end >= self._ub:
+                raise IndexError()
+        else:
+            return self._data[self._lb+start:self._lb+end]
+
+
 class SliceError(LookupError):
     """Exception raised for errors when getting slices from CircularBuffers.
 
