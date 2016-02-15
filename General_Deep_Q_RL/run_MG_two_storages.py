@@ -14,7 +14,7 @@ class Defaults:
     STEPS_PER_EPOCH = 360*24
     EPOCHS = 1000
     STEPS_PER_TEST = 360*24
-    PERIOD_BTW_SUMMARY_PERFS = 10
+    PERIOD_BTW_SUMMARY_PERFS = 5
     
     # ----------------------
     # Environment Parameters

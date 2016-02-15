@@ -50,9 +50,14 @@ class MyEnv(Environment):
         print "Sample of the production profile (kW): " + str(self.production_train[0:24])
         print "Min of the production profile (kW): " + str(self.min_production)
         print "Max of the production profile (kW): " + str(self.max_production)
-        print "Average production per day (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
+        #print "Average production per day (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
+        print "Average production per day train (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
+        print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
 
         
+        print "should be the same as"
+        print self.production_valid[0:100]
+
         self.battery_size=15.
         self.battery_eta=0.9
         
@@ -160,7 +165,7 @@ class MyEnv(Environment):
         
         elems, actions = test_data_set.slice(-test_data_set.nElems(), -1)
         print "elems, actions"
-        print elems, actions
+        print elems[0:100], actions[0:100]
 
         battery_level=elems[0][0:100]
         consumption=elems[1][:,0][0:100]
@@ -173,7 +178,13 @@ class MyEnv(Environment):
 
         steps=np.arange(100)
         print steps
-        print production
+        print "battery_level"
+        print battery_level[0:100]
+        print consumption[0:100]
+        print production[0:100]
+        print "should be the same as"
+        print self.production_valid[0:100]
+        
         steps_long=np.arange(1000)/10.
         
         
