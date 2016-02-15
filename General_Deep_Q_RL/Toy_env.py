@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import theano
 from base_classes import Environment
 from IPython import embed
+import copy
 
 class MyEnv(Environment):
     def __init__(self, rng):
