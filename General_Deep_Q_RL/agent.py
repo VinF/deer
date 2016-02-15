@@ -428,21 +428,14 @@ class CircularBuffer(object):
         self._cur += 1
 
     def __getitem__(self, i):
-        if self._lb + i >= self._ub:
-            raise IndexError()
         return self._data[self._lb + i]
 
     def getSliceBySeq(self, seq):
         return self._data[seq + self._lb]
 
     def getSlice(self, start, end=sys.maxsize):
-        if self._lb + start >= self._ub:
-            raise IndexError()
-        
         if end == sys.maxsize:
             return self._data[self._lb+start:self._ub]
-        elif self._lb + end > self._ub:
-                raise IndexError()
         else:
             return self._data[self._lb+start:self._lb+end]
 
