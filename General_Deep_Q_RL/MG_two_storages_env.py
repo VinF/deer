@@ -15,11 +15,21 @@ class MyEnv(Environment):
             rng - the numpy random number generator
         """
         # Defining the type of environment
-        self._nActions = 3                     # The environment allows two different actions to be taken at each time step
-        self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]] # At each time step, the observation is made up of two elements, each scalar
-        self._batchDimensions = [(1,), (12,2), (1,),(1,2)]   # We consider a belief state made up of an history of
-                                               # - the last six for the first element obtained
-                                               # - the last one for the second element
+        self._dist_equinox=0
+        self._pred=0
+        
+        self._nActions = 3
+        
+        if (self._dist_equinox==1, self._pred==1):
+            self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
+            self._batchDimensions = [(1,), (12,2), (1,),(1,2)]
+        elif (self._dist_equinox==1, self._pred==0):
+            self._lastPonctualObservation = [0. ,[0.,0.],0.]
+            self._batchDimensions = [(1,), (12,2), (1,)]
+        elif (self._dist_equinox==0, self._pred==0):
+            self._lastPonctualObservation = [0. ,[0.,0.]]
+            self._batchDimensions = [(1,), (12,2)]
+
         self._initState()
 
         self.rng = rng
@@ -70,7 +80,13 @@ class MyEnv(Environment):
            current observation (list of k elements)
         """
         ### Test 6
-        self._lastPonctualObservation=[1., [0.,0.],0 , [0.,0.]]#,0]#, [0.,0.]]
+        if (self._dist_equinox==1, self._pred==1):
+            self._lastPonctualObservation = [1. ,[0.,0.],0., [0.,0.]]
+        elif (self._dist_equinox==1, self._pred==0):
+            self._lastPonctualObservation = [1. ,[0.,0.],0.]
+        elif (self._dist_equinox==0, self._pred==0):
+            self._lastPonctualObservation = [1. ,[0.,0.]]
+
         self._initState()
 
         self.counter = 1        
@@ -130,16 +146,23 @@ class MyEnv(Environment):
         
         ### Test
         # self._lastPonctualObservation[0] : State of the battery (0=empty, 1=full)
-        # self._lastPonctualObservation[1] : Normalized consumption at current time step (-> not available at decision time)
+        # self._lastPonctualObservation[1][0] : Normalized consumption at current time step (-> not available at decision time)
         # self._lastPonctualObservation[1][1] : Normalized production at current time step (-> not available at decision time)
-        # self._lastPonctualObservation[2][0] : Prevision (accurate) for the current time step and the next 24hours
-        # self._lastPonctualObservation[2][1] : Prevision (accurate) for the current time step and the next 48hours
+        # self._lastPonctualObservation[2] : distance equinox
+        # self._lastPonctualObservation[3][0] : Prevision (accurate) for the current time step and the next 24hours
+        # self._lastPonctualObservation[3][1] : Prevision (accurate) for the current time step and the next 48hours
         ###
         self._lastPonctualObservation[1][0]=self.consumption_norm[self.counter]
         self._lastPonctualObservation[1][1]=self.production_norm[self.counter]
-        self._lastPonctualObservation[2]=abs(self.counter/24-(171))/(365.-171.) #171 days between 1jan and 21 Jun
-        self._lastPonctualObservation[3][0]=sum(self.production_norm[self.counter:self.counter+24])/24.*self.rng.uniform(0.75,1.25)
-        self._lastPonctualObservation[3][1]=sum(self.production_norm[self.counter:self.counter+48])/48.*self.rng.uniform(0.75,1.25)
+        i=1
+        if(self._dist_equinox==1):
+            i=i+1
+            self._lastPonctualObservation[i]=abs(self.counter/24-(171))/(365.-171.) #171 days between 1jan and 21 Jun
+        if (self._pred==1):
+            i=i+1
+            self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
+            self._lastPonctualObservation[i][1]=sum(self.production_norm[self.counter:self.counter+48])/48.#*self.rng.uniform(0.75,1.25)
+
         self._updateState()
 
                     
