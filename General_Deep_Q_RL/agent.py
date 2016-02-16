@@ -129,7 +129,8 @@ class NeuralAgent(object):
                     length = self._runEpisode(length)
 
             for c in self._controllers: c.OnEpochEnd(self)
-
+            
+        for c in self._controllers: c.OnEnd(self)
 
     def _runEpisode(self, maxSteps):
         self._inEpisode = True

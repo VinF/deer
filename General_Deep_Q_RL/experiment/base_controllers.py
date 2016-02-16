@@ -30,6 +30,9 @@ class Controller(object):
     def OnActionTaken(self, agent):
         pass
 
+    def OnEnd(self, agent):
+        pass
+
 
 class LearningRateController(Controller):
     """A controller that modifies the learning rate periodically.
