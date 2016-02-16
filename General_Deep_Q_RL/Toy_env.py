@@ -36,16 +36,16 @@ class MyEnv(Environment):
         self._prices = None
         self._counter = 1
                 
-    def reset(self, testing):
+    def reset(self, mode):
         """ Reset environment for a new episode.
 
         Arguments:
             testing - whether we are in test mode or train mode (boolean)  
         """
-        if testing:
-            self.prices = self._priceSignalValid
-        else:
+        if mode == -1:
             self.prices = self._priceSignalTrain
+        else:
+            self.prices = self._priceSignalValid
             
         
         self._lastPonctualObservation = [self.prices[0], 0]
@@ -54,7 +54,7 @@ class MyEnv(Environment):
         self._counter = 1
         
         
-    def act(self, action, testing):
+    def act(self, action, mode):
         """
         Performs one time step on the environment
         Arguments:
@@ -80,7 +80,7 @@ class MyEnv(Environment):
 
 
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, mode, test_data_set):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
         Arguments:

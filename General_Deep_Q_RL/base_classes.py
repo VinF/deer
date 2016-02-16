@@ -35,7 +35,7 @@ class Environment(object):
     def state(self):
         return self._state
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, mode, test_data_set):
         pass
 
 class QNetwork(object):        

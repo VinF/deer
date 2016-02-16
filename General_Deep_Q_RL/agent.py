@@ -33,10 +33,10 @@ class NeuralAgent(object):
         self._frameSkip = frameSkip
         self._randomState = randomState
         self._dataSet = DataSet(environment.batchDimensions(), maxSize=replay_memory_size, randomState=randomState)
-        self._dataSetTest = None # Will be created by startTesting() when necessary
-        self._inTestingMode = False
-        self._testEpochsLength = 0
-        self._totalTestReward = 0
+        self._tmpDataSet = None # Will be created by startTesting() when necessary
+        self._mode = -1
+        self._modeEpochsLength = 0
+        self._totalModeReward = 0
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
         self._inEpisode = False
@@ -74,7 +74,7 @@ class NeuralAgent(object):
         return np.average(self._VsOnLastEpisode)
     
     def totalRewardOverLastTest(self):
-        return self._totalTestReward
+        return self._totalModeReward
 
     def attach(self, controller):
         if (isinstance(controller, controllers.Controller)):
@@ -85,28 +85,26 @@ class NeuralAgent(object):
     def detach(self, controllerIdx):
         return self._controllers.pop(controllerIdx)
 
-    def startTesting(self, epochLength):
-        if self._inTestingMode:
-            warn("Testing mode is already ON.", AgentWarning)
+    def startMode(self, mode, epochLength):
         if self._inEpisode:
-            raise AgentError("Trying to start testing while current episode is not yet finished. This method can be "
-                             "called only *between* episodes.")
+            raise AgentError("Trying to start mode while current episode is not yet finished. This method can be "
+                             "called only *between* episodes for testing and validation.")
+        elif mode == -1:
+            raise AgentError("Mode -1 is reserved and means 'training mode'; use resumeTrainingMode() instead.")
+        else:
+            self._mode = mode
+            self._modeEpochsLength = epochLength
+            self._totalModeReward = 0
+            self._tmpDataSet = DataSet(self._environment.batchDimensions(), self._randomState, maxSize=self._replayMemorySize)
 
-        self._inTestingMode = True
-        self._testEpochsLength = epochLength
-        self._totalTestReward = 0
-        self._dataSetTest = DataSet(self._environment.batchDimensions(), self._randomState, maxSize=self._replayMemorySize)
-
-    def endTesting(self):
-        if not self._inTestingMode:
-            warn("Testing mode was not ON.", AgentWarning)
-        self._inTestingMode = False
+    def resumeTrainingMode(self):
+        self._mode = -1
 
     def summarizeTestPerformance(self):
-        if not self._inTestingMode:
+        if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._dataSetTest)
+        self._environment.summarizePerformance(self._mode, self._tmpDataSet)
 
     def train(self):
         if self._dataSet.nElems() < self._replayMemoryStartSize:
@@ -122,9 +120,9 @@ class NeuralAgent(object):
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.OnStart(self)
         for _ in range(nEpochs):
-            if self._inTestingMode:
-                while self._testEpochsLength > 0:
-                    self._testEpochsLength = self._runEpisode(self._testEpochsLength)
+            if self._mode != -1:
+                while self._modeEpochsLength > 0:
+                    self._modeEpochsLength = self._runEpisode(self._modeEpochsLength)
             else:
                 length = epochLength
                 while length > 0:
@@ -135,7 +133,7 @@ class NeuralAgent(object):
 
     def _runEpisode(self, maxSteps):
         self._inEpisode = True
-        self._environment.reset(self._inTestingMode)
+        self._environment.reset(self._mode)
         
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
@@ -146,8 +144,8 @@ class NeuralAgent(object):
             V, action, reward = self._step()
             self._VsOnLastEpisode.append(V)
             isTerminal = self._environment.inTerminalState()
-            if self._inTestingMode:
-                self._totalTestReward += reward
+            if self._mode != -1:
+                self._totalModeReward += reward
 
             self._addSample(obs, action, reward, isTerminal)
             for c in self._controllers: c.OnActionTaken(self)
@@ -180,15 +178,15 @@ class NeuralAgent(object):
         action, V = self._chooseAction()        
         reward = 0
         for _ in range(self._frameSkip):
-            reward += self._environment.act(action, self._inTestingMode)
+            reward += self._environment.act(action, self._mode)
             if self._environment.inTerminalState():
                 break
 
         return V, action, reward
 
     def _addSample(self, ponctualObs, action, reward, isTerminal):
-        if self._inTestingMode:
-            self._dataSetTest.addSample(ponctualObs, action, reward, isTerminal)
+        if self._mode != -1:
+            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal)
         else:
             self._dataSet.addSample(ponctualObs, action, reward, isTerminal)
 
@@ -209,7 +207,7 @@ class NeuralAgent(object):
         """
         
         state = self._environment.state()
-        if self._inTestingMode:
+        if self._mode != -1:
             action = self._network.chooseBestAction(state)
             V = max(self._network.qValues(state))
         else:
