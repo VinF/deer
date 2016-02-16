@@ -181,7 +181,6 @@ class InterleavedTestEpochController(Controller):
         self._epochLength = epochLength
         self._toDisable = controllersToDisable
         self._showScore = showScore
-        self._summarizeEvery = summarizeEvery
         if periodicity <= 2:
             self._periodicity = 2
         else:
