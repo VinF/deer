@@ -283,10 +283,19 @@ class DataSet(object):
 
         self._nElems  = 0
 
-    def slice(self, fromIndex, toIndex):
+    def actions(self):
+        return self._actions.getSlice(0)
+
+    def rewards(self):
+        return self._rewards.getSlice(0)
+
+    def terminals(self):
+        return self._terminals.getSlice(0)
+
+    def observations(self):
         ret = np.zeros_like(self._observations)
         for input in range(len(self._observations)):
-            ret[input] = self._observations[input].getSlice(fromIndex, toIndex)
+            ret[input] = self._observations[input].getSlice(0)
 
         return ret
 
@@ -435,7 +444,7 @@ class CircularBuffer(object):
 
     def getSlice(self, start, end=sys.maxsize):
         if end == sys.maxsize:
-            return self._data[self._lb+start:self._ub]
+            return self._data[self._lb+start:self._cur]
         else:
             return self._data[self._lb+start:self._lb+end]
 

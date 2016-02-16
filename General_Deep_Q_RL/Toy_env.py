@@ -89,9 +89,9 @@ class MyEnv(Environment):
     
         print "Summary Perf"
         
-        elems = test_data_set.slice(0, test_data_set.nElems())
-        prices = elems[0]
-        invest = elems[1]
+        observations = test_data_set.observations()
+        prices = observations[0]
+        invest = observations[1]
         
         steps=np.arange(len(prices))
         steps_long=np.arange(len(prices)*10)/10.
