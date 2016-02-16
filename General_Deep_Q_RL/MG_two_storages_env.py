@@ -18,8 +18,8 @@ class MyEnv(Environment):
         self._dist_equinox=0
         self._pred=0
         
-        self._nActions = 3
-        
+        self._nActions = 3 
+
         if (self._dist_equinox==1, self._pred==1):
             self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
             self._batchDimensions = [(1,), (12,2), (1,),(1,2)]
@@ -146,11 +146,10 @@ class MyEnv(Environment):
         
         ### Test
         # self._lastPonctualObservation[0] : State of the battery (0=empty, 1=full)
-        # self._lastPonctualObservation[1][0] : Normalized consumption at current time step (-> not available at decision time)
+        # self._lastPonctualObservation[1] : Normalized consumption at current time step (-> not available at decision time)
         # self._lastPonctualObservation[1][1] : Normalized production at current time step (-> not available at decision time)
-        # self._lastPonctualObservation[2] : distance equinox
-        # self._lastPonctualObservation[3][0] : Prevision (accurate) for the current time step and the next 24hours
-        # self._lastPonctualObservation[3][1] : Prevision (accurate) for the current time step and the next 48hours
+        # self._lastPonctualObservation[2][0] : Prevision (accurate) for the current time step and the next 24hours
+        # self._lastPonctualObservation[2][1] : Prevision (accurate) for the current time step and the next 48hours
         ###
         self._lastPonctualObservation[1][0]=self.consumption_norm[self.counter]
         self._lastPonctualObservation[1][1]=self.production_norm[self.counter]
@@ -186,14 +185,15 @@ class MyEnv(Environment):
         print "summary perf"
         print "self.hydrogen_storage: "+str(self.hydrogen_storage)
         
-        elems = test_data_set.slice(0, test_data_set.nElems())#, actions = test_data_set.slice(-test_data_set.nElems(), -1)
-        print "elems"#, actions"
-        print elems[0:100]#, actions[0:100]
+        observations = test_data_set.observations()
+        actions = test_data_set.actions()
+        print "observations, actions"
+        print observations[0:100], actions[0:100]
 
-        battery_level=elems[0][0:100]
-        consumption=elems[1][:,0][0:100]
-        production=elems[1][:,1][0:100]
-        #actions=actions[0:100]
+        battery_level=observations[0][0:100]
+        consumption=observations[1][:,0][0:100]
+        production=observations[1][:,1][0:100]
+        actions=actions[0:100]
         
         battery_level=np.array(battery_level)*self.battery_size
         consumption=np.array(consumption)*(self.max_consumption-self.min_consumption)+self.min_consumption
@@ -227,10 +227,10 @@ class MyEnv(Environment):
         
         offset = -60
         new_fixed_axis = par3.get_grid_helper().new_fixed_axis
-        #par3.axis["right"] = new_fixed_axis(loc="left",
-        #                                    axes=par3,
-        #                                    offset=(offset, 0))    
-        #par3.axis["right"].toggle(all=True)
+        par3.axis["right"] = new_fixed_axis(loc="left",
+                                            axes=par3,
+                                            offset=(offset, 0))    
+        par3.axis["right"].toggle(all=True)
         
         
         host.set_xlim(-0.9, 99)
@@ -240,25 +240,25 @@ class MyEnv(Environment):
         host.set_ylabel("Battery level")
         par1.set_ylabel("Consumption")
         par2.set_ylabel("Production")
-        #par3.set_ylabel("H Actions")
+        par3.set_ylabel("H Actions")
         
         p1, = host.plot(steps, battery_level, marker='o', lw=1, c = 'b', alpha=0.8, ls='-', label = 'Battery level')
         print steps_long.shape
         print np.repeat(consumption,10).shape
         p2, = par1.plot(steps_long-0.9, np.repeat(consumption,10), lw=3, c = 'r', alpha=0.5, ls='-', label = 'Consumption')
         p3, = par2.plot(steps_long-0.9, np.repeat(production,10), lw=3, c = 'g', alpha=0.5, ls='-', label = 'Production')
-        #p4, = par3.plot(steps_long, np.repeat(actions,10), lw=3, c = 'c', alpha=0.5, ls='-', label = 'H Actions')
+        p4, = par3.plot(steps_long, np.repeat(actions,10), lw=3, c = 'c', alpha=0.5, ls='-', label = 'H Actions')
         
         par1.set_ylim(0, 10.09)
         par2.set_ylim(0, 10.09)
-        #par3.set_ylim(-0.09, 2.09)
+        par3.set_ylim(-0.09, 2.09)
         
-        #host.legend(loc=2)#loc=9)
+        host.legend(loc=2)#loc=9)
         
         host.axis["left"].label.set_color(p1.get_color())
         par1.axis["right"].label.set_color(p2.get_color())
         par2.axis["right"].label.set_color(p3.get_color())
-        #par3.axis["right"].label.set_color(p4.get_color())
+        par3.axis["right"].label.set_color(p4.get_color())
         
         plt.savefig("plot.png")
         
