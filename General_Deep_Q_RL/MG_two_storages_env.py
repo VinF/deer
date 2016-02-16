@@ -5,9 +5,10 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 from base_classes import Environment
+from experiment.base_controllers import Controller
 import copy
 
-class MyEnv(Environment):
+class MyEnv(Environment, Controller):
     def __init__(self, rng):
         """ Initialize environment
 
@@ -32,7 +33,12 @@ class MyEnv(Environment):
 
         self._initState()
 
-        self.rng = rng
+        self._rng = rng
+        self._validationScores = np.zeros(1000)
+        self._testScores = np.zeros_like(self._validationScores)
+        self._epochNumbers = np.zeros_like(self._validationScores, dtype='int32')
+        self._epochCount = 0
+        self._resultCount = 0
 
         # Get consumption profile in [0,1]
         self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
@@ -49,20 +55,20 @@ class MyEnv(Environment):
         # Get production profile in W/Wp in [0,1]
         self.production_train_norm=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
         self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
-        #self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
+        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
         # Scale production profile : 12KWp (60m^2) et en kWh
         self.production_train=self.production_train_norm*12000./1000.
         self.production_valid=self.production_valid_norm*12000./1000.
-        #self.production_test=self.production_train_norm*12000/1000
+        self.production_test=self.production_test_norm*12000/1000
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)
         print "Sample of the production profile (kW): " + str(self.production_train[0:24])
         print "Min of the production profile (kW): " + str(self.min_production)
         print "Max of the production profile (kW): " + str(self.max_production)
-        #print "Average production per day (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
         print "Average production per day train (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
         print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
+        print "Average production per day test (kWh): " + str(np.sum(self.production_test)/self.production_test.shape[0]*24)
 
         
         print "should be the same as"
@@ -95,9 +101,12 @@ class MyEnv(Environment):
         if mode == -1:
             self.production_norm=self.production_train_norm
             self.production=self.production_train
-        else:
+        elif mode == 0:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
+        else:
+            self.production_norm=self.production_test_norm
+            self.production=self.production_test
         
     def act(self, action, mode):
         """
@@ -266,6 +275,30 @@ class MyEnv(Environment):
         plt.show()
         plt.close('all')
 
+    def OnEpochEnd(self, agent):
+        mode = agent.mode()
+        if mode == 0:
+            self._validationScores[self._resultCount] = agent.totalRewardOverLastTest()
+        elif mode == 1:
+            self._testScores[self._resultCount] = agent.totalRewardOverLastTest()
+            self._epochNumbers[self._resultCount] = self._epochCount
+            self._resultCount += 1
+        else:
+            self._epochCount += 1
+        
+    def OnEnd(self, agent):
+        bestIndex = np.argmax(self._validationScores[0:self._resultCount])
+        print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
+        print "Test score of this neural net: {}".format(self._testScores[bestIndex])
+
+        plt.plot(self._epochNumbers[0:self._resultCount], self._validationScores[0:self._resultCount], label="VS", color='b')
+        plt.plot(self._epochNumbers[0:self._resultCount], self._testScores[0:self._resultCount], label="TS", color='r')
+        plt.legend()
+        plt.xlabel("n_epochs")
+        plt.ylabel("Score")
+
+        plt.savefig("MG_two_storages__scores.pdf")
+        plt.show()
 
 
 def main():

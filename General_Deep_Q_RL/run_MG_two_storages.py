@@ -6,13 +6,20 @@ Execute a training run of general deep-Q-Leaning with following parameters:
 
 import launcher
 import sys
+import logging
+import numpy as np
+
+from agent import NeuralAgent
+from q_network import MyQNetwork
+from MG_two_storages_env import MyEnv
+import experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 360*24
-    EPOCHS = 1000
+    EPOCHS = 200
     STEPS_PER_TEST = 360*24
     PERIOD_BTW_SUMMARY_PERFS = 5
     
@@ -53,5 +60,55 @@ class Defaults:
     DETERMINISTIC = True
     CUDNN_DETERMINISTIC = False
 
+
+
+
 if __name__ == "__main__":
-    launcher.launch(sys.argv[1:], Defaults, __doc__)
+    logging.basicConfig(level=logging.INFO)
+
+    parameters = launcher.process_args(sys.argv[1:], Defaults, __doc__)
+    if parameters.deterministic:
+        rng = np.random.RandomState(123456)
+    else:
+        rng = np.random.RandomState()
+    
+    # Instantiate environment
+    env = MyEnv(rng)
+
+    # Instantiate qnetwork
+    qnetwork = MyQNetwork(
+        env,
+        parameters.rms_decay,
+        parameters.rms_epsilon,
+        parameters.momentum,
+        parameters.clip_delta,
+        parameters.freeze_interval,
+        parameters.batch_size,
+        parameters.network_type,
+        parameters.update_rule,
+        parameters.batch_accumulator,
+        rng)
+    
+    # Instantiate agent
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        parameters.replay_memory_size,
+        max(env.batchDimensions()[i][0] for i in range(len(env.batchDimensions()))),
+        parameters.batch_size,
+        parameters.frame_skip,
+        rng)
+
+    # Bind controllers to the agent
+    agent.attach(bc.VerboseController())
+    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
+    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
+    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
+    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
+    agent.attach(env)
+    agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
+    agent.attach(bc.InterleavedTestEpochController(1, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=-1))
+    
+    # Run the experiment
+    #agent.run(parameters.epochs, parameters.steps_per_epoch)
+    agent.run(5, parameters.steps_per_epoch)
