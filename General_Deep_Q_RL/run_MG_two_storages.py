@@ -8,6 +8,7 @@ import launcher
 import sys
 import logging
 import numpy as np
+from joblib import hash
 
 from agent import NeuralAgent
 from q_network import MyQNetwork
@@ -100,15 +101,16 @@ if __name__ == "__main__":
         rng)
 
     # Bind controllers to the agent
+    VALIDATION_MODE = 0
+    TEST_MODE = 1
     agent.attach(bc.VerboseController())
     agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
     agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(env)
-    agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
-    agent.attach(bc.InterleavedTestEpochController(1, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=-1))
+    agent.attach(bc.FindBestController(VALIDATION_MODE, TEST_MODE, hash(vars(parameters), hash_name="sha1")))
+    agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
+    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=-1))
     
     # Run the experiment
-    #agent.run(parameters.epochs, parameters.steps_per_epoch)
-    agent.run(5, parameters.steps_per_epoch)
+    agent.run(parameters.epochs, parameters.steps_per_epoch)

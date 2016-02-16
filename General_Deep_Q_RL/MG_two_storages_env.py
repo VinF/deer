@@ -5,10 +5,9 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 from base_classes import Environment
-from experiment.base_controllers import Controller
 import copy
 
-class MyEnv(Environment, Controller):
+class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment
 
@@ -34,11 +33,6 @@ class MyEnv(Environment, Controller):
         self._initState()
 
         self._rng = rng
-        self._validationScores = np.zeros(1000)
-        self._testScores = np.zeros_like(self._validationScores)
-        self._epochNumbers = np.zeros_like(self._validationScores, dtype='int32')
-        self._epochCount = 0
-        self._resultCount = 0
 
         # Get consumption profile in [0,1]
         self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
@@ -274,33 +268,7 @@ class MyEnv(Environment, Controller):
         plt.draw()
         plt.show()
         plt.close('all')
-
-    def OnEpochEnd(self, agent):
-        mode = agent.mode()
-        if mode == 0:
-            self._validationScores[self._resultCount] = agent.totalRewardOverLastTest()
-        elif mode == 1:
-            self._testScores[self._resultCount] = agent.totalRewardOverLastTest()
-            self._epochNumbers[self._resultCount] = self._epochCount
-            self._resultCount += 1
-        else:
-            self._epochCount += 1
         
-    def OnEnd(self, agent):
-        bestIndex = np.argmax(self._validationScores[0:self._resultCount])
-        print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
-        print "Test score of this neural net: {}".format(self._testScores[bestIndex])
-
-        plt.plot(self._epochNumbers[0:self._resultCount], self._validationScores[0:self._resultCount], label="VS", color='b')
-        plt.plot(self._epochNumbers[0:self._resultCount], self._testScores[0:self._resultCount], label="TS", color='r')
-        plt.legend()
-        plt.xlabel("n_epochs")
-        plt.ylabel("Score")
-
-        plt.savefig("MG_two_storages__scores.pdf")
-        plt.show()
-
-
 def main():
     rng = np.random.RandomState(123456)
     myenv=MyEnv(rng)

@@ -14,6 +14,7 @@ import logging
 import numpy as np
 import copy
 import sys
+import joblib
 import experiment.base_controllers as controllers
 from warnings import warn
 from IPython import embed
@@ -119,6 +120,21 @@ class NeuralAgent(object):
             self._trainingLossAverages.append(loss)
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
+
+    def dumpNetwork(self, fname, nEpoch):
+        try:
+            os.mkdir("nnets")
+        except Exception:
+            pass
+        basename = "nnets/" + fname
+
+        for f in os.listdir("nnets/"):
+            if fname in f:
+                os.remove("nnets/" + f)
+
+        all_params, all_params_conv = self._network.toDump()
+        joblib.dump([all_params, all_params_conv], basename + ".epoch={}".format(nEpoch))
+                
 
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.OnStart(self)
