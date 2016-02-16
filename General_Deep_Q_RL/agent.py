@@ -85,6 +85,9 @@ class NeuralAgent(object):
     def detach(self, controllerIdx):
         return self._controllers.pop(controllerIdx)
 
+    def mode(self):
+        return self._mode
+
     def startMode(self, mode, epochLength):
         if self._inEpisode:
             raise AgentError("Trying to start mode while current episode is not yet finished. This method can be "
