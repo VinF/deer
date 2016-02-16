@@ -64,7 +64,7 @@ class MyEnv(Environment):
         self.hydrogen_max_power=1.1
         self.hydrogen_eta=.65
         
-    def reset(self, testing):
+    def reset(self, mode):
         """
         Returns:
            current observation (list of k elements)
@@ -83,7 +83,7 @@ class MyEnv(Environment):
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
         
-    def act(self, action, testing):
+    def act(self, action, mode):
         """
         Perform one time step on the environment
         """
@@ -159,7 +159,7 @@ class MyEnv(Environment):
     def observe(self):
         return copy.deepcopy(self._lastPonctualObservation)     
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, mode, test_data_set):
         print "summary perf"
         print "self.hydrogen_storage: "+str(self.hydrogen_storage)
         

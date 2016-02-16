@@ -1,6 +1,5 @@
 from theano import config
 import numpy as np
-import utils as ut
 
 class Environment(object):                
     def _initState(self):
@@ -14,10 +13,10 @@ class Environment(object):
         for i in range(len(obs)):
             ut.appendCircular(self._state[i], obs[i])
             
-    def reset(self, testing):
+    def reset(self, mode):
         raise NotImplementedError()
         
-    def act(self, action, testing):
+    def act(self, action, mode):
         raise NotImplementedError()
 
     def batchDimensions(self):
@@ -35,7 +34,7 @@ class Environment(object):
     def state(self):
         return self._state
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, mode, test_data_set):
         pass
 
 class QNetwork(object):        
