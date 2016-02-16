@@ -76,7 +76,7 @@ class MyEnv(Environment):
         self.counter = 1        
         self.hydrogen_storage=0.
         
-        if testing==False:
+        if mode == -1:
             self.production_norm=self.production_train_norm
             self.production=self.production_train
         else:
