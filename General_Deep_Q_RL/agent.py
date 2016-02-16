@@ -20,7 +20,7 @@ from IPython import embed
 
 class NeuralAgent(object):
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
-        if replay_start_size < max(environment.batchDimensions()[0]):
+        if replay_start_size < max(environment.batchDimensions()[i][0] for i in range(len(environment.batchDimensions()))):
             raise AgentError("Replay_start_size should be greater than the biggest history of a state.")
 
         self._controllers = []
@@ -122,7 +122,8 @@ class NeuralAgent(object):
 
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.OnStart(self)
-        for _ in range(nEpochs):
+        i = 0
+        while i < nEpochs:
             if self._mode != -1:
                 while self._modeEpochsLength > 0:
                     self._modeEpochsLength = self._runEpisode(self._modeEpochsLength)
@@ -130,6 +131,7 @@ class NeuralAgent(object):
                 length = epochLength
                 while length > 0:
                     length = self._runEpisode(length)
+                i += 1
 
             for c in self._controllers: c.OnEpochEnd(self)
             
