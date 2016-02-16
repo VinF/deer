@@ -182,8 +182,9 @@ def launch(args, defaults, description):
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
     agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], summarizeEvery=parameters.period_btw_summary_perfs))
-    agent.attach(bc.InterleavedTestEpochController(1, parameters.steps_per_test, [0, 1, 2, 3, 4, 5], summarizeEvery=parameters.period_btw_summary_perfs))
+    agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4], summarizeEvery=parameters.period_btw_summary_perfs))
+    #agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], summarizeEvery=parameters.period_btw_summary_perfs))
+    #agent.attach(bc.InterleavedTestEpochController(1, parameters.steps_per_test, [0, 1, 2, 3, 4, 5], summarizeEvery=parameters.period_btw_summary_perfs))
     
     # Run the experiment
     agent.run(parameters.epochs, parameters.steps_per_epoch)
