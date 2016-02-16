@@ -15,7 +15,6 @@ import numpy as np
 import copy
 import sys
 import experiment.base_controllers as controllers
-import utils as ut
 from warnings import warn
 from IPython import embed
 
