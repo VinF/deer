@@ -11,7 +11,8 @@ class Environment(object):
     def _updateState(self):
         obs = self.observe()
         for i in range(len(obs)):
-            ut.appendCircular(self._state[i], obs[i])
+            self._state[i][0:-1] = self._state[i][1:]
+            self._state[i][-1] = obs[i]
             
     def reset(self, mode):
         raise NotImplementedError()
