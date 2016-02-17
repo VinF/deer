@@ -21,9 +21,11 @@ from IPython import embed
 
 class NeuralAgent(object):
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
-        if replay_start_size < max(environment.batchDimensions()[i][0] for i in range(len(environment.batchDimensions()))):
-            raise AgentError("Replay_start_size should be greater than the biggest history of a state.")
+        batchDims = environment.batchDimensions()
 
+        if replay_start_size < max(batchDims[i][0] for i in range(len(batchDims))):
+            raise AgentError("Replay_start_size should be greater than the biggest history of a state.")
+        
         self._controllers = []
         self._environment = environment
         self._network = q_network
@@ -33,7 +35,7 @@ class NeuralAgent(object):
         self._batchSize = batch_size
         self._frameSkip = frameSkip
         self._randomState = randomState
-        self._dataSet = DataSet(environment.batchDimensions(), maxSize=replay_memory_size, randomState=randomState)
+        self._dataSet = DataSet(batchDims, maxSize=replay_memory_size, randomState=randomState)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -41,6 +43,9 @@ class NeuralAgent(object):
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
         self._inEpisode = False
+        self._state = []
+        for i in range(len(batchDims)):
+            self._state.append(np.zeros(batchDims[i], dtype=config.floatX))
 
     def setControllersActive(self, toDisable, active):
         for i in toDisable:
@@ -155,7 +160,11 @@ class NeuralAgent(object):
 
     def _runEpisode(self, maxSteps):
         self._inEpisode = True
-        self._environment.reset(self._mode)
+        initState = self._environment.reset(self._mode)
+        batchDims = self._environment.batchDimensions()
+        for i in range(len(batchDims)):
+            if batchDims[i][0] > 1:
+                self._state[i][1:] = initState[i]
         
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
@@ -163,12 +172,16 @@ class NeuralAgent(object):
             maxSteps -= 1
 
             obs = self._environment.observe()
+            for i in range(len(obs)):
+                self._state[i][0:-1] = self._state[i][1:]
+                self._state[i][-1] = obs[i]
+
             V, action, reward = self._step()
             self._VsOnLastEpisode.append(V)
             isTerminal = self._environment.inTerminalState()
             if self._mode != -1:
                 self._totalModeReward += reward
-
+                
             self._addSample(obs, action, reward, isTerminal)
             for c in self._controllers: c.OnActionTaken(self)
             
@@ -228,10 +241,9 @@ class NeuralAgent(object):
            An integer - action based on the current policy
         """
         
-        state = self._environment.state()
         if self._mode != -1:
-            action = self._network.chooseBestAction(state)
-            V = max(self._network.qValues(state))
+            action = self._network.chooseBestAction(self._state)
+            V = max(self._network.qValues(self._state))
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
@@ -239,8 +251,8 @@ class NeuralAgent(object):
                     action = self._randomState.randint(0, self._environment.nActions())
                     V = 0
                 else:
-                    action = self._network.chooseBestAction(state)
-                    V = max(self._network.qValues(state))
+                    action = self._network.chooseBestAction(self._state)
+                    V = max(self._network.qValues(self._state))
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._randomState.randint(0, self._environment.nActions())
@@ -317,6 +329,7 @@ class DataSet(object):
             ret[input] = self._observations[input].getSlice(0)
 
         return ret
+            
 
     def randomBatch(self, batch_size):
         """Return corresponding states, actions, rewards, terminal status, and next_states for batch_size randomly 

@@ -30,8 +30,6 @@ class MyEnv(Environment):
             self._lastPonctualObservation = [0. ,[0.,0.]]
             self._batchDimensions = [(1,), (12,2)]
 
-        self._initState()
-
         self._rng = rng
 
         # Get consumption profile in [0,1]
@@ -87,8 +85,6 @@ class MyEnv(Environment):
         elif (self._dist_equinox==0, self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.]]
 
-        self._initState()
-
         self.counter = 1        
         self.hydrogen_storage=0.
         
@@ -101,6 +97,25 @@ class MyEnv(Environment):
         else:
             self.production_norm=self.production_test_norm
             self.production=self.production_test
+            
+        if (self._dist_equinox==1, self._pred==1):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.]],
+                        0.,
+                        [0.,0.]
+                    ]
+        elif (self._dist_equinox==1, self._pred==0):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],],
+                        0.
+                    ]
+        else: #elif (self._dist_equinox==0, self._pred==0):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],]
+                    ]
         
     def act(self, action, mode):
         """
@@ -164,10 +179,7 @@ class MyEnv(Environment):
             i=i+1
             self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
             self._lastPonctualObservation[i][1]=sum(self.production_norm[self.counter:self.counter+48])/48.#*self.rng.uniform(0.75,1.25)
-
-        self._updateState()
-
-                    
+                                
         self.counter+=1
                 
         return copy.copy(reward)

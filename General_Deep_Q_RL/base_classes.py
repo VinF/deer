@@ -1,19 +1,7 @@
 from theano import config
 import numpy as np
 
-class Environment(object):                
-    def _initState(self):
-        self._state = []
-        batchDims = self.batchDimensions()
-        for i in range(len(batchDims)):
-            self._state.append(np.zeros(batchDims[i], dtype=config.floatX))
-    
-    def _updateState(self):
-        obs = self.observe()
-        for i in range(len(obs)):
-            self._state[i][0:-1] = self._state[i][1:]
-            self._state[i][-1] = obs[i]
-            
+class Environment(object):            
     def reset(self, mode):
         raise NotImplementedError()
         
@@ -31,9 +19,6 @@ class Environment(object):
 
     def observe(self):
         raise NotImplementedError()
-
-    def state(self):
-        return self._state
 
     def summarizePerformance(self, mode, test_data_set):
         pass
