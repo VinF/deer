@@ -6,6 +6,7 @@ Author: Vincent Francois-Lavet, David Taralla
 from matplotlib import pyplot as plt
 import numpy as np
 import joblib
+import os
 
 class Controller(object):
     """A base controller that does nothing when receiving the various signals emitted by an agent. This class should 
@@ -376,7 +377,14 @@ class FindBestController(Controller):
         plt.xlabel("n_epochs")
         plt.ylabel("Score")
 
-        plt.savefig("MG_two_storages__scores.pdf")
+        
+        try:
+            os.mkdir("scores")
+        except Exception:
+            pass
+        basename = "scores/" + self._filename
+        joblib.dump({"n": self._epochNumbers, "vs": self._validationScores, "ts": self._testScores}, basename + "_scores.jldump")
+        plt.savefig(basename + "_scores.pdf")
         if self._showPlot:
             plt.show()
 
