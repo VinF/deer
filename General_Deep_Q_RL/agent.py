@@ -436,24 +436,27 @@ class CircularBuffer(object):
     def __init__(self, size, elemShape=(), extension=0.1, dtype="float32"):
         self._size = size
         self._data = np.zeros((int(size+extension*size),) + elemShape, dtype=dtype)
+        self._trueSize = self._data.shape[0]
         self._lb   = 0
         self._ub   = size
         self._cur  = 0
         self.dtype = dtype
     
     def append(self, obj):
-        if self._ub >= self._data.size:
-            self._data[0:self._size-1] = self._data[self._lb+1:]
-            self._lb  = 0
-            self._ub  = self._size
-            self._cur = self._size - 1
-
         if self._cur >= self._size:
             self._lb += 1
             self._ub += 1
 
+        if self._ub >= self._trueSize:
+            self._data[0:self._size-1] = self._data[self._lb+1:]
+            self._lb  = 0
+            self._ub  = self._size
+            self._cur = self._size - 1
+            
         self._data[self._cur] = obj
+
         self._cur += 1
+
 
     def __getitem__(self, i):
         return self._data[self._lb + i]
