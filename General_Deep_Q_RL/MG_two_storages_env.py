@@ -62,10 +62,6 @@ class MyEnv(Environment):
         print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
         print "Average production per day test (kWh): " + str(np.sum(self.production_test)/self.production_test.shape[0]*24)
 
-        
-        print "should be the same as"
-        print self.production_valid[0:100]
-
         self.battery_size=15.
         self.battery_eta=0.9
         
@@ -220,8 +216,6 @@ class MyEnv(Environment):
         print battery_level[0:100]
         print consumption[0:100]
         print production[0:100]
-        print "should be the same as"
-        print self.production_valid[0:100]
         
         steps_long=np.arange(1000)/10.
         
