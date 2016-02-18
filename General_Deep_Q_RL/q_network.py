@@ -205,6 +205,14 @@ class MyQNetwork(QNetwork):
     def discountFactor(self):
         return self._df
             
+    def toDump(self):
+        all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
+        all_params_conv=[]
+        for conv_param in self.l_outs_conv:
+            all_params_conv.append(lasagne.layers.helper.get_all_param_values(conv_param))
+
+        return all_params, all_params_conv
+    
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
         Train one batch.

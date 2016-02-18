@@ -20,7 +20,6 @@ class MyEnv(Environment):
         self._batchDimensions = [(6,), (1,)]   # We consider a belief state made up of an history of 
                                                # - the last six for the first element obtained 
                                                # - the last one for the second element
-        self._initState()
         
         self._randomState = rng
                 
@@ -49,9 +48,9 @@ class MyEnv(Environment):
             
         
         self._lastPonctualObservation = [self.prices[0], 0]
-        self._initState()
 
         self._counter = 1
+        return [[0, 0, 0, 0, 0], 0]
         
         
     def act(self, action, mode):
@@ -72,7 +71,6 @@ class MyEnv(Environment):
 
         self._lastPonctualObservation[0] = self.prices[self._counter]
         self._lastPonctualObservation[1] = action
-        self._updateState()
 
         self._counter += 1
         

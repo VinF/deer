@@ -3,6 +3,10 @@ the training and the various parameters of your agents.
 
 Author: Vincent Francois-Lavet, David Taralla
 """
+from matplotlib import pyplot as plt
+import numpy as np
+import joblib
+import os
 
 class Controller(object):
     """A base controller that does nothing when receiving the various signals emitted by an agent. This class should 
@@ -28,6 +32,9 @@ class Controller(object):
         pass
 
     def OnActionTaken(self, agent):
+        pass
+
+    def OnEnd(self, agent):
         pass
 
 
@@ -181,7 +188,6 @@ class InterleavedTestEpochController(Controller):
         self._epochLength = epochLength
         self._toDisable = controllersToDisable
         self._showScore = showScore
-        self._summarizeEvery = summarizeEvery
         if periodicity <= 2:
             self._periodicity = 2
         else:
@@ -325,6 +331,62 @@ class VerboseController(Controller):
             print "Discount factor: {}".format(agent.discountFactor())
             print "Epsilon: {}".format(agent.epsilon())
         self._count += 1
+
+class FindBestController(Controller):
+    def __init__(self, validationID, testID, unique_fname="nnet", showPlot=False):
+        super(self.__class__, self).__init__()
+
+        self._validationScores = []
+        self._testScores = []
+        self._epochNumbers = []
+        self._epochCount = 0
+        self._testID = testID
+        self._validationID = validationID
+        self._filename = unique_fname
+        self._showPlot = showPlot
+        self._bestValidationScoreSoFar = -9999999
+
+    def OnEpochEnd(self, agent):
+        if (self._active == False):
+            return
+
+        mode = agent.mode()
+        if mode == self._validationID:
+            score = agent.totalRewardOverLastTest()
+            self._validationScores.append(score)
+            if score > self._bestValidationScoreSoFar:
+                self._bestValidationScoreSoFar = score
+                agent.dumpNetwork(self._filename, self._epochCount)
+        elif mode == self._testID:
+            self._testScores.append(agent.totalRewardOverLastTest())
+            self._epochNumbers.append(self._epochCount)
+        else:
+            self._epochCount += 1
+        
+    def OnEnd(self, agent):
+        if (self._active == False):
+            return
+
+        bestIndex = np.argmax(self._validationScores)
+        print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
+        print "Test score of this neural net: {}".format(self._testScores[bestIndex])
+
+        plt.plot(self._epochNumbers, self._validationScores, label="VS", color='b')
+        plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
+        plt.legend()
+        plt.xlabel("n_epochs")
+        plt.ylabel("Score")
+
+        
+        try:
+            os.mkdir("scores")
+        except Exception:
+            pass
+        basename = "scores/" + self._filename
+        joblib.dump({"n": self._epochNumbers, "vs": self._validationScores, "ts": self._testScores}, basename + "_scores.jldump")
+        plt.savefig(basename + "_scores.pdf")
+        if self._showPlot:
+            plt.show()
 
 
 if __name__ == "__main__":

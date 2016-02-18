@@ -30,9 +30,7 @@ class MyEnv(Environment):
             self._lastPonctualObservation = [0. ,[0.,0.]]
             self._batchDimensions = [(1,), (12,2)]
 
-        self._initState()
-
-        self.rng = rng
+        self._rng = rng
 
         # Get consumption profile in [0,1]
         self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
@@ -49,20 +47,20 @@ class MyEnv(Environment):
         # Get production profile in W/Wp in [0,1]
         self.production_train_norm=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
         self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
-        #self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
+        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
         # Scale production profile : 12KWp (60m^2) et en kWh
         self.production_train=self.production_train_norm*12000./1000.
         self.production_valid=self.production_valid_norm*12000./1000.
-        #self.production_test=self.production_train_norm*12000/1000
+        self.production_test=self.production_test_norm*12000/1000
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)
         print "Sample of the production profile (kW): " + str(self.production_train[0:24])
         print "Min of the production profile (kW): " + str(self.min_production)
         print "Max of the production profile (kW): " + str(self.max_production)
-        #print "Average production per day (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
         print "Average production per day train (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
         print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
+        print "Average production per day test (kWh): " + str(np.sum(self.production_test)/self.production_test.shape[0]*24)
 
         
         print "should be the same as"
@@ -74,7 +72,7 @@ class MyEnv(Environment):
         self.hydrogen_max_power=1.1
         self.hydrogen_eta=.65
         
-    def reset(self, testing):
+    def reset(self, mode):
         """
         Returns:
            current observation (list of k elements)
@@ -87,19 +85,39 @@ class MyEnv(Environment):
         elif (self._dist_equinox==0, self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.]]
 
-        self._initState()
-
         self.counter = 1        
         self.hydrogen_storage=0.
         
-        if testing==False:
+        if mode == -1:
             self.production_norm=self.production_train_norm
             self.production=self.production_train
-        else:
+        elif mode == 0:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
+        else:
+            self.production_norm=self.production_test_norm
+            self.production=self.production_test
+            
+        if (self._dist_equinox==1, self._pred==1):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.]],
+                        0.,
+                        [0.,0.]
+                    ]
+        elif (self._dist_equinox==1, self._pred==0):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],],
+                        0.
+                    ]
+        else: #elif (self._dist_equinox==0, self._pred==0):
+            return [
+                        0., 
+                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],]
+                    ]
         
-    def act(self, action, testing):
+    def act(self, action, mode):
         """
         Perform one time step on the environment
         """
@@ -161,10 +179,7 @@ class MyEnv(Environment):
             i=i+1
             self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
             self._lastPonctualObservation[i][1]=sum(self.production_norm[self.counter:self.counter+48])/48.#*self.rng.uniform(0.75,1.25)
-
-        self._updateState()
-
-                    
+                                
         self.counter+=1
                 
         return copy.copy(reward)
@@ -181,7 +196,7 @@ class MyEnv(Environment):
     def observe(self):
         return copy.deepcopy(self._lastPonctualObservation)     
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, mode, test_data_set):
         print "summary perf"
         print "self.hydrogen_storage: "+str(self.hydrogen_storage)
         
@@ -265,9 +280,7 @@ class MyEnv(Environment):
         plt.draw()
         plt.show()
         plt.close('all')
-
-
-
+        
 def main():
     rng = np.random.RandomState(123456)
     myenv=MyEnv(rng)
