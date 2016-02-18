@@ -156,7 +156,7 @@ class MyEnv(Environment):
         i=1
         if(self._dist_equinox==1):
             i=i+1
-            self._lastPonctualObservation[i]=abs(self.counter/24-(171))/(365.-171.) #171 days between 1jan and 21 Jun
+            self._lastPonctualObservation[i]=abs(self.counter/24-(365./2))/(365./2) #171 days between 1jan and 21 Jun
         if (self._pred==1):
             i=i+1
             self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
