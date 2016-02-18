@@ -105,6 +105,7 @@ if __name__ == "__main__":
     VALIDATION_MODE = 0
     TEST_MODE = 1
     fname = hash(vars(parameters), hash_name="sha1")
+    print "The parameters hash is:"+str(fname)
     agent.attach(bc.VerboseController())
     agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
