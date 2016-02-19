@@ -362,7 +362,7 @@ class FindBestController(Controller):
             self._epochNumbers.append(self._epochCount)
         else:
             self._epochCount += 1
-        
+
     def OnEnd(self, agent):
         if (self._active == False):
             return
@@ -371,8 +371,8 @@ class FindBestController(Controller):
         print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
         print "Test score of this neural net: {}".format(self._testScores[bestIndex])
 
-        plt.plot(self._epochNumbers, self._validationScores, label="VS", color='b')
-        plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
+        plt.plot(self._epochNumbers, self._validationScores-110, label="VS", color='b') #determinist best score (for MG) is 110
+        plt.plot(self._epochNumbers, self._testScores-76, label="TS", color='r') #determinist best score (for MG) is 76
         plt.legend()
         plt.xlabel("n_epochs")
         plt.ylabel("Score")

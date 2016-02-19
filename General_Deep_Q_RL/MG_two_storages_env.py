@@ -46,8 +46,8 @@ class MyEnv(Environment):
 
         # Get production profile in W/Wp in [0,1]
         self.production_train_norm=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
-        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
-        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
+        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24] #determinist best score is 110
+        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24] #determinist best score is 76
         # Scale production profile : 12KWp (60m^2) et en kWh
         self.production_train=self.production_train_norm*12000./1000.
         self.production_valid=self.production_valid_norm*12000./1000.
