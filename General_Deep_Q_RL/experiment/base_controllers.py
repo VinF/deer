@@ -152,7 +152,7 @@ class DiscountFactorController(Controller):
         self._initDF = initialDiscountFactor
         self._df = initialDiscountFactor
         self._dfGrowth = discountFactorGrowth
-        self._dfMax = discountFactorGrowth
+        self._dfMax = discountFactorMax
         self._periodicity = periodicity
 
     def OnStart(self, agent):
