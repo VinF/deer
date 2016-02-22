@@ -33,21 +33,27 @@ class MyEnv(Environment):
         self._rng = rng
 
         # Get consumption profile in [0,1]
-        self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
-        # Scale consumption profile in [0,1.7kW]
-        self.consumption=self.consumption_norm*1.7
+        self.consumption_train_norm=np.load("data/example_nondeterminist_cons_train.npy")[0:1*365*24]
+        self.consumption_valid_norm=np.load("data/example_nondeterminist_cons_train.npy")[365*24:2*365*24]
+        self.consumption_test_norm=np.load("data/example_nondeterminist_cons_test.npy")[0:1*365*24]
+        # Scale consumption profile in [0,2.1kW] --> average max per day = 1.7kW, average per day is 18.3kWh
+        self.consumption_train=self.consumption_train_norm*2.1
+        self.consumption_valid=self.consumption_valid_norm*2.1
+        self.consumption_test=self.consumption_test_norm*2.1
 
-        self.min_consumption=min(self.consumption)
-        self.max_consumption=max(self.consumption)
-        print "Sample of the consumption profile (kW): " + str(self.consumption[0:24])
+        self.min_consumption=min(self.consumption_train)
+        self.max_consumption=max(self.consumption_train)
+        print "Sample of the consumption profile (kW): " + str(self.consumption_train[0:24])
         print "Min of the consumption profile (kW): " + str(self.min_consumption)
         print "Max of the consumption profile (kW): " + str(self.max_consumption)
-        print "Average consumption per day (kWh): " + str(np.sum(self.consumption)/self.consumption.shape[0]*24)
+        print "Average consumption per day train (kWh): " + str(np.sum(self.consumption_train)/self.consumption_train.shape[0]*24)
+        print "Average consumption per day valid (kWh): " + str(np.sum(self.consumption_valid)/self.consumption_valid.shape[0]*24)
+        print "Average consumption per day test (kWh): " + str(np.sum(self.consumption_test)/self.consumption_test.shape[0]*24)
 
         # Get production profile in W/Wp in [0,1]
         self.production_train_norm=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
-        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24] #determinist best score is 110
-        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24] #determinist best score is 76
+        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24] #determinist best is 110, "nondeterminist" is 124.9
+        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24] #determinist best is 76, "nondeterminist" is 75.2
         # Scale production profile : 12KWp (60m^2) et en kWh
         self.production_train=self.production_train_norm*12000./1000.
         self.production_valid=self.production_valid_norm*12000./1000.
@@ -87,12 +93,18 @@ class MyEnv(Environment):
         if mode == -1:
             self.production_norm=self.production_train_norm
             self.production=self.production_train
+            self.consumption_norm=self.consumption_train_norm
+            self.consumption=self.consumption_train
         elif mode == 0:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
+            self.consumption_norm=self.consumption_valid_norm
+            self.consumption=self.consumption_valid
         else:
             self.production_norm=self.production_test_norm
             self.production=self.production_test
+            self.consumption_norm=self.consumption_test_norm
+            self.consumption=self.consumption_test
             
         if (self._dist_equinox==1, self._pred==1):
             return [
