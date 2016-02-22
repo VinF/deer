@@ -23,7 +23,7 @@ class Defaults:
     STEPS_PER_EPOCH = 360*24
     EPOCHS = 200
     STEPS_PER_TEST = 360*24
-    PERIOD_BTW_SUMMARY_PERFS = 5
+    PERIOD_BTW_SUMMARY_PERFS = -1 #set to -1 for avoiding call to env.summarizePerformance
     
     # ----------------------
     # Environment Parameters
@@ -37,7 +37,7 @@ class Defaults:
     UPDATE_RULE = 'deepmind_rmsprop'#'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = 0.0002
-    LEARNING_RATE_DECAY = 0.99
+    LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 0.99
     DISCOUNT_MAX = 0.98
@@ -53,7 +53,7 @@ class Defaults:
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = .3#.1
-    EPSILON_DECAY = 500000
+    EPSILON_DECAY = 1000000
     UPDATE_FREQUENCY = 1#4
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
     agent.attach(bc.FindBestController(VALIDATION_MODE, TEST_MODE, fname))
     agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
-    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=-1))
+    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=parameters.period_btw_summary_perfs))
     
     # Run the experiment
     try:

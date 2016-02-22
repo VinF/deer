@@ -207,16 +207,16 @@ class MyEnv(Environment):
     def summarizePerformance(self, mode, test_data_set):
         print "summary perf"
         print "self.hydrogen_storage: "+str(self.hydrogen_storage)
-        
+        i=0#180*24
         observations = test_data_set.observations()
         actions = test_data_set.actions()
         print "observations, actions"
-        print observations[0:100], actions[0:100]
+        print observations[0+i:100+i], actions[0+i:100+i]
 
-        battery_level=observations[0][0:100]
-        consumption=observations[1][:,0][0:100]
-        production=observations[1][:,1][0:100]
-        actions=actions[0:100]
+        battery_level=observations[0][0+i:100+i]
+        consumption=observations[1][:,0][0+i:100+i]
+        production=observations[1][:,1][0+i:100+i]
+        actions=actions[0+i:100+i]
         
         battery_level=np.array(battery_level)*self.battery_size
         consumption=np.array(consumption)*(self.max_consumption-self.min_consumption)+self.min_consumption
@@ -225,9 +225,9 @@ class MyEnv(Environment):
         steps=np.arange(100)
         print steps
         print "battery_level"
-        print battery_level[0:100]
-        print consumption[0:100]
-        print production[0:100]
+        print battery_level[0+i:100+i]
+        print consumption[0+i:100+i]
+        print production[0+i:100+i]
         
         steps_long=np.arange(1000)/10.
         
@@ -274,7 +274,7 @@ class MyEnv(Environment):
         par2.set_ylim(0, 10.09)
         par3.set_ylim(-0.09, 2.09)
         
-        host.legend(loc=2)#loc=9)
+        host.legend(loc=1)#loc=9)
         
         host.axis["left"].label.set_color(p1.get_color())
         par1.axis["right"].label.set_color(p2.get_color())
