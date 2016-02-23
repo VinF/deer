@@ -1,7 +1,12 @@
 """This file defines the base Controller class and some presets controllers that you can use for controlling 
 the training and the various parameters of your agents.
 
-Author: Vincent Francois-Lavet, David Taralla
+Controllers can be attached to an agent using the agent's attach(Controller) method. The order in which controllers 
+are attached matters. Indeed, if controllers C1, C2 and C3 were attached in this order and C1 and C3 both listen to the
+OnEpisodeEnd signal, the OnEpisodeEnd() method of C1 will be called *before* the OnEpisodeEnd() method of C3, whenever 
+an episode ends.
+
+Authors: Vincent Francois-Lavet, David Taralla
 """
 from matplotlib import pyplot as plt
 import numpy as np
@@ -14,35 +19,95 @@ class Controller(object):
     """
 
     def __init__(self):
+        """Activate this controller.
+
+        All controllers inheriting this class should call this method in their own __init()__ using 
+        super(self.__class__, self).__init__().
+        """
+
         self._active = True
 
     def setActive(self, active):
+        """Activate or deactivate this controller.
+        
+        A controller should not react to any signal it receives as long as it is deactivated.
+        """
+
         self._active = active
 
     def OnStart(self, agent):
+        """Called when the agent is going to start working (before anything else).
+        
+        This corresponds to the moment where the agent's run() method is called.
+
+        Parameters:
+            agent [NeuralAgent] - The agent firing the event
+        """
+
         pass
 
     def OnEpisodeEnd(self, agent, terminalReached, reward):
+        """Called whenever the agent ends an episode, just after this episode ended and before any OnEpochEnd() signal
+        could be sent.
+
+        Parameters:
+            agent [NeuralAgent] - The agent firing the event
+            terminalReached [bool] - Whether the episode ended because a terminal transition occured. This could be 
+                False if the episode was stopped because its step budget was exhausted.
+            reward [number] - The reward obtained on the last transition performed in this episode.
+        """
+
         pass
 
     def OnEpochEnd(self, agent):
+        """Called whenever the agent ends an epoch, just after the last episode of this epoch was ended and after any 
+        OnEpisodeEnd() signal was processed.
+
+        Parameters:
+            agent [NeuralAgent] - The agent firing the event
+        """
+
         pass
 
     def OnActionChosen(self, agent, action):
+        """Called whenever the agent has chosen an action.
+
+        This occurs after the agent state was updated with the new observation it made, but before it applied this 
+        action on the environment and before the total reward is updated.
+        """
+
         pass
 
     def OnActionTaken(self, agent):
+        """Called whenever the agent has taken an action on its environment.
+
+        This occurs after the agent applied this action on the environment and before terminality is evaluated. This 
+        is called only once, even in the case where the agent skip frames by taking the same action multiple times.
+        In other words, this occurs just before the next observation of the environment.
+        """
+
         pass
 
     def OnEnd(self, agent):
+        """Called when the agent has finished processing all its epochs, just before returning from its run() method.
+        """
+
         pass
 
 
 class LearningRateController(Controller):
-    """A controller that modifies the learning rate periodically.
+    """A controller that modifies the learning rate periodically upon epochs end."""
 
-    """
     def __init__(self, initialLearningRate, learningRateDecay, periodicity=1):
+        """Initializer.
+
+        Parameters:
+            initialLearningRate [number] - The learning rate upon agent start
+            learningRateDecay [number] - The factor by which the previous learning rate is multiplied every
+                [periodicity] epochs.
+            periodicity [int] - How many epochs are necessary before an update of the learning rate occurs
+        """
+
         super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initLr = initialLearningRate
@@ -69,17 +134,22 @@ class LearningRateController(Controller):
 
 
 class EpsilonController(Controller):
-    """A controller that modifies the probability of taking a random action periodically.
+    """A controller that modifies the probability "epsilon" of taking a random action periodically."""
 
-    Arguments:
-        initialE - Start epsilon
-        eDecays - How many steps of "evaluateOn" are necessary for epsilon to reach eMin
-        eMin - End epsilon
-        evaluateOn - After what type of event epsilon shoud be updated periodically ('action', 'episode', 'epoch').
-        periodicity - How many steps of "evaluateOn" are necessary before an update of epsilon
-        resetEvery - After what type of event epsilon should be reset to initial value ('none', 'episode', 'epoch').
-    """
     def __init__(self, initialE, eDecays, eMin, evaluateOn='action', periodicity=1, resetEvery='none'):
+        """Initializer.
+
+        Parameters:
+            initialE [number] - Start epsilon
+            eDecays [int] - How many updates are necessary for epsilon to reach eMin
+            eMin [number] - End epsilon
+            evaluateOn [str] - After what type of event epsilon shoud be updated periodically. Possible values: 
+                'action', 'episode', 'epoch'.
+            periodicity [int] - How many [evaluateOn] are necessary before an update of epsilon occurs
+            resetEvery [str] - After what type of event epsilon should be reset to its initial value. Possible values: 
+                'none', 'episode', 'epoch'.
+        """
+
         super(self.__class__, self).__init__()
         self._count = 0
         self._initE = initialE
@@ -143,10 +213,19 @@ class EpsilonController(Controller):
 
 
 class DiscountFactorController(Controller):
-    """A controller that modifies the qnetwork discount periodically.
+    """A controller that modifies the qnetwork discount periodically."""
 
-    """
     def __init__(self, initialDiscountFactor, discountFactorGrowth, discountFactorMax=0.99, periodicity=1):
+        """Initializer.
+
+        Parameters:
+            initialDiscountFactor [number] - Start discount
+            discountFactorGrowth [number] - The factor by which the previous discount is multiplied every [periodicity]
+                epochs.
+            discountFactorMax [number] - Maximum reachable discount
+            periodicity [int] - How many epochs are necessary before an update of the discount occurs
+        """
+
         super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initDF = initialDiscountFactor
