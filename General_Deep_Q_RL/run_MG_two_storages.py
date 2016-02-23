@@ -37,7 +37,7 @@ class Defaults:
     UPDATE_RULE = 'deepmind_rmsprop'#'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = 0.0002
-    LEARNING_RATE_DECAY = 0.98
+    LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 0.99
     DISCOUNT_MAX = 0.98
@@ -53,7 +53,7 @@ class Defaults:
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = .3#.1
-    EPSILON_DECAY = 1000000
+    EPSILON_DECAY = 500000
     UPDATE_FREQUENCY = 1#4
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32

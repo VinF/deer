@@ -22,13 +22,13 @@ class MyEnv(Environment):
         
         self._nActions = 3 
 
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
             self._batchDimensions = [(1,), (12,2), (1,),(1,2)]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.],0.]
             self._batchDimensions = [(1,), (12,2), (1,)]
-        elif (self._dist_equinox==0, self._pred==0):
+        elif (self._dist_equinox==0 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.]]
             self._batchDimensions = [(1,), (12,2)]
 
@@ -82,11 +82,11 @@ class MyEnv(Environment):
            current observation (list of k elements)
         """
         ### Test 6
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [1. ,[0.,0.],0., [0.,0.]]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.],0.]
-        elif (self._dist_equinox==0, self._pred==0):
+        elif (self._dist_equinox==0 and self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.]]
 
         self.counter = 1        
@@ -108,14 +108,14 @@ class MyEnv(Environment):
             self.consumption_norm=self.consumption_test_norm
             self.consumption=self.consumption_test
             
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             return [
                         0., 
                         [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.]],
                         0.,
                         [0.,0.]
                     ]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             return [
                         0., 
                         [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],],

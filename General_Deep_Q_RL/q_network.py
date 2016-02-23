@@ -368,7 +368,7 @@ class MyQNetwork(QNetwork):
                 
                 l_conv2 = conv2DFunc(
                     l_conv1,
-                    num_filters=8,
+                    num_filters=16,
                     filter_size=(2, 2),
                     stride=(1, 1),
                     nonlinearity=lasagne.nonlinearities.rectify,
