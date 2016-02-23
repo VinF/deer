@@ -18,6 +18,8 @@ class MyEnv(Environment):
         self._dist_equinox=0
         self._pred=0
         
+        inc_sizing=1.
+        
         self._nActions = 3 
 
         if (self._dist_equinox==1, self._pred==1):
@@ -55,9 +57,9 @@ class MyEnv(Environment):
         self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24] #determinist best is 110, "nondeterminist" is 124.9
         self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24] #determinist best is 76, "nondeterminist" is 75.2
         # Scale production profile : 12KWp (60m^2) et en kWh
-        self.production_train=self.production_train_norm*12000./1000.
-        self.production_valid=self.production_valid_norm*12000./1000.
-        self.production_test=self.production_test_norm*12000/1000
+        self.production_train=self.production_train_norm*12000./1000.*inc_sizing
+        self.production_valid=self.production_valid_norm*12000./1000.*inc_sizing
+        self.production_test=self.production_test_norm*12000/1000*inc_sizing
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)
@@ -68,10 +70,10 @@ class MyEnv(Environment):
         print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
         print "Average production per day test (kWh): " + str(np.sum(self.production_test)/self.production_test.shape[0]*24)
 
-        self.battery_size=15.
+        self.battery_size=15.*inc_sizing
         self.battery_eta=0.9
         
-        self.hydrogen_max_power=1.1
+        self.hydrogen_max_power=1.1*inc_sizing
         self.hydrogen_eta=.65
         
     def reset(self, mode):
