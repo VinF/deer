@@ -371,10 +371,10 @@ class FindBestController(Controller):
         print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
         print "Test score of this neural net: {}".format(self._testScores[bestIndex])
 
-        plt.plot(self._epochNumbers, self._validationScores-110, label="VS", color='b') #determinist best score (for MG) is 110
-        plt.plot(self._epochNumbers, self._testScores-76, label="TS", color='r') #determinist best score (for MG) is 76
+        plt.plot(self._epochNumbers, np.array(self._validationScores)-124.9, label="VS", color='b') #determinist best score (for MG) is 110
+        plt.plot(self._epochNumbers, np.array(self._testScores)-75.2, label="TS", color='r') #determinist best score (for MG) is 76
         plt.legend()
-        plt.xlabel("n_epochs")
+        plt.xlabel("Number of epochs")
         plt.ylabel("Score")
 
         
