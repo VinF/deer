@@ -20,9 +20,9 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 360*24
+    STEPS_PER_EPOCH = 365*24-1
     EPOCHS = 200
-    STEPS_PER_TEST = 360*24
+    STEPS_PER_TEST = 365*24-1
     PERIOD_BTW_SUMMARY_PERFS = -1 #set to -1 for avoiding call to env.summarizePerformance
     
     # ----------------------
