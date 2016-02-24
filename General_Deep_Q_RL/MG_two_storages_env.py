@@ -111,20 +111,20 @@ class MyEnv(Environment):
         if (self._dist_equinox==1 and self._pred==1):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.]],
+                        [[0. ,0.] for i in range(12)],
                         0.,
                         [0.,0.]
                     ]
         elif (self._dist_equinox==1 and self._pred==0):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],],
+                        [[0. ,0.] for i in range(12)],
                         0.
                     ]
         else: #elif (self._dist_equinox==0, self._pred==0):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],]
+                        [[0. ,0.] for i in range(12)],
                     ]
         
     def act(self, action, mode):
