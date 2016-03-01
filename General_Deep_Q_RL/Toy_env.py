@@ -50,7 +50,7 @@ class MyEnv(Environment):
         self._lastPonctualObservation = [self.prices[0], 0]
 
         self._counter = 1
-        return [[0, 0, 0, 0, 0], 0]
+        return [[0, 0, 0, 0], 0]
         
         
     def act(self, action, mode):
