@@ -33,7 +33,9 @@ class Controller(object):
     def setActive(self, active):
         """Activate or deactivate this controller.
         
-        A controller should not react to any signal it receives as long as it is deactivated.
+        A controller should not react to any signal it receives as long as it is deactivated. For instance, if a 
+        controller maintains a counter on how many episodes it has seen, this counter should not be updated when 
+        this controller is disabled.
         """
 
         self._active = active
@@ -109,7 +111,7 @@ class LearningRateController(Controller):
             learningRateDecay [number] - The factor by which the previous learning rate is multiplied every
                 [periodicity] epochs.
             periodicity [int] - How many epochs are necessary before an update of the learning rate occurs
-    """
+        """
 
         super(self.__class__, self).__init__()
         self._epochCount = 0
@@ -151,7 +153,7 @@ class EpsilonController(Controller):
             periodicity [int] - How many [evaluateOn] are necessary before an update of epsilon occurs
             resetEvery [str] - After what type of event epsilon should be reset to its initial value. Possible values: 
                 'none', 'episode', 'epoch'.
-    """
+        """
 
         super(self.__class__, self).__init__()
         self._count = 0
@@ -227,7 +229,7 @@ class DiscountFactorController(Controller):
                 epochs.
             discountFactorMax [number] - Maximum reachable discount
             periodicity [int] - How many epochs are necessary before an update of the discount occurs
-    """
+        """
 
         super(self.__class__, self).__init__()
         self._epochCount = 0
@@ -260,10 +262,30 @@ class DiscountFactorController(Controller):
 
 
 class InterleavedTestEpochController(Controller):
-    """A controller that interleaves a test epoch between training epochs of the agent.
+    """A controller that interleaves a test epoch between training epochs of the agent."""
 
-    """
     def __init__(self, id, epochLength, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=1):
+        """Initializer.
+
+        Parameters:
+            id [int] - The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
+                Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
+                will be given to your environment's reset() method when starting the test epoch).
+            epochLength [number] - The total number of transitions that will occur during a test epoch. This means that
+                this epoch could feature several episodes if a terminal transition is reached before this budget is 
+                exhausted.
+            controllersToDisable [list of int] - A list of controllers to disable when this controller wants to start a
+                test epoch. These same controllers will be reactivated after this controller has finished dealing with
+                its test epoch.
+            periodicity [int] - How many epochs are necessary before a test epoch is ran (these controller's epochs
+                included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
+            showScore [bool] - Whether to print an informative message on stdout at the end of each test epoch, about 
+                the total reward obtained in the course of the test epoch.
+            summarizeEvery [int] - How many of this controller's test epochs are necessary before the attached agent's 
+                summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
+                occur just after the first test epoch.
+        """
+
         super(self.__class__, self).__init__()
         self._epochCount = 0
         self._id = id
@@ -305,13 +327,21 @@ class InterleavedTestEpochController(Controller):
 
 
 class TrainerController(Controller):
-    """A controller that make the agent train on its current database periodically.
+    """A controller that make the agent train on its current database periodically."""
 
-    Arguments:
-        evaluateOn - After what type of event the agent shoud be trained periodically ('action', 'episode', 'epoch').
-        periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
-    """
     def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
+        """Initializer.
+
+        Parameters:
+            evaluateOn [str] - After what type of event the agent shoud be trained periodically. Possible values: 
+                'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
+            periodicity [int] - How many [evaluateOn] are necessary before a training occurs
+            _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
+                training if [evaluateOn] is 'episode') about the average bellman residual of this episode
+            showEpisodeAvgVValue [bool] - Whether to show an informative message after each episode end (and after a 
+                training if [evaluateOn] is 'episode') about the average V value of this episode
+        """
+
         super(self.__class__, self).__init__()
         self._count = 0
         self._periodicity = periodicity
@@ -355,19 +385,28 @@ class TrainerController(Controller):
             self._update(agent)
 
     def _update(self, agent):
-        self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.train()
+        self._count += 1
             
 
 class VerboseController(Controller):
-    """A controller that make the agent train on its current database periodically.
-
-    Arguments:
-        evaluateOn - After what type of event the agent shoud be trained periodically ('action', 'episode', 'epoch').
-        periodicity - How many steps of "evaluateOn" are necessary before a training occurs.
+    """A controller that print various agent information periodically:
+    - Count of passed [evaluateOn]
+    - Agent current learning rate
+    - Agent current discount factor
+    - Agent current epsilon
     """
+
     def __init__(self, evaluateOn='epoch', periodicity=1):
+        """Initializer.
+
+        Parameters:
+            evaluateOn [str] - After what type of event the printing should occur periodically. Possible values: 
+                'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
+            periodicity [int] - How many [evaluateOn] are necessary before a printing occurs
+        """
+
         super(self.__class__, self).__init__()
         self._count = 0
         self._periodicity = periodicity
@@ -415,6 +454,24 @@ class VerboseController(Controller):
         self._count += 1
 
 class FindBestController(Controller):
+    """A controller that finds the neural net performing at best in validation mode (i.e. for mode = [validationID]) 
+    and computes the associated generalization score in test mode (i.e. for mode = [testID]). This controller should
+    never be disabled by InterleavedTestControllers as it is meant to work in conjunction with them.
+    
+    At each epoch end where this controller is active, it will look at the current mode the agent is in. 
+    
+    If the mode matches [validationID], it will take the total reward of the agent on this epoch and compare it to its 
+    current best score. If it is better, it will ask the agent to dump its current nnet on disk and update its current 
+    best score. In all cases, it saves the validation score obtained in a vector.
+
+    If the mode matches [testID], it saves the test (= generalization) score in another vector.
+
+    At the end of the experiment (OnEnd), if active, this controller will print information about the epoch at which 
+    the best neural net was found together with its generalization score. Finally it will plot all validation and 
+    generalization scores it memorized and save it as a PDF file, plus will dump a dictionnary containing the data 
+    of the plots ({n: number of epochs elapsed, ts: test scores, vs: validation scores}).
+    """
+
     def __init__(self, validationID, testID, unique_fname="nnet", showPlot=False):
         super(self.__class__, self).__init__()
 
