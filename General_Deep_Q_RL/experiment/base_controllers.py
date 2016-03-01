@@ -3,6 +3,7 @@ the training and the various parameters of your agents.
 
 Author: Vincent Francois-Lavet, David Taralla
 """
+
 from matplotlib import pyplot as plt
 import numpy as np
 import joblib
@@ -255,7 +256,7 @@ class TrainerController(Controller):
         if self._onEpisode:
             self._update(agent)
 
-        if self._showAvgBellmanResidual: print "Episode average bellman residual): {}".format(agent.avgBellmanResidual())
+        if self._showAvgBellmanResidual: print "Episode average bellman residual: {}".format(agent.avgBellmanResidual())
         if self._showEpisodeAvgVValue: print "Episode average V value: {}".format(agent.avgEpisodeVValue())
 
     def OnEpochEnd(self, agent):
