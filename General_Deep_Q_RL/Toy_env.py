@@ -30,8 +30,8 @@ class MyEnv(Environment):
             price += self._randomState.uniform(0, 3)
             self._priceSignal.extend(price.tolist())
        
-        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)/2]
-        self._priceSignalValid = self._priceSignal[len(self._priceSignal)/2:]
+        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)//2]
+        self._priceSignalValid = self._priceSignal[len(self._priceSignal)//2:]
         self._prices = None
         self._counter = 1
                 
