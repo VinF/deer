@@ -30,8 +30,8 @@ class MyEnv(Environment):
             price += self._randomState.uniform(0, 3)
             self._priceSignal.extend(price.tolist())
        
-        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)/2]
-        self._priceSignalValid = self._priceSignal[len(self._priceSignal)/2:]
+        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)//2]
+        self._priceSignalValid = self._priceSignal[len(self._priceSignal)//2:]
         self._prices = None
         self._counter = 1
                 
@@ -50,7 +50,7 @@ class MyEnv(Environment):
         self._lastPonctualObservation = [self.prices[0], 0]
 
         self._counter = 1
-        return [[0, 0, 0, 0, 0], 0]
+        return [[0, 0, 0, 0, 0, 0], 0]
         
         
     def act(self, action, mode):
@@ -85,7 +85,7 @@ class MyEnv(Environment):
             test_data_set
         """
     
-        print "Summary Perf"
+        print("Summary Perf")
         
         observations = test_data_set.observations()
         prices = observations[0]
@@ -145,7 +145,7 @@ def main():
     myenv.act(0, False)
     myenv.act(1, False)
 
-    print myenv._state
+    print(myenv._state)
     
 if __name__ == "__main__":
     main()

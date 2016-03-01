@@ -18,58 +18,62 @@ class MyEnv(Environment):
         self._dist_equinox=0
         self._pred=0
         
+        inc_sizing=1.
+        
         self._nActions = 3 
 
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
             self._batchDimensions = [(1,), (12,2), (1,),(1,2)]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.],0.]
             self._batchDimensions = [(1,), (12,2), (1,)]
-        elif (self._dist_equinox==0, self._pred==0):
+        elif (self._dist_equinox==0 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.]]
             self._batchDimensions = [(1,), (12,2)]
 
         self._rng = rng
 
         # Get consumption profile in [0,1]
-        self.consumption_norm=np.load("data/example_determinist_cons_train.npy")[0:365*24]
-        # Scale consumption profile in [0,1.7kW]
-        self.consumption=self.consumption_norm*1.7
+        self.consumption_train_norm=np.load("data/example_nondeterminist_cons_train.npy")[0:1*365*24]
+        self.consumption_valid_norm=np.load("data/example_nondeterminist_cons_train.npy")[365*24:2*365*24]
+        self.consumption_test_norm=np.load("data/example_nondeterminist_cons_test.npy")[0:1*365*24]
+        # Scale consumption profile in [0,2.1kW] --> average max per day = 1.7kW, average per day is 18.3kWh
+        self.consumption_train=self.consumption_train_norm*2.1
+        self.consumption_valid=self.consumption_valid_norm*2.1
+        self.consumption_test=self.consumption_test_norm*2.1
 
-        self.min_consumption=min(self.consumption)
-        self.max_consumption=max(self.consumption)
-        print "Sample of the consumption profile (kW): " + str(self.consumption[0:24])
-        print "Min of the consumption profile (kW): " + str(self.min_consumption)
-        print "Max of the consumption profile (kW): " + str(self.max_consumption)
-        print "Average consumption per day (kWh): " + str(np.sum(self.consumption)/self.consumption.shape[0]*24)
+        self.min_consumption=min(self.consumption_train)
+        self.max_consumption=max(self.consumption_train)
+        print("Sample of the consumption profile (kW): {}".format(self.consumption_train[0:24]))
+        print("Min of the consumption profile (kW): {}".format(self.min_consumption))
+        print("Max of the consumption profile (kW): {}".format(self.max_consumption))
+        print("Average consumption per day train (kWh): {}".format(np.sum(self.consumption_train)/self.consumption_train.shape[0]*24))
+        print("Average consumption per day valid (kWh): {}".format(np.sum(self.consumption_valid)/self.consumption_valid.shape[0]*24))
+        print("Average consumption per day test (kWh): {}".format(np.sum(self.consumption_test)/self.consumption_test.shape[0]*24))
 
         # Get production profile in W/Wp in [0,1]
         self.production_train_norm=np.load("data/BelgiumPV_prod_train.npy")[0:1*365*24]
-        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24]
-        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24]
+        self.production_valid_norm=np.load("data/BelgiumPV_prod_train.npy")[365*24:2*365*24] #determinist best is 110, "nondeterminist" is 124.9
+        self.production_test_norm=np.load("data/BelgiumPV_prod_test.npy")[0:1*365*24] #determinist best is 76, "nondeterminist" is 75.2
         # Scale production profile : 12KWp (60m^2) et en kWh
-        self.production_train=self.production_train_norm*12000./1000.
-        self.production_valid=self.production_valid_norm*12000./1000.
-        self.production_test=self.production_test_norm*12000/1000
+        self.production_train=self.production_train_norm*12000./1000.*inc_sizing
+        self.production_valid=self.production_valid_norm*12000./1000.*inc_sizing
+        self.production_test=self.production_test_norm*12000/1000*inc_sizing
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)
-        print "Sample of the production profile (kW): " + str(self.production_train[0:24])
-        print "Min of the production profile (kW): " + str(self.min_production)
-        print "Max of the production profile (kW): " + str(self.max_production)
-        print "Average production per day train (kWh): " + str(np.sum(self.production_train)/self.production_train.shape[0]*24)
-        print "Average production per day valid (kWh): " + str(np.sum(self.production_valid)/self.production_valid.shape[0]*24)
-        print "Average production per day test (kWh): " + str(np.sum(self.production_test)/self.production_test.shape[0]*24)
+        print("Sample of the production profile (kW): {}".format(self.production_train[0:24]))
+        print("Min of the production profile (kW): {}".format(self.min_production))
+        print("Max of the production profile (kW): {}".format(self.max_production))
+        print("Average production per day train (kWh): {}".format(np.sum(self.production_train)/self.production_train.shape[0]*24))
+        print("Average production per day valid (kWh): {}".format(np.sum(self.production_valid)/self.production_valid.shape[0]*24))
+        print("Average production per day test (kWh): {}".format(np.sum(self.production_test)/self.production_test.shape[0]*24))
 
-        
-        print "should be the same as"
-        print self.production_valid[0:100]
-
-        self.battery_size=15.
+        self.battery_size=15.*inc_sizing
         self.battery_eta=0.9
         
-        self.hydrogen_max_power=1.1
+        self.hydrogen_max_power=1.1*inc_sizing
         self.hydrogen_eta=.65
         
     def reset(self, mode):
@@ -78,11 +82,11 @@ class MyEnv(Environment):
            current observation (list of k elements)
         """
         ### Test 6
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [1. ,[0.,0.],0., [0.,0.]]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.],0.]
-        elif (self._dist_equinox==0, self._pred==0):
+        elif (self._dist_equinox==0 and self._pred==0):
             self._lastPonctualObservation = [1. ,[0.,0.]]
 
         self.counter = 1        
@@ -91,30 +95,36 @@ class MyEnv(Environment):
         if mode == -1:
             self.production_norm=self.production_train_norm
             self.production=self.production_train
+            self.consumption_norm=self.consumption_train_norm
+            self.consumption=self.consumption_train
         elif mode == 0:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
+            self.consumption_norm=self.consumption_valid_norm
+            self.consumption=self.consumption_valid
         else:
             self.production_norm=self.production_test_norm
             self.production=self.production_test
+            self.consumption_norm=self.consumption_test_norm
+            self.consumption=self.consumption_test
             
-        if (self._dist_equinox==1, self._pred==1):
+        if (self._dist_equinox==1 and self._pred==1):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.]],
+                        [[0. ,0.] for i in range(12)],
                         0.,
                         [0.,0.]
                     ]
-        elif (self._dist_equinox==1, self._pred==0):
+        elif (self._dist_equinox==1 and self._pred==0):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],],
+                        [[0. ,0.] for i in range(12)],
                         0.
                     ]
         else: #elif (self._dist_equinox==0, self._pred==0):
             return [
                         0., 
-                        [[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],[0.,0.],]
+                        [[0. ,0.] for i in range(12)],
                     ]
         
     def act(self, action, mode):
@@ -174,7 +184,7 @@ class MyEnv(Environment):
         i=1
         if(self._dist_equinox==1):
             i=i+1
-            self._lastPonctualObservation[i]=abs(self.counter/24-(171))/(365.-171.) #171 days between 1jan and 21 Jun
+            self._lastPonctualObservation[i]=abs(self.counter/24-(365./2))/(365./2) #171 days between 1jan and 21 Jun
         if (self._pred==1):
             i=i+1
             self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
@@ -197,31 +207,29 @@ class MyEnv(Environment):
         return copy.deepcopy(self._lastPonctualObservation)     
 
     def summarizePerformance(self, mode, test_data_set):
-        print "summary perf"
-        print "self.hydrogen_storage: "+str(self.hydrogen_storage)
-        
+        print("summary perf")
+        print("self.hydrogen_storage: {}".format(self.hydrogen_storage))
+        i=0#180*24
         observations = test_data_set.observations()
         actions = test_data_set.actions()
-        print "observations, actions"
-        print observations[0:100], actions[0:100]
+        print("observations, actions")
+        print(observations[0+i:100+i], actions[0+i:100+i])
 
-        battery_level=observations[0][0:100]
-        consumption=observations[1][:,0][0:100]
-        production=observations[1][:,1][0:100]
-        actions=actions[0:100]
+        battery_level=observations[0][0+i:100+i]
+        consumption=observations[1][:,0][0+i:100+i]
+        production=observations[1][:,1][0+i:100+i]
+        actions=actions[0+i:100+i]
         
         battery_level=np.array(battery_level)*self.battery_size
         consumption=np.array(consumption)*(self.max_consumption-self.min_consumption)+self.min_consumption
         production=np.array(production)*(self.max_production-self.min_production)+self.min_production
 
         steps=np.arange(100)
-        print steps
-        print "battery_level"
-        print battery_level[0:100]
-        print consumption[0:100]
-        print production[0:100]
-        print "should be the same as"
-        print self.production_valid[0:100]
+        print(steps)
+        print("battery_level")
+        print(battery_level[0+i:100+i])
+        print(consumption[0+i:100+i])
+        print(production[0+i:100+i])
         
         steps_long=np.arange(1000)/10.
         
@@ -258,8 +266,8 @@ class MyEnv(Environment):
         par3.set_ylabel("H Actions")
         
         p1, = host.plot(steps, battery_level, marker='o', lw=1, c = 'b', alpha=0.8, ls='-', label = 'Battery level')
-        print steps_long.shape
-        print np.repeat(consumption,10).shape
+        print(steps_long.shape)
+        print(np.repeat(consumption,10).shape)
         p2, = par1.plot(steps_long-0.9, np.repeat(consumption,10), lw=3, c = 'r', alpha=0.5, ls='-', label = 'Consumption')
         p3, = par2.plot(steps_long-0.9, np.repeat(production,10), lw=3, c = 'g', alpha=0.5, ls='-', label = 'Production')
         p4, = par3.plot(steps_long, np.repeat(actions,10), lw=3, c = 'c', alpha=0.5, ls='-', label = 'H Actions')
@@ -268,7 +276,7 @@ class MyEnv(Environment):
         par2.set_ylim(0, 10.09)
         par3.set_ylim(-0.09, 2.09)
         
-        host.legend(loc=2)#loc=9)
+        host.legend(loc=1)#loc=9)
         
         host.axis["left"].label.set_color(p1.get_color())
         par1.axis["right"].label.set_color(p2.get_color())
@@ -288,31 +296,31 @@ def main():
     myenv.reset(False)
     
     
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(0, False)
-    print myenv.observe()
-    print myenv.act(1, False)
-    print myenv.observe()
-    print myenv.act(1, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(2, False)
-    print myenv.observe()
-    print myenv.act(1, False)
-    print myenv.observe()
-    print myenv.act(1, False)
-    print myenv.observe()
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(0, False))
+    print(myenv.observe())
+    print(myenv.act(1, False))
+    print(myenv.observe())
+    print(myenv.act(1, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(2, False))
+    print(myenv.observe())
+    print(myenv.act(1, False))
+    print(myenv.observe())
+    print(myenv.act(1, False))
+    print(myenv.observe())
     
     
 if __name__ == "__main__":

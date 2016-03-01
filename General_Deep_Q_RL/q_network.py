@@ -76,8 +76,8 @@ class MyQNetwork(QNetwork):
             self.states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
             self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
         
-        print "Number of observations per state: {}".format(len(self.states_shared))
-        print "For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions)
+        print("Number of observations per state: {}".format(len(self.states_shared)))
+        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions))
                 
         rewards = T.col('rewards')
         actions = T.icol('actions')
@@ -87,7 +87,7 @@ class MyQNetwork(QNetwork):
         
         self.l_out, self.l_outs_conv, shape_after_conv = self._build(network_type, states)
         
-        print "Number of neurons after spatial and temporal convolution layers: "+str(shape_after_conv)
+        print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
         if self.freeze_interval > 0:
             self.next_l_out, self.next_l_outs_conv, shape_after_conv = self._build(network_type, next_states)

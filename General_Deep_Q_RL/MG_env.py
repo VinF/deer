@@ -11,16 +11,16 @@ class Env(object):
             
         """
         self.market_price, self.min_market_price, self.max_market_price=get_market_price()
-        print "self.market_price: "+str(self.market_price[0:100])
-        print self.min_market_price, self.max_market_price, self.market_price.shape
+        print("self.market_price: "+str(self.market_price[0:100]))
+        print(self.min_market_price, self.max_market_price, self.market_price.shape)
         
         self.consumption, self.min_consumption, self.max_consumption=get_consumption(365*24)
-        print "self.consumption: " + str(self.consumption[0:100])
-        print self.min_consumption, self.max_consumption, self.consumption.shape
+        print("self.consumption: " + str(self.consumption[0:100]))
+        print(self.min_consumption, self.max_consumption, self.consumption.shape)
 
         self.production, self.min_production, self.max_production=get_production(365*24)
-        print "self.production: " + str(self.production[0:100])
-        print self.min_production, self.max_production, self.production.shape
+        print("self.production: " + str(self.production[0:100]))
+        print(self.min_production, self.max_production, self.production.shape)
 
 
         self.rng = rng
@@ -254,8 +254,8 @@ class Env(object):
             true_energy_avail_from_MG=true_energy_avail_from_battery/self.battery_eta-true_cons
         
         reward=true_market_price*true_energy_avail_from_MG
-        print "reward=true_market_price*true_energy_avail_from_MG"
-        print str(reward)+"="+str(true_market_price)+"*"+str(true_energy_avail_from_MG)
+        print("reward = true_market_price * true_energy_avail_from_MG")
+        print("{} = {} * {}".format(reward, true_market_price, true_energy_avail_from_MG))
             
 #        print "state b before:"+str(self.observation[0])
         self.observation[0]=self.observation[0]-true_energy_avail_from_battery/self.battery_size
@@ -286,8 +286,8 @@ class Env(object):
         
         reward_scaled=(reward-self.reward_mean_running)/self.reward_std_running
         #print "reward=self.market_price[self.counter-1] * true_energy_avail_from_MG"
-        print "reward_scaled=(reward-self.reward_mean_running)/self.reward_std_running"
-        print str(reward_scaled)+"=("+str(reward)+"-"+str(self.reward_mean_running)+")/"+str(self.reward_std_running)
+        print("reward_scaled=(reward-self.reward_mean_running)/self.reward_std_running")
+        print("{} = ({} - {}) / {}".format(reward_scaled, reward, self.reward_mean_running, self.reward_std_running))
 
         
         if (testing):
@@ -301,11 +301,11 @@ class Env(object):
 # Spain
 def read_excell_solar(i,j):
 	book = xlrd.open_workbook("data/SolarGIS-15min-PSA-ES.xls")#("spotmarket_data_2011-2013.xls")  #("spotmarket_data_2009-2013.xls") #("spotmarket_data_2011-2013.xls")
-	print "The number of worksheets is", book.nsheets
-	print "Worksheet name(s):", book.sheet_names()
+	print("The number of worksheets is", book.nsheets)
+	print("Worksheet name(s):", book.sheet_names())
 	sh = book.sheet_by_index(0)
-	print sh.name, sh.nrows, sh.ncols
-	print "Cell C80 is", sh.cell_value(rowx=79, colx=2)
+	print(sh.name, sh.nrows, sh.ncols)
+	print("Cell C80 is", sh.cell_value(rowx=79, colx=2))
 	
 	row=np.zeros(i/4,np.float32);
 	
@@ -368,7 +368,7 @@ def get_consumption(timesteps):
 
 def get_market_price():
     market_price=read_excell(3*365,24).flatten()
-    print market_price.shape
+    print(market_price.shape)
     
 
     price_train=market_price[0:24*365]
@@ -379,18 +379,18 @@ def get_market_price():
     price_train[indices_max]=price_train[indices_max[-1]]    
     price_train[indices_min]=price_train[indices_min[0]]    
     
-    print price_train[0:10]
+    print(price_train[0:10])
     min_price=price_train[indices_min[0]]
     max_price=price_train[indices_max[-1]]
     price_train= (price_train-price_train[indices_min[0]]) / (price_train[indices_max[-1]]-price_train[indices_min[0]]) #* 2 - 1
-    print price_train[0:10]
+    print(price_train[0:10])
     
     price_valid=market_price[24*365+1:2*24*365]
     price_test=market_price[2*24*365+1:3*24*365]
     
-    print np.sum(price_train)/365/24 ## euro/MWh
-    print np.sum(price_valid)/365/24 ## euro/MWh
-    print np.sum(price_test)/365/24 ## euro/MWh
+    print(np.sum(price_train)/365/24) ## euro/MWh
+    print(np.sum(price_valid)/365/24) ## euro/MWh
+    print(np.sum(price_test)/365/24) ## euro/MWh
     
     return price_train, min_price, max_price
 
@@ -414,26 +414,26 @@ def main():
     rng = np.random.RandomState(123456)
     myenv=Env(rng)
 
-    print "market price"
+    print("market price")
 
     aa, minaa,maxaa=get_market_price()
-    print aa[0:100], minaa,maxaa
+    print(aa[0:100], minaa,maxaa)
     
 
 
-    print "consumption"
+    print("consumption")
     aa, minaa,maxaa=get_consumption(100)
-    print aa[0:100], minaa,maxaa
+    print(aa[0:100], minaa,maxaa)
     
-    print "production"
+    print("production")
     aa, minaa,maxaa=get_production(100)
-    print aa[0:100], minaa,maxaa
+    print(aa[0:100], minaa,maxaa)
     
     
-    print myenv.act(1, False)
-    print myenv.act(1, False)
-    print myenv.act(0, False)
-    print myenv.act(0, False)
+    print(myenv.act(1, False))
+    print(myenv.act(1, False))
+    print(myenv.act(0, False))
+    print(myenv.act(0, False))
     
 if __name__ == "__main__":
     main()

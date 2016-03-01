@@ -8,6 +8,9 @@ an episode ends.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 import joblib
@@ -106,7 +109,7 @@ class LearningRateController(Controller):
             learningRateDecay [number] - The factor by which the previous learning rate is multiplied every
                 [periodicity] epochs.
             periodicity [int] - How many epochs are necessary before an update of the learning rate occurs
-        """
+    """
 
         super(self.__class__, self).__init__()
         self._epochCount = 0
@@ -148,7 +151,7 @@ class EpsilonController(Controller):
             periodicity [int] - How many [evaluateOn] are necessary before an update of epsilon occurs
             resetEvery [str] - After what type of event epsilon should be reset to its initial value. Possible values: 
                 'none', 'episode', 'epoch'.
-        """
+    """
 
         super(self.__class__, self).__init__()
         self._count = 0
@@ -224,14 +227,14 @@ class DiscountFactorController(Controller):
                 epochs.
             discountFactorMax [number] - Maximum reachable discount
             periodicity [int] - How many epochs are necessary before an update of the discount occurs
-        """
+    """
 
         super(self.__class__, self).__init__()
         self._epochCount = 0
         self._initDF = initialDiscountFactor
         self._df = initialDiscountFactor
         self._dfGrowth = discountFactorGrowth
-        self._dfMax = discountFactorGrowth
+        self._dfMax = discountFactorMax
         self._periodicity = periodicity
 
     def OnStart(self, agent):
@@ -293,7 +296,7 @@ class InterleavedTestEpochController(Controller):
             agent.setControllersActive(self._toDisable, False)
         elif mod == 1:
             if self._showScore:
-                print "Testing score (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest())
+                print("Testing score (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
             if self._summaryPeriodicity > 0 and self._summaryCounter % self._summaryPeriodicity == 0:
                 agent.summarizeTestPerformance()
             self._summaryCounter += 1
@@ -334,8 +337,8 @@ class TrainerController(Controller):
         if self._onEpisode:
             self._update(agent)
 
-        if self._showAvgBellmanResidual: print "Episode average bellman residual): {}".format(agent.avgBellmanResidual())
-        if self._showEpisodeAvgVValue: print "Episode average V value: {}".format(agent.avgEpisodeVValue())
+        if self._showAvgBellmanResidual: print("Episode average bellman residual: {}".format(agent.avgBellmanResidual()))
+        if self._showEpisodeAvgVValue: print("Episode average V value: {}".format(agent.avgEpisodeVValue()))
 
     def OnEpochEnd(self, agent):
         if (self._active == False):
@@ -405,10 +408,10 @@ class VerboseController(Controller):
 
     def _print(self, agent):
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
-            print "{} {}:".format(self._string, self._count + 1)
-            print "Learning rate: {}".format(agent.learningRate())
-            print "Discount factor: {}".format(agent.discountFactor())
-            print "Epsilon: {}".format(agent.epsilon())
+            print("{} {}:".format(self._string, self._count + 1))
+            print("Learning rate: {}".format(agent.learningRate()))
+            print("Discount factor: {}".format(agent.discountFactor()))
+            print("Epsilon: {}".format(agent.epsilon()))
         self._count += 1
 
 class FindBestController(Controller):
@@ -447,13 +450,13 @@ class FindBestController(Controller):
             return
 
         bestIndex = np.argmax(self._validationScores)
-        print "Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex])
-        print "Test score of this neural net: {}".format(self._testScores[bestIndex])
+        print("Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex]))
+        print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
 
         plt.plot(self._epochNumbers, self._validationScores, label="VS", color='b')
         plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
         plt.legend()
-        plt.xlabel("n_epochs")
+        plt.xlabel("Number of epochs")
         plt.ylabel("Score")
 
         

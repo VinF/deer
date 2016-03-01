@@ -20,10 +20,10 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 360*24
+    STEPS_PER_EPOCH = 365*24-1
     EPOCHS = 200
-    STEPS_PER_TEST = 360*24
-    PERIOD_BTW_SUMMARY_PERFS = 5
+    STEPS_PER_TEST = 365*24-1
+    PERIOD_BTW_SUMMARY_PERFS = -1 #set to -1 for avoiding call to env.summarizePerformance
     
     # ----------------------
     # Environment Parameters
@@ -105,6 +105,8 @@ if __name__ == "__main__":
     VALIDATION_MODE = 0
     TEST_MODE = 1
     fname = hash(vars(parameters), hash_name="sha1")
+    print("The parameters hash is: {}".format(fname))
+    print("The parameters are: {}".format(parameters))
     agent.attach(bc.VerboseController())
     agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
@@ -112,7 +114,7 @@ if __name__ == "__main__":
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
     agent.attach(bc.FindBestController(VALIDATION_MODE, TEST_MODE, fname))
     agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
-    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=-1))
+    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=parameters.period_btw_summary_perfs))
     
     # Run the experiment
     try:

@@ -8,7 +8,6 @@ Contributor: David Taralla
 
 from theano import config
 import os
-import cPickle
 import time
 import logging
 import numpy as np
@@ -164,7 +163,7 @@ class NeuralAgent(object):
         batchDims = self._environment.batchDimensions()
         for i in range(len(batchDims)):
             if batchDims[i][0] > 1:
-                self._state[i][1:] = initState[i]
+                self._state[i][1:] = initState[i][1:]
         
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
