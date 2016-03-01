@@ -85,7 +85,7 @@ class MyEnv(Environment):
             test_data_set
         """
     
-        print "Summary Perf"
+        print("Summary Perf")
         
         observations = test_data_set.observations()
         prices = observations[0]
@@ -145,7 +145,7 @@ def main():
     myenv.act(0, False)
     myenv.act(1, False)
 
-    print myenv._state
+    print(myenv._state)
     
 if __name__ == "__main__":
     main()
