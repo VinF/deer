@@ -7,7 +7,6 @@ environment, agent and experiment.
 import os
 import argparse
 import logging
-import cPickle
 import numpy as np
 
 from agent import NeuralAgent

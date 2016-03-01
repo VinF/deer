@@ -8,7 +8,6 @@ Contributor: David Taralla
 
 from theano import config
 import os
-import cPickle
 import time
 import logging
 import numpy as np
