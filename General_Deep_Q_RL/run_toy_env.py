@@ -11,10 +11,10 @@ class Defaults:
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 1000
-    EPOCHS = 1000
+    EPOCHS = 50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 10
-    
+
     # ----------------------
     # Environment Parameters
     # ----------------------
@@ -31,7 +31,7 @@ class Defaults:
     DISCOUNT = 0.9
     DISCOUNT_INC = 1.
     DISCOUNT_MAX = 0.99
-    
+
     RMS_DECAY = 0.9#.99 # (Rho)
     RMS_EPSILON = 0.0001#.01
     MOMENTUM = 0 # Note that the "momentum" value mentioned in the Nature
