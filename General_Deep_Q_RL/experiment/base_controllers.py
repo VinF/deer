@@ -3,7 +3,9 @@ the training and the various parameters of your agents.
 
 Author: Vincent Francois-Lavet, David Taralla
 """
-
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 import joblib
