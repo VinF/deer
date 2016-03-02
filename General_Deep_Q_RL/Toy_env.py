@@ -14,8 +14,8 @@ class MyEnv(Environment):
     - Action 0 corresponds to selling if the agent possesses one unit or idle if the agent possesses zero unit.
     - Action 1 corresponds to buying if the agent possesses zero unit or idle if the agent already possesses one unit.
     The state of the agent is made up of an history of two punctual observations:
-    - the price signal
-    - either the agent possesses the good or not (1 or 0)
+    - The price signal
+    - Either the agent possesses the good or not (1 or 0)
     The price signal is build following the same rules for the training and the validation environment. That allows the agent to learn a strategy that exploits this successfully.
     """
     
