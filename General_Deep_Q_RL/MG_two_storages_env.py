@@ -127,7 +127,7 @@ class MyEnv(Environment):
                         [[0. ,0.] for i in range(12)],
                     ]
         
-    def act(self, action, mode):
+    def act(self, action):
         """
         Perform one time step on the environment
         """
@@ -200,13 +200,10 @@ class MyEnv(Environment):
     def nActions(self):
         return self._nActions
 
-    def inTerminalState(self):
-        return False
-
     def observe(self):
         return copy.deepcopy(self._lastPonctualObservation)     
 
-    def summarizePerformance(self, mode, test_data_set):
+    def summarizePerformance(self, test_data_set):
         print("summary perf")
         print("self.hydrogen_storage: {}".format(self.hydrogen_storage))
         i=0#180*24

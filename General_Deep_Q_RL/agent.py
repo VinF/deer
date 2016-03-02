@@ -112,7 +112,7 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._mode, self._tmpDataSet)
+        self._environment.summarizePerformance(self._tmpDataSet)
 
     def train(self):
         if self._dataSet.nElems() < self._replayMemoryStartSize:
@@ -212,7 +212,7 @@ class NeuralAgent(object):
         action, V = self._chooseAction()        
         reward = 0
         for _ in range(self._frameSkip):
-            reward += self._environment.act(action, self._mode)
+            reward += self._environment.act(action)
             if self._environment.inTerminalState():
                 break
 

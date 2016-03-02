@@ -53,7 +53,7 @@ class MyEnv(Environment):
         return [[0, 0, 0, 0, 0, 0], 0]
         
         
-    def act(self, action, mode):
+    def act(self, action):
         """
         Performs one time step on the environment
         Arguments:
@@ -123,9 +123,6 @@ class MyEnv(Environment):
 
     def nActions(self):
         return self._nActions
-
-    def inTerminalState(self):
-        return False
 
     def observe(self):
         return np.array(self._lastPonctualObservation)
