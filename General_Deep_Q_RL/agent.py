@@ -283,28 +283,29 @@ class AgentWarning(RuntimeWarning):
     """
 
 class DataSet(object):
-    """A replay memory consisting of circular buffers for observations, actions, and rewards.
+    """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    """
-    def __init__(self, history_sizes, randomState=None, maxSize=1000):
-        """Construct a DataSet.
+    def __init__(self, inputDims, randomState=None, maxSize=1000):
+        """Initializer.
 
-        Arguments:
-            history_sizes - For each input i, history_sizes[i] is the size of the history for this input.
+        Parameters:
+            inputDims - For each subject i, inputDims[i] is a tuple where the first value is the memory size for this 
+                subject and the rest describes the shape of each single observation on this subject (number, vector or 
+                matrix). See base_classes.Environment.batchDimensions() documentation for more info about this format.
             randomState - Numpy random number generator. If None, a new one is created with default numpy seed.
-            maxSize - The maximum size of this buffer.
-
+            maxSize - The replay memory maximum size.
         """
-        self._batchDimensions = history_sizes
-        self._maxHistorySize = np.max([history_sizes[i][0] for i in range (len(history_sizes))])
+
+        self._batchDimensions = inputDims
+        self._maxHistorySize = np.max([inputDims[i][0] for i in range (len(inputDims))])
         self._size = maxSize
         self._actions      = CircularBuffer(maxSize, dtype="int32")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
-        self._observations = np.zeros(len(history_sizes), dtype='object')
+        self._observations = np.zeros(len(inputDims), dtype='object')
         # Initialize the observations container if necessary
-        for i in range(len(history_sizes)):
-            self._observations[i] = CircularBuffer(maxSize, elemShape=history_sizes[i][1:])
+        for i in range(len(inputDims)):
+            self._observations[i] = CircularBuffer(maxSize, elemShape=inputDims[i][1:])
 
         if (randomState == None):
             self._randomState = np.random.RandomState()
@@ -314,15 +315,30 @@ class DataSet(object):
         self._nElems  = 0
 
     def actions(self):
+        """Get all actions currently in the replay memory, ordered by time where they were taken."""
+
         return self._actions.getSlice(0)
 
     def rewards(self):
+        """Get all rewards currently in the replay memory, ordered by time where they were received."""
+
         return self._rewards.getSlice(0)
 
     def terminals(self):
+        """Get all terminals currently in the replay memory, ordered by time where they were observed.
+        
+        terminals[i] is True if actions()[i] lead to a terminal state (i.e. corresponded to a terminal 
+        transition), and False otherwise.
+        """
+
         return self._terminals.getSlice(0)
 
     def observations(self):
+        """Get all observations currently in the replay memory, ordered by time where they were observed.
+        
+        observations[s][i] corresponds to the observation made on subject s before the agent took actions()[i].
+        """
+
         ret = np.zeros_like(self._observations)
         for input in range(len(self._observations)):
             ret[input] = self._observations[input].getSlice(0)
@@ -330,32 +346,35 @@ class DataSet(object):
         return ret
             
 
-    def randomBatch(self, batch_size):
-        """Return corresponding states, actions, rewards, terminal status, and next_states for batch_size randomly 
-        chosen state transitions. Note that if terminal[i] == True, then 
-        next_states[input][i] == np.zeros_like(states[input][i]) for all 'input's.
+    def randomBatch(self, size):
+        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
+        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
+        each subject s.
         
         Arguments:
-            batch_size - Number of elements in the batch.
+            size - Number of transitions to return.
 
         Returns:
-            states - An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 2+D matrix of dimensions
-                     batch_size x input.historySize x "shape of a given ponctual observation for this input". States were
-                     taken randomly in the data set such that they are complete regarding the histories of each input.
-            actions - The actions taken in each of those states.
-            rewards - The rewards obtained for taking these actions in those states.
-            next_states - Same structure than states, but next_states[i][j] is guaranteed to be the information 
-                          concerning the state following the one described by states[i][j] for input i.
-            terminals - Whether these actions lead to terminal states.
-
+            states - An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
+                size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in 
+                the data with the only constraint that they are complete regarding the histories for each observed 
+                subject.
+            actions - An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after 
+                having observed states[:][i].
+            rewards - An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for 
+                taking actions[i-1].
+            next_states - Same structure than states, but next_states[s][i] is guaranteed to be the information 
+                concerning the state following the one described by states[s][i] for each subject s.
+            terminals - An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
+                to terminal states and False otherwise
         Throws:
-            SliceError - If a batch of this size could not be built based on current data set (not enough data or 
-                         all trajectories are too short).
+            SliceError - If a batch of this size could not be built based on current data set (not enough data or all 
+                trajectories are too short).
         """
 
-        rndValidIndices = np.zeros(batch_size, dtype='int32')
+        rndValidIndices = np.zeros(size, dtype='int32')
 
-        for i in range(batch_size): # TODO: multithread this loop?
+        for i in range(size): # TODO: multithread this loop?
             rndValidIndices[i] = self._randomValidStateIndex()
             
         
@@ -366,9 +385,9 @@ class DataSet(object):
         next_states = np.zeros_like(states)
         
         for input in range(len(self._batchDimensions)):
-            states[input] = np.zeros((batch_size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
+            states[input] = np.zeros((size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
-            for i in range(batch_size):
+            for i in range(size):
                 states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batchDimensions[input][0], rndValidIndices[i]+1)
                 if rndValidIndices[i] >= self._nElems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
@@ -412,28 +431,25 @@ class DataSet(object):
        
 
     def nElems(self):
-        """Return the number of *complete* samples in this data set (i.e. complete tuples (state, action, reward, isTerminal)).
-        Might thus be different than what nStates returns.
+        """Get the number of samples in this dataset (i.e. the current memory replay size)."""
 
-        """
         return self._nElems
 
 
-    def addSample(self, ponctualObs, action, reward, isTerminal):
-        """Store a (state, action, reward, isTerminal) in the dataset. 
-        Equivalent to 'addState(state); addActionRewardTerminal(action, reward, isTerminal)'.
+    def addSample(self, obs, action, reward, isTerminal):
+        """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
 
         Arguments:
-            ponctualObs - An ndarray(dtype='object') whose length is the number of inputs.
-                          For each input i, observation[i] is a 2D matrix that represents actual data.
-            action - The id of the action taken in the last inserted state using addState.
-            reward - The reward associated to taking 'action' in the last inserted state using addState.
-            isTerminal - Tells whether 'action' lead to a terminal state (i.e. whether the tuple (state, action, reward, isTerminal) marks the end of a trajectory).
+            obs - An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the 
+                agent took action [action].
+            action - The action taken after having observed [obs].
+            reward - The reward associated to taking this [action].
+            isTerminal - Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
 
         """        
         # Store observations
         for i in range(len(self._batchDimensions)):
-            self._observations[i].append(ponctualObs[i])
+            self._observations[i].append(obs[i])
         
         # Store rest of sample
         self._actions.append(action)
