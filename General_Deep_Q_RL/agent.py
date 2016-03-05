@@ -28,7 +28,7 @@ class NeuralAgent(object):
         self._controllers = []
         self._environment = environment
         self._network = q_network
-        self._epsilon = 0
+        self._epsilon = 1
         self._replayMemorySize = replay_memory_size
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
@@ -42,7 +42,6 @@ class NeuralAgent(object):
         self._trainingLossAverages = []
         self._VsOnLastEpisode = []
         self._inEpisode = False
-        self._selectedAction = -1
         self._state = []
         for i in range(len(batchDims)):
             self._state.append(np.zeros(batchDims[i], dtype=config.floatX))
@@ -69,9 +68,6 @@ class NeuralAgent(object):
     def discountFactor(self):
         return self._network.discountFactor()
 
-    def overrideNextAction(self, action):
-        self._selectedAction = action
-
     def avgBellmanResidual(self):
         if (len(self._trainingLossAverages) == 0):
             return -1
@@ -85,11 +81,6 @@ class NeuralAgent(object):
     def totalRewardOverLastTest(self):
         return self._totalModeReward
 
-    def bestAction(self):
-        action = self._network.chooseBestAction(self._state)
-        V = max(self._network.qValues(self._state))
-        return action, V
-    
     def attach(self, controller):
         if (isinstance(controller, controllers.Controller)):
             self._controllers.append(controller)
@@ -235,8 +226,23 @@ class NeuralAgent(object):
 
 
     def _chooseAction(self):
+        """
+        Get the action chosen by the agent regarding epsilon greedy parameter and current state. It will be a random
+        action with probability epsilon and the believed-best action otherwise.
+
+        Arguments:
+           epsilon - float, exploration of the epsilon greedy
+           state - An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
+                   input.historySize x "shape of a given ponctual observation for this input".
+
+        Returns:
+           action - The id of the chosen action
+           An integer - action based on the current policy
+        """
+        
         if self._mode != -1:
-            action, V = self.bestAction()
+            action = self._network.chooseBestAction(self._state)
+            V = max(self._network.qValues(self._state))
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
@@ -244,7 +250,8 @@ class NeuralAgent(object):
                     action = self._randomState.randint(0, self._environment.nActions())
                     V = 0
                 else:
-                    action, V = self.bestAction()
+                    action = self._network.chooseBestAction(self._state)
+                    V = max(self._network.qValues(self._state))
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._randomState.randint(0, self._environment.nActions())
