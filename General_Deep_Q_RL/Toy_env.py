@@ -64,7 +64,7 @@ class MyEnv(Environment):
         return [[0, 0, 0, 0, 0, 0], 0]
         
         
-    def act(self, action, mode):
+    def act(self, action):
         """
         Perform one time step on the environment.
         Arguments:
@@ -89,7 +89,7 @@ class MyEnv(Environment):
 
 
 
-    def summarizePerformance(self, mode, test_data_set):
+    def summarizePerformance(self, test_data_set):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
         Arguments:
