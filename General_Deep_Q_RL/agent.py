@@ -19,7 +19,7 @@ from warnings import warn
 from IPython import embed
 
 class NeuralAgent(object):
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, frameSkip, randomState):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
         batchDims = environment.batchDimensions()
 
         if replay_start_size < max(batchDims[i][0] for i in range(len(batchDims))):
@@ -32,7 +32,6 @@ class NeuralAgent(object):
         self._replayMemorySize = replay_memory_size
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
-        self._frameSkip = frameSkip
         self._randomState = randomState
         self._dataSet = DataSet(batchDims, maxSize=replay_memory_size, randomState=randomState)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
@@ -219,11 +218,7 @@ class NeuralAgent(object):
         """
 
         action, V = self._chooseAction()        
-        reward = 0
-        for _ in range(self._frameSkip):
-            reward += self._environment.act(action)
-            if self._environment.inTerminalState():
-                break
+        reward = self._environment.act(action)
 
         return V, action, reward
 
