@@ -95,7 +95,6 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.batchDimensions()[i][0] for i in range(len(env.batchDimensions()))),
         parameters.batch_size,
-        parameters.frame_skip,
         rng)
 
     # Bind controllers to the agent
