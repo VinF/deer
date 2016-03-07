@@ -89,9 +89,8 @@ class MyQNetwork(QNetwork):
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        if self.freeze_interval > 0:
-            self.next_l_out, self.next_l_outs_conv, shape_after_conv = self._build(network_type, next_states)
-            self._resetQHat()
+        self.next_l_out, self.next_l_outs_conv, shape_after_conv = self._build(network_type, next_states)
+        self._resetQHat()
 
         self.rewards_shared = theano.shared(
             np.zeros((batchSize, 1), dtype=theano.config.floatX),
@@ -108,12 +107,7 @@ class MyQNetwork(QNetwork):
 
         q_vals = lasagne.layers.get_output(self.l_out)        
         
-
-        if self.freeze_interval > 0:
-            next_q_vals = lasagne.layers.get_output(self.next_l_out)
-        else:
-            next_q_vals = lasagne.layers.get_output(self.l_out)
-            next_q_vals = theano.gradient.disconnected_grad(next_q_vals)
+        next_q_vals = lasagne.layers.get_output(self.next_l_out)
         
         max_next_q_vals=T.max(next_q_vals, axis=1, keepdims=True)
         
@@ -239,7 +233,7 @@ class MyQNetwork(QNetwork):
         self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
         self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
-        if self.freeze_interval > 0 and self.update_counter % self.freeze_interval == 0:
+        if self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
             
         loss, _ = self._train(self._df, self._lr)
