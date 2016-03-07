@@ -118,11 +118,11 @@ def process_args(args, defaults, description):
                               '(default: %(default)s)'))
     parser.add_argument('--nn-file', dest="nn_file", type=str, default=None,
                         help='Pickle file containing trained net.')
-    parser.add_argument('--deterministic', dest="deterministic",
-                        type=bool, default=defaults.DETERMINISTIC,
-                        help=('Whether to use deterministic parameters ' +
-                              'for learning. (default: %(default)s)'))
-
+    parser.add_argument('--deterministic', dest='deterministic', action='store_true',
+                        help=('If fixed seed (default: %(default)s)'))
+    parser.add_argument('--no-deterministic', dest='deterministic', action='store_false',
+                        help=('If no fixed seed'))
+    parser.set_defaults(deterministic=True)
 
     parameters = parser.parse_args(args)
 
