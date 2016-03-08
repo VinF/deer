@@ -37,7 +37,6 @@ def process_args(args, defaults, description):
                         help='freq summary perfs (default: %(default)s)')
 
 
-    
     parser.add_argument('-env', '--env-path', dest="env_name",
                         type=str, default=defaults.ENV_NAME,
                         help='environment_file (default: %(default)s)')
@@ -143,7 +142,7 @@ def launch(args, defaults, description):
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
-    
+
     # Instantiate environment
     env = __import__(parameters.env_name).MyEnv(rng)
     if not isinstance(env, Environment):
@@ -164,7 +163,7 @@ def launch(args, defaults, description):
         rng)
     if not isinstance(qnetwork, QNetwork):
         raise TypeError("The supplied q-network does not subclass base_classes.QNetwork")
-    
+
     # Instantiate agent
     agent = NeuralAgent(
         env,
@@ -184,7 +183,7 @@ def launch(args, defaults, description):
     agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4], summarizeEvery=parameters.period_btw_summary_perfs))
     #agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], summarizeEvery=parameters.period_btw_summary_perfs))
     #agent.attach(bc.InterleavedTestEpochController(1, parameters.steps_per_test, [0, 1, 2, 3, 4, 5], summarizeEvery=parameters.period_btw_summary_perfs))
-    
+
     # Run the experiment
     agent.run(parameters.epochs, parameters.steps_per_epoch)
     #agent.run(1, parameters.steps_per_epoch)
