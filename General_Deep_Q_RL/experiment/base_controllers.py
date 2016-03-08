@@ -523,6 +523,8 @@ class FindBestController(Controller):
         plt.savefig(basename + "_scores.pdf")
         if self._showPlot:
             plt.show()
+        else:
+            plt.clf()
 
 
 if __name__ == "__main__":
