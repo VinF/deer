@@ -8,9 +8,6 @@ an episode ends.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
-import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 import joblib
