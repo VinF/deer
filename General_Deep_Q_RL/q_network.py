@@ -164,7 +164,7 @@ class MyQNetwork(QNetwork):
         if update_rule == 'deepmind_rmsprop':
             updates = deepmind_rmsprop(loss, params, thelr, self.rho,
                                        self.rms_epsilon)
-        if update_rule == 'rmsprop':
+        elif update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,
                                               self.rms_epsilon)
         elif update_rule == 'sgd':
