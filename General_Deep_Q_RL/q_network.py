@@ -164,7 +164,7 @@ class MyQNetwork(QNetwork):
         if update_rule == 'deepmind_rmsprop':
             updates = deepmind_rmsprop(loss, params, thelr, self.rho,
                                        self.rms_epsilon)
-        elif update_rule == 'rmsprop':
+        if update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,
                                               self.rms_epsilon)
         elif update_rule == 'sgd':
@@ -412,25 +412,24 @@ class MyQNetwork(QNetwork):
                     )
                                 
                     l_outs_conv.append(l_in)
-        
+
         ## Custom merge of layers
         ## NB : l_output_conv=lasagne.layers.MergeLayer(l_outs_conv) gives NOT IMPLEMENTED ERROR
         output_conv = lasagne.layers.get_output(l_outs_conv[0]).flatten().reshape((self._batchSize, np.prod(l_outs_conv[0].output_shape[1:])))       
         shapes = [np.prod(l_outs_conv[0].output_shape[1:])]
-        
+
         if (len(l_outs_conv)>1):
             for l_out_conv in l_outs_conv[1:]:
                 output_conv=T.concatenate((output_conv, lasagne.layers.get_output(l_out_conv).flatten().reshape((self._batchSize, np.prod(l_out_conv.output_shape[1:])))) , axis=1)
                 shapes.append(np.prod(l_out_conv.output_shape[1:]))
-        
+
         shape = sum(shapes)
-        
+
         l_output_conv = lasagne.layers.InputLayer(
-            shape=([self._batchSize, shape]), 
+            shape=([self._batchSize, shape]),
             input_var=output_conv,
         )
 
-        
         l_hidden1 = lasagne.layers.DenseLayer(
             l_output_conv,
             num_units=50,#512,
