@@ -41,7 +41,7 @@ class MyQNetwork(QNetwork):
         self._environment = environment
         
         self._batchSize = batchSize
-        self._batchDimensions = self._environment.batchDimensions()
+        self._inputDimensions = self._environment.inputDimensions()
         self._nActions = self._environment.nActions()
         self._df = 0
         self.rho = rho
@@ -60,7 +60,7 @@ class MyQNetwork(QNetwork):
         self.states_shared=[] # list of shared variable for each of the k element in the belief state
         self.next_states_shared=[] # idem that self.states_shared at t+1
 
-        for i, dim in enumerate(self._batchDimensions):
+        for i, dim in enumerate(self._inputDimensions):
             if len(dim) == 3:
                 states.append(T.tensor4("%s_%s" % ("state", i)))
                 next_states.append(T.tensor4("%s_%s" % ("next_state", i)))
@@ -77,7 +77,7 @@ class MyQNetwork(QNetwork):
             self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
         
         print("Number of observations per state: {}".format(len(self.states_shared)))
-        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions))
+        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._inputDimensions))
                 
         rewards = T.col('rewards')
         actions = T.icol('actions')
@@ -282,7 +282,7 @@ class MyQNetwork(QNetwork):
         outs_conv=[]
         outs_conv_shapes=[]
         
-        for i, dim in enumerate(self._batchDimensions):
+        for i, dim in enumerate(self._inputDimensions):
             
             # - observation[i] is a FRAME -
             if len(dim) == 3: 
