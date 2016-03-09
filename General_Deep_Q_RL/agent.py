@@ -2,8 +2,7 @@
 The NeuralAgent class wraps a deep Q-network for training and testing
 in any given environment.
 
-Modifications: Vincent Francois-Lavet
-Contributor: David Taralla
+Authors: Vincent Francois-Lavet, David Taralla
 """
 
 from theano import config
