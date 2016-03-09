@@ -452,8 +452,9 @@ class VerboseController(Controller):
 
 class FindBestController(Controller):
     """A controller that finds the neural net performing at best in validation mode (i.e. for mode = [validationID]) 
-    and computes the associated generalization score in test mode (i.e. for mode = [testID]). This controller should
-    never be disabled by InterleavedTestControllers as it is meant to work in conjunction with them.
+    and computes the associated generalization score in test mode (i.e. for mode = [testID], and this only if [testID] 
+    is different from None). This controller should never be disabled by InterleavedTestControllers as it is meant to 
+    work in conjunction with them.
     
     At each epoch end where this controller is active, it will look at the current mode the agent is in. 
     
@@ -461,21 +462,23 @@ class FindBestController(Controller):
     current best score. If it is better, it will ask the agent to dump its current nnet on disk and update its current 
     best score. In all cases, it saves the validation score obtained in a vector.
 
-    If the mode matches [testID], it saves the test (= generalization) score in another vector.
+    If the mode matches [testID], it saves the test (= generalization) score in another vector. Note that if [testID] 
+    is None, no test mode score are ever recorded.
 
     At the end of the experiment (OnEnd), if active, this controller will print information about the epoch at which 
-    the best neural net was found together with its generalization score. Finally it will plot all validation and 
-    generalization scores it memorized and save it as a PDF file, plus will dump a dictionnary containing the data 
-    of the plots ({n: number of epochs elapsed, ts: test scores, vs: validation scores}).
+    the best neural net was found together with its generalization score, this last information shown only if [testID] 
+    is different from None. Finally it will plot all validation and generalization (if [testID] not None) scores it 
+    memorized and save it as a PDF file, plus will dump a dictionnary containing the data of the plots ({n: number of 
+    epochs elapsed, ts: test scores, vs: validation scores}).
     """
 
-    def __init__(self, validationID, testID, unique_fname="nnet", showPlot=False):
+    def __init__(self, validationID, testID=None, unique_fname="nnet", showPlot=False):
         super(self.__class__, self).__init__()
 
         self._validationScores = []
         self._testScores = []
         self._epochNumbers = []
-        self._epochCount = 0
+        self._trainingEpochCount = 0
         self._testID = testID
         self._validationID = validationID
         self._filename = unique_fname
@@ -490,14 +493,14 @@ class FindBestController(Controller):
         if mode == self._validationID:
             score = agent.totalRewardOverLastTest()
             self._validationScores.append(score)
+            self._epochNumbers.append(self._trainingEpochCount)
             if score > self._bestValidationScoreSoFar:
                 self._bestValidationScoreSoFar = score
-                agent.dumpNetwork(self._filename, self._epochCount)
+                agent.dumpNetwork(self._filename, self._trainingEpochCount)
         elif mode == self._testID:
             self._testScores.append(agent.totalRewardOverLastTest())
-            self._epochNumbers.append(self._epochCount)
         else:
-            self._epochCount += 1
+            self._trainingEpochCount += 1
         
     def OnEnd(self, agent):
         if (self._active == False):
@@ -505,11 +508,13 @@ class FindBestController(Controller):
 
         bestIndex = np.argmax(self._validationScores)
         print("Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex]))
-        print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
-
+        
         plt.plot(self._epochNumbers, self._validationScores, label="VS", color='b')
-        plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
-        plt.legend()
+        if self._testID != None:
+            print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
+            plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
+            plt.legend()
+
         plt.xlabel("Number of epochs")
         plt.ylabel("Score")
 
@@ -523,6 +528,8 @@ class FindBestController(Controller):
         plt.savefig(basename + "_scores.pdf")
         if self._showPlot:
             plt.show()
+        else:
+            plt.clf()
 
 
 if __name__ == "__main__":

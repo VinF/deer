@@ -111,7 +111,7 @@ if __name__ == "__main__":
     agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
     agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
     agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(bc.FindBestController(VALIDATION_MODE, TEST_MODE, fname))
+    agent.attach(bc.FindBestController(VALIDATION_MODE, unique_fname=fname, testID=TEST_MODE))
     agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
     agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=parameters.period_btw_summary_perfs))
     
