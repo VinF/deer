@@ -478,7 +478,7 @@ class FindBestController(Controller):
         self._validationScores = []
         self._testScores = []
         self._epochNumbers = []
-        self._epochCount = 0
+        self._trainingEpochCount = 0
         self._testID = testID
         self._validationID = validationID
         self._filename = unique_fname
@@ -493,14 +493,14 @@ class FindBestController(Controller):
         if mode == self._validationID:
             score = agent.totalRewardOverLastTest()
             self._validationScores.append(score)
+            self._epochNumbers.append(self._trainingEpochCount)
             if score > self._bestValidationScoreSoFar:
                 self._bestValidationScoreSoFar = score
-                agent.dumpNetwork(self._filename, self._epochCount)
+                agent.dumpNetwork(self._filename, self._trainingEpochCount)
         elif mode == self._testID:
             self._testScores.append(agent.totalRewardOverLastTest())
-            self._epochNumbers.append(self._epochCount)
         else:
-            self._epochCount += 1
+            self._trainingEpochCount += 1
         
     def OnEnd(self, agent):
         if (self._active == False):
