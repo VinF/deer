@@ -39,13 +39,13 @@ class MyEnv(Environment):
 
         if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
-            self._batchDimensions = [(1,), (12,2), (1,),(1,2)]
+            self._inputDimensions = [(1,), (12,2), (1,),(1,2)]
         elif (self._dist_equinox==1 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.],0.]
-            self._batchDimensions = [(1,), (12,2), (1,)]
+            self._inputDimensions = [(1,), (12,2), (1,)]
         elif (self._dist_equinox==0 and self._pred==0):
             self._lastPonctualObservation = [0. ,[0.,0.]]
-            self._batchDimensions = [(1,), (12,2)]
+            self._inputDimensions = [(1,), (12,2)]
 
         self._rng = rng
 
@@ -209,8 +209,8 @@ class MyEnv(Environment):
                 
         return copy.copy(reward)
 
-    def batchDimensions(self):
-        return self._batchDimensions
+    def inputDimensions(self):
+        return self._inputDimensions
 
     def nActions(self):
         return self._nActions

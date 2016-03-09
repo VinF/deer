@@ -60,7 +60,7 @@ class Environment(object):
 
         raise NotImplementedError()
 
-    def batchDimensions(self):
+    def inputDimensions(self):
         """Get the shape of the input space for this environment.
         
         This returns a list whose length is the number of subjects observed on the environment. Each element of the 
@@ -95,10 +95,9 @@ class Environment(object):
     def observe(self):
         """Get a list of punctual observations on all subjects composing this environment.
         
-        This returns a list where element i is a punctual observation on subject i. The punctual observation for 
-        subject i will be equal to batchDimensions()[i][1:]. You will notice that the history of observations on this 
-        subject is not returned; only the very last observation. Each element is thus either a number, vector or 
-        matrix and not a succession of numbers, vectors and matrices.
+        This returns a list where element i is a punctual observation on subject i. You will notice that the history 
+        of observations on this subject is not returned; only the very last observation. Each element is thus either 
+        a number, vector or matrix and not a succession of numbers, vectors and matrices.
 
         See the documentation of batchDimensions() for more information about the shape of the observations according 
         to their mathematical representation (number, vector or matrix).

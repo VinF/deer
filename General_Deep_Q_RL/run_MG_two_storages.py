@@ -96,7 +96,7 @@ if __name__ == "__main__":
         env,
         qnetwork,
         parameters.replay_memory_size,
-        max(env.batchDimensions()[i][0] for i in range(len(env.batchDimensions()))),
+        max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng)
 

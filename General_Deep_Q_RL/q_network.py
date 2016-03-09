@@ -39,7 +39,7 @@ class MyQNetwork(QNetwork):
         self._environment = environment
         
         self._batchSize = batchSize
-        self._batchDimensions = self._environment.batchDimensions()
+        self._inputDimensions = self._environment.inputDimensions()
         self._nActions = self._environment.nActions()
         self._df = 0
         self.rho = rho
@@ -60,7 +60,7 @@ class MyQNetwork(QNetwork):
         self.states_shared=[] # list of shared variable for each of the k element in the belief state
         self.next_states_shared=[] # idem that self.states_shared at t+1
 
-        for i, dim in enumerate(self._batchDimensions):
+        for i, dim in enumerate(self._inputDimensions):
             if len(dim) == 3:
                 states.append(T.tensor4("%s_%s" % ("state", i)))
                 next_states.append(T.tensor4("%s_%s" % ("next_state", i)))
@@ -77,7 +77,7 @@ class MyQNetwork(QNetwork):
             self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
         
         print("Number of observations per state: {}".format(len(self.states_shared)))
-        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._batchDimensions))
+        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._inputDimensions))
                 
         rewards = T.col('rewards')
         actions = T.icol('actions')
@@ -298,7 +298,7 @@ class MyQNetwork(QNetwork):
             conv2DFunc = lasagne.layers.Conv2DLayer
 
         l_outs_conv=[]
-        for i, dim in enumerate(self._batchDimensions):
+        for i, dim in enumerate(self._inputDimensions):
             # - observation[i] is a FRAME -
             if len(dim) == 3: 
                 # Building here for 3D
@@ -310,8 +310,8 @@ class MyQNetwork(QNetwork):
                 l_conv1 = conv2DFunc(
                     l_in,
                     num_filters=32,
-                    filter_size=(1, 1),#filter_size=(8, 8),
-                    stride=(1, 1),#stride=(4, 4),
+                    filter_size=(8, 8),#filter_size=(8, 8),
+                    stride=(4, 4),#stride=(4, 4),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(), # Defaults to Glorot
                     b=lasagne.init.Constant(.0),
@@ -321,8 +321,8 @@ class MyQNetwork(QNetwork):
                 l_conv2 = conv2DFunc(
                     l_conv1,
                     num_filters=64,
-                    filter_size=(1, 1),#filter_size=(4, 4),
-                    stride=(1, 1),#stride=(2, 2),
+                    filter_size=(4, 4),#filter_size=(4, 4),
+                    stride=(2, 2),#stride=(2, 2),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
                     b=lasagne.init.Constant(.0),

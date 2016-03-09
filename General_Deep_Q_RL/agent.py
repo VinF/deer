@@ -20,9 +20,9 @@ from IPython import embed
 
 class NeuralAgent(object):
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
-        batchDims = environment.batchDimensions()
+        inputDims = environment.inputDimensions()
 
-        if replay_start_size < max(batchDims[i][0] for i in range(len(batchDims))):
+        if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
             raise AgentError("Replay_start_size should be greater than the biggest history of a state.")
         
         self._controllers = []
@@ -33,7 +33,7 @@ class NeuralAgent(object):
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
         self._randomState = randomState
-        self._dataSet = DataSet(batchDims, maxSize=replay_memory_size, randomState=randomState)
+        self._dataSet = DataSet(inputDims, maxSize=replay_memory_size, randomState=randomState)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -43,8 +43,8 @@ class NeuralAgent(object):
         self._inEpisode = False
         self._selectedAction = -1
         self._state = []
-        for i in range(len(batchDims)):
-            self._state.append(np.zeros(batchDims[i], dtype=config.floatX))
+        for i in range(len(inputDims)):
+            self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
 
     def setControllersActive(self, toDisable, active):
         for i in toDisable:
@@ -111,7 +111,7 @@ class NeuralAgent(object):
             self._mode = mode
             self._modeEpochsLength = epochLength
             self._totalModeReward = 0
-            self._tmpDataSet = DataSet(self._environment.batchDimensions(), self._randomState, maxSize=self._replayMemorySize)
+            self._tmpDataSet = DataSet(self._environment.inputDimensions(), self._randomState, maxSize=self._replayMemorySize)
 
     def resumeTrainingMode(self):
         self._mode = -1
@@ -168,9 +168,9 @@ class NeuralAgent(object):
     def _runEpisode(self, maxSteps):
         self._inEpisode = True
         initState = self._environment.reset(self._mode)
-        batchDims = self._environment.batchDimensions()
-        for i in range(len(batchDims)):
-            if batchDims[i][0] > 1:
+        inputDims = self._environment.inputDimensions()
+        for i in range(len(inputDims)):
+            if inputDims[i][0] > 1:
                 self._state[i][1:] = initState[i][1:]
         
         self._trainingLossAverages = []
@@ -280,7 +280,7 @@ class DataSet(object):
         Parameters:
             inputDims - For each subject i, inputDims[i] is a tuple where the first value is the memory size for this 
                 subject and the rest describes the shape of each single observation on this subject (number, vector or 
-                matrix). See base_classes.Environment.batchDimensions() documentation for more info about this format.
+                matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
             randomState - Numpy random number generator. If None, a new one is created with default numpy seed.
             maxSize - The replay memory maximum size.
         """
