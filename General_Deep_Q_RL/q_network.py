@@ -310,23 +310,21 @@ class MyQNetwork(QNetwork):
                 l_conv1 = conv2DFunc(
                     l_in,
                     num_filters=32,
-                    filter_size=(1, 1),#filter_size=(8, 8),
-                    stride=(1, 1),#stride=(4, 4),
+                    filter_size=(8, 8),
+                    stride=(4, 4),
                     nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(), # Defaults to Glorot
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
+                    W=lasagne.init.HeUniform(),
+                    b=lasagne.init.Constant(.0)
                 )
                 
                 l_conv2 = conv2DFunc(
                     l_conv1,
                     num_filters=64,
-                    filter_size=(1, 1),#filter_size=(4, 4),
-                    stride=(1, 1),#stride=(2, 2),
+                    filter_size=(4, 4),
+                    stride=(2, 2),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
+                    b=lasagne.init.Constant(.0)
                 )
                 
                 l_conv3 = conv2DFunc(
@@ -336,8 +334,7 @@ class MyQNetwork(QNetwork):
                     stride=(1, 1),
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
+                    b=lasagne.init.Constant(.0)
                 )
                 l_outs_conv.append(l_conv3)
                 
@@ -355,9 +352,8 @@ class MyQNetwork(QNetwork):
                     filter_size=(2, 1),#filter_size=(8, 8),
                     stride=(1, 1),#stride=(4, 4),
                     nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(), # Defaults to Glorot
-                    b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
+                    W=lasagne.init.HeUniform(),
+                    b=lasagne.init.Constant(.0)
                 )
                 
                 l_conv2 = conv2DFunc(
@@ -368,7 +364,6 @@ class MyQNetwork(QNetwork):
                     nonlinearity=lasagne.nonlinearities.rectify,
                     W=lasagne.init.HeUniform(),
                     b=lasagne.init.Constant(.0),
-                    #dimshuffle=True
                 )
                 l_outs_conv.append(l_conv2)
                 
@@ -388,8 +383,7 @@ class MyQNetwork(QNetwork):
                         stride=1,#stride=(4, 4),
                         nonlinearity=lasagne.nonlinearities.rectify,
                         W=lasagne.init.HeUniform(), # Defaults to Glorot
-                        b=lasagne.init.Constant(.0),
-                        #dimshuffle=True
+                        b=lasagne.init.Constant(.0)
                     )
                 
                     l_conv2 = lasagne.layers.Conv1DLayer(
@@ -399,8 +393,7 @@ class MyQNetwork(QNetwork):
                         stride=1,#stride=(2, 2),
                         nonlinearity=lasagne.nonlinearities.rectify,
                         W=lasagne.init.HeUniform(),
-                        b=lasagne.init.Constant(.0),
-                        #dimshuffle=True
+                        b=lasagne.init.Constant(.0)
                     )
                 
                     l_outs_conv.append(l_conv2)
