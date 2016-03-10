@@ -11,7 +11,7 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
-from updates import deepmind_rmsprop
+from updates import deepmind_rmsprop, get_or_compute_grads
 from base_classes import QNetwork
 from IPython import embed
 
@@ -162,7 +162,8 @@ class MyQNetwork(QNetwork):
             givens[ next_states[i] ] = x
                 
         if update_rule == 'deepmind_rmsprop':
-            updates = deepmind_rmsprop(loss, params, thelr, self.rho,
+            grads = get_or_compute_grads(loss, params)
+            updates = deepmind_rmsprop(loss, params, grads, thelr, self.rho,
                                        self.rms_epsilon)
         elif update_rule == 'rmsprop':
             updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,

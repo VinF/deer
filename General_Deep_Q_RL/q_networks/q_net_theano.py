@@ -157,7 +157,10 @@ class MyQNetwork(QNetwork):
 
         updates = []
         
-        if update_rule == 'rmsprop':        
+        if update_rule == 'deepmind_rmsprop':
+            updates = deepmind_rmsprop(loss, self.params, gparams, thelr, self.rho,
+                                       self.rms_epsilon)
+        elif update_rule == 'rmsprop':
             for i,(p, g) in enumerate(zip(self.params, gparams)):                
                 acc = theano.shared(p.get_value() * 0.)
                 acc_new = rho * acc + (1 - self.rho) * g ** 2
@@ -165,7 +168,7 @@ class MyQNetwork(QNetwork):
                 g = g / gradient_scaling
                 updates.append((acc, acc_new))
                 updates.append((p, p - thelr * g))
-            
+
         elif update_rule == 'sgd':
             for i, (param, gparam) in enumerate(zip(self.params, gparams)):
                 updates.append((param, param - thelr * gparam))
@@ -287,7 +290,8 @@ class MyQNetwork(QNetwork):
             # - observation[i] is a FRAME -
             if len(dim) == 3: 
                 # FIXME
-                print"here"
+                print "here"
+
                 
             # - observation[i] is a VECTOR -
             elif len(dim) == 2 and dim[0] > 3:                
