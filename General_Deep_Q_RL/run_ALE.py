@@ -52,7 +52,6 @@ class Defaults:
     NETWORK_TYPE = "General_DQN_0"
     FREEZE_INTERVAL = 10000
     DETERMINISTIC = True
-    CUDNN_DETERMINISTIC = False
 
 
 

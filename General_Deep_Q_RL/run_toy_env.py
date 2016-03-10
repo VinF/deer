@@ -52,7 +52,6 @@ class Defaults:
     NETWORK_TYPE = "General_DQN_0"
     FREEZE_INTERVAL = 1000
     DETERMINISTIC = True
-    CUDNN_DETERMINISTIC = False
 
 
 if __name__ == "__main__":
