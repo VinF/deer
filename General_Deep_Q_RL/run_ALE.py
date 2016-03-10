@@ -11,7 +11,7 @@ import os
 
 from arg_parser import process_args
 from agent_ale import ALEAgent
-from q_networks.q_net_lasagne import MyQNetwork
+from q_networks.q_net_theano import MyQNetwork
 from environments.ALE_env import MyEnv
 import experiment.base_controllers as bc
 
