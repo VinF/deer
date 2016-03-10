@@ -7,8 +7,6 @@ Authors: Vincent Francois-Lavet, David Taralla
 
 from theano import config
 import os
-import time
-import logging
 import numpy as np
 import copy
 import sys
