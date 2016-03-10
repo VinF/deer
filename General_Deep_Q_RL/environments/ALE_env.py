@@ -1,3 +1,7 @@
+""" Interface with the ALE environment
+
+Authors: Vincent Francois-Lavet, David Taralla
+"""
 import numpy as np
 import cv2
 from ale_python_interface import ALEInterface
@@ -13,7 +17,8 @@ class MyEnv(Environment):
     TEST_MODE = 1
 
     def __init__(self, rng, rom="ale/breakout.bin", frame_skip=4, 
-                 ale_options=[{"key": "random_seed", "value": 0}, {"key": "color_averaging", "value": True},
+                 ale_options=[{"key": "random_seed", "value": 0}, 
+                              {"key": "color_averaging", "value": True},
                               {"key": "repeat_action_probability", "value": 0.}]):
         self._mode = -1
         self._modeScore = 0
