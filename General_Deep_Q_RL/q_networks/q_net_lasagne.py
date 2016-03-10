@@ -149,7 +149,6 @@ class MyQNetwork(QNetwork):
                 params.append(p)
         
             
-        params.append  
         givens = {
             rewards: self.rewards_shared,
             actions: self.actions_shared, ## actions not needed!

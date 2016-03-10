@@ -286,16 +286,79 @@ class MyQNetwork(QNetwork):
         outs_conv_shapes=[]
         
         for i, dim in enumerate(self._inputDimensions):
+            nfilter=[]
             
             # - observation[i] is a FRAME -
             if len(dim) == 3: 
-                # FIXME
-                print "here"
+
+                ### First layer
+                newR = dim[1]
+                newC = dim[2]
+                fR=8  # filter Rows
+                fC=8  # filter Column
+                pR=1  # pool Rows
+                pC=1  # pool Column
+                nfilter.append(32)
+                stride_size=4
+                l_conv1 = ConvolutionalLayer(
+                    rng=self._randomState,
+                    input=inputs[i].reshape((self._batchSize,dim[0],newR,newC)),
+                    filter_shape=(nfilter[0],dim[0],fR,fC),
+                    image_shape=(self._batchSize,dim[0],newR,newC),
+                    poolsize=(pR,pC),
+                    stride=(stride_size,stride_size)
+                )
+                layers.append(l_conv1)
+
+                newR = (newR - fR + 1 - pR) / stride_size + 1
+                newC = (newC - fC + 1 - pC) / stride_size + 1
+
+                ### Second layer
+                fR=4  # filter Rows
+                fC=4  # filter Column
+                pR=1  # pool Rows
+                pC=1  # pool Column
+                nfilter.append(64)
+                stride_size=2
+                l_conv2 = ConvolutionalLayer(
+                    rng=self._randomState,
+                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                    filter_shape=(nfilter[1],nfilter[0],fR,fC),
+                    image_shape=(self._batchSize,nfilter[0],newR,newC),
+                    poolsize=(pR,pC),
+                    stride=(stride_size,stride_size)
+                )
+                layers.append(l_conv2)
+
+                newR = (newR - fR + 1 - pR) / stride_size + 1
+                newC = (newC - fC + 1 - pC) / stride_size + 1
+
+                ### Third layer
+                fR=3  # filter Rows
+                fC=3  # filter Column
+                pR=1  # pool Rows
+                pC=1  # pool Column
+                nfilter.append(64)
+                stride_size=1
+                l_conv3 = ConvolutionalLayer(
+                    rng=self._randomState,
+                    input=l_conv2.output.reshape((self._batchSize,nfilter[1],newR,newC)),
+                    filter_shape=(nfilter[2],nfilter[1],fR,fC),
+                    image_shape=(self._batchSize,nfilter[1],newR,newC),
+                    poolsize=(pR,pC),
+                    stride=(stride_size,stride_size)
+                )
+                layers.append(l_conv3)
+
+                newR = (newR - fR + 1 - pR) / stride_size + 1
+                newC = (newC - fC + 1 - pC) / stride_size + 1
+
+                outs_conv.append(l_conv3.output)
+                outs_conv_shapes.append((nfilter[2],newR,newC))
 
                 
             # - observation[i] is a VECTOR -
             elif len(dim) == 2 and dim[0] > 3:                
-                nfilter=[]
                 
                 newR = dim[0]
                 newC = dim[1]
@@ -347,8 +410,6 @@ class MyQNetwork(QNetwork):
             # - observation[i] is a SCALAR -
             else:
                 if dim[0] > 3:
-
-                    nfilter=[]
 
                     newR = 1
                     newC = dim[0]
