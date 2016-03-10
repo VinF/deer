@@ -1,6 +1,4 @@
-"""
-The NeuralAgent class wraps a deep Q-network for training and testing
-in any given environment.
+"""This module contains classes used to define any agent wrapping a DQN.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
@@ -16,6 +14,11 @@ from warnings import warn
 from IPython import embed
 
 class NeuralAgent(object):
+    """The NeuralAgent class wraps a deep Q-network for training and testing in any given environment.
+    
+    Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
+    """
+
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
         inputDims = environment.inputDimensions()
 

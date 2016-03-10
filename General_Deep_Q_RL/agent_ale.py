@@ -1,9 +1,8 @@
-"""
-The NeuralAgent class wraps a deep Q-network for training and testing
-in any given environment.
+"""This module contains classes used to define an agent suited for playing with the ALE environment.
 
-Modifications: Vincent Francois-Lavet
-Contributor: David Taralla
+See environments.ALE_env, run_ALE.
+
+Authors: Vincent Francois-Lavet, David Taralla
 """
 
 from agent import NeuralAgent
