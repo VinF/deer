@@ -11,8 +11,8 @@ from joblib import hash, dump
 import os
 
 from agent import NeuralAgent
-from q_network import MyQNetwork
-from Toy_env import MyEnv
+from q_networks.q_net_lasagne import MyQNetwork
+from environments.Toy_env import MyEnv
 import experiment.base_controllers as bc
 
 class Defaults:

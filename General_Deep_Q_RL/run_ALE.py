@@ -12,8 +12,8 @@ from joblib import hash, dump
 import os
 
 from agent_ale import ALEAgent
-from q_network import MyQNetwork
-from ALE_env import MyEnv
+from q_networks.q_net_lasagne import MyQNetwork
+from environments.ALE_env import MyEnv
 import experiment.base_controllers as bc
 
 class Defaults:

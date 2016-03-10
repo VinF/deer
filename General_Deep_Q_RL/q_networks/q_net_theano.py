@@ -1,13 +1,12 @@
 """
 Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
 
-Author: Vincent Francois-Lavet, David Taralla
+Authors: Vincent Francois-Lavet, David Taralla
 
 Inspired from "Human-level control through deep reinforcement learning",
 Nature, 518(7540):529-533, February 2015
 """
 
-import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
@@ -15,9 +14,12 @@ from updates import deepmind_rmsprop
 from base_classes import QNetwork
 from IPython import embed
 
+from theano_layers import ConvolutionalLayer,HiddenLayer
+
+    
 class MyQNetwork(QNetwork):
     """
-    Deep Q-learning network using Lasagne.
+    Deep Q-learning network using Theano
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
@@ -50,8 +52,6 @@ class MyQNetwork(QNetwork):
         self.freeze_interval = freeze_interval
         self._randomState = randomState
         
-        lasagne.random.set_rng(self._randomState)
-
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -85,11 +85,11 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        self.l_out, self.l_outs_conv, shape_after_conv = self._build(network_type, states)
+        q_vals, self.params, shape_after_conv = self._build(network_type, states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_l_out, self.next_l_outs_conv, shape_after_conv = self._build(network_type, next_states)
+        next_q_vals, self.next_params, shape_after_conv = self._build(network_type, next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(
@@ -103,16 +103,12 @@ class MyQNetwork(QNetwork):
         self.terminals_shared = theano.shared(
             np.zeros((batchSize, 1), dtype='int32'),
             broadcastable=(False, True))
-
-
-        q_vals = lasagne.layers.get_output(self.l_out)        
         
-        next_q_vals = lasagne.layers.get_output(self.next_l_out)
         
         max_next_q_vals=T.max(next_q_vals, axis=1, keepdims=True)
         
         T_ones_like=T.ones_like(T.ones_like(terminals) - terminals)
-        
+                
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
         q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
@@ -142,14 +138,6 @@ class MyQNetwork(QNetwork):
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
-        params = lasagne.layers.helper.get_all_params(self.l_out)
-
-        for conv_param in self.l_outs_conv:
-            for p in lasagne.layers.helper.get_all_params(conv_param):
-                params.append(p)
-        
-            
-        params.append  
         givens = {
             rewards: self.rewards_shared,
             actions: self.actions_shared, ## actions not needed!
@@ -161,21 +149,33 @@ class MyQNetwork(QNetwork):
         for i, x in enumerate(self.next_states_shared):
             givens[ next_states[i] ] = x
                 
+                
+        gparams=[]
+        for p in self.params:
+            gparam =  T.grad(loss, p)
+            gparams.append(gparam)
+
+        updates = []
+        
         if update_rule == 'deepmind_rmsprop':
-            updates = deepmind_rmsprop(loss, params, thelr, self.rho,
+            updates = deepmind_rmsprop(loss, self.params, gparams, thelr, self.rho,
                                        self.rms_epsilon)
         elif update_rule == 'rmsprop':
-            updates = lasagne.updates.rmsprop(loss, params, thelr, self.rho,
-                                              self.rms_epsilon)
+            for i,(p, g) in enumerate(zip(self.params, gparams)):                
+                acc = theano.shared(p.get_value() * 0.)
+                acc_new = rho * acc + (1 - self.rho) * g ** 2
+                gradient_scaling = T.sqrt(acc_new + self.rms_epsilon)
+                g = g / gradient_scaling
+                updates.append((acc, acc_new))
+                updates.append((p, p - thelr * g))
+
         elif update_rule == 'sgd':
-            updates = lasagne.updates.sgd(loss, params, thelr)
+            for i, (param, gparam) in enumerate(zip(self.params, gparams)):
+                updates.append((param, param - thelr * gparam))
         else:
             raise ValueError("Unrecognized update: {}".format(update_rule))
-
-        if self.momentum > 0:
-            updates = lasagne.updates.apply_momentum(updates, None,
-                                                     self.momentum)
-
+    
+        
         self._train = theano.function([thediscount, thelr], [loss, q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
@@ -200,12 +200,9 @@ class MyQNetwork(QNetwork):
         return self._df
             
     def toDump(self):
-        all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
-        all_params_conv=[]
-        for conv_param in self.l_outs_conv:
-            all_params_conv.append(lasagne.layers.helper.get_all_param_values(conv_param))
+        # FIXME
 
-        return all_params, all_params_conv
+        return None,None
     
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
@@ -235,7 +232,7 @@ class MyQNetwork(QNetwork):
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
         if self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
-            
+        
         loss, _ = self._train(self._df, self._lr)
         self.update_counter += 1
         return np.sqrt(loss)
@@ -276,179 +273,165 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized network: {}".format(network_type))
 
     def _resetQHat(self):
-        all_params = lasagne.layers.helper.get_all_param_values(self.l_out)
-        
-        all_params_conv=[]
-        for conv_param in self.l_outs_conv:
-            all_params_conv.append( lasagne.layers.helper.get_all_param_values(conv_param) )
-
-        lasagne.layers.helper.set_all_param_values(self.next_l_out, all_params)
-        for i,param_conv in enumerate(all_params_conv):
-            lasagne.layers.helper.set_all_param_values(self.next_l_outs_conv[i], param_conv)        
+        for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
+            next_param.set_value(param.get_value())        
         
 
     def _buildG_DQN_0(self, inputs):
         """
         Build a network consistent with each type of inputs
         """
-        if ("gpu" in theano.config.device):
-            from lasagne.layers.cuda_convnet import Conv2DCCLayer
-            conv2DFunc = Conv2DCCLayer
-        else:
-            conv2DFunc = lasagne.layers.Conv2DLayer
-
-        l_outs_conv=[]
+        layers=[]
+        outs_conv=[]
+        outs_conv_shapes=[]
+        
         for i, dim in enumerate(self._inputDimensions):
+            
             # - observation[i] is a FRAME -
             if len(dim) == 3: 
-                # Building here for 3D
-                l_in = lasagne.layers.InputLayer(
-                    shape=(self._batchSize,) + dim, 
-                    input_var=inputs[i],
-                )
-                
-                l_conv1 = conv2DFunc(
-                    l_in,
-                    num_filters=32,
-                    filter_size=(8, 8),
-                    stride=(4, 4),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0)
-                )
-                
-                l_conv2 = conv2DFunc(
-                    l_conv1,
-                    num_filters=64,
-                    filter_size=(4, 4),
-                    stride=(2, 2),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0)
-                )
-                
-                l_conv3 = conv2DFunc(
-                    l_conv2,
-                    num_filters=64,
-                    filter_size=(3, 3),
-                    stride=(1, 1),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0)
-                )
-                l_outs_conv.append(l_conv3)
+                # FIXME
+                print "here"
+
                 
             # - observation[i] is a VECTOR -
-            elif len(dim) == 2 and dim[0] > 3:
-                # Building here for  2D
-                l_in = lasagne.layers.InputLayer(
-                    shape=(self._batchSize, 1) + dim, 
-                    input_var=inputs[i].reshape((self._batchSize, 1) + dim),
-                )
+            elif len(dim) == 2 and dim[0] > 3:                
+                nfilter=[]
                 
-                l_conv1 = conv2DFunc(
-                    l_in,
-                    num_filters=16,
-                    filter_size=(2, 1),#filter_size=(8, 8),
-                    stride=(1, 1),#stride=(4, 4),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0)
-                )
+                newR = dim[0]
+                newC = dim[1]
                 
-                l_conv2 = conv2DFunc(
-                    l_conv1,
-                    num_filters=16,
-                    filter_size=(2, 2),
-                    stride=(1, 1),
-                    nonlinearity=lasagne.nonlinearities.rectify,
-                    W=lasagne.init.HeUniform(),
-                    b=lasagne.init.Constant(.0),
-                )
-                l_outs_conv.append(l_conv2)
+                fR=2  # filter Rows
+                fC=1  # filter Column
+                pR=1  # pool Rows
+                pC=1  # pool Column
+                nfilter.append(16)
+                stride_size=1
+
+                l_conv1 = ConvolutionalLayer(
+                    rng=self._randomState,
+                    input=inputs[i].reshape((self._batchSize,1,newR,newC)),
+                    filter_shape=(nfilter[0],1,fR,fC),
+                    image_shape=(self._batchSize,1,newR,newC),
+                    poolsize=(pR,pC),
+                    stride=(stride_size,stride_size)                    
+                )                
+                layers.append(l_conv1)
                 
+                newR = (newR - fR + 1 - pR) / stride_size + 1  # stride 2
+                newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+
+                fR=2  # filter Rows
+                fC=2  # filter Column
+                pR=1  # pool Rows
+                pC=1  # pool Column
+                nfilter.append(16)
+                stride_size=1
+                                
+                l_conv2 = ConvolutionalLayer(
+                    rng=self._randomState,
+                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                    filter_shape=(nfilter[1],nfilter[0],fR,fC),
+                    image_shape=(self._batchSize,nfilter[0],newR,newC),
+                    poolsize=(pR,pC),
+                    stride=(stride_size,stride_size)
+                )                
+                layers.append(l_conv2)
+                
+                newR = (newR - fR + 1 - pR) / stride_size + 1  # stride 2
+                newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+
+                outs_conv.append(l_conv2.output)
+                outs_conv_shapes.append((nfilter[1],newR,newC))
+
+
             # - observation[i] is a SCALAR -
             else:
                 if dim[0] > 3:
-                    # Building here for  1D
-                    l_in = lasagne.layers.InputLayer(
-                        shape=(self._batchSize, 1) + dim, 
-                        input_var=inputs[i].reshape((self._batchSize, 1) + dim),
-                    )
-                
-                    l_conv1 = lasagne.layers.Conv1DLayer(
-                        l_in,
-                        num_filters=8,#32,
-                        filter_size=2,#filter_size=(8, 8),
-                        stride=1,#stride=(4, 4),
-                        nonlinearity=lasagne.nonlinearities.rectify,
-                        W=lasagne.init.HeUniform(), # Defaults to Glorot
-                        b=lasagne.init.Constant(.0)
-                    )
-                
-                    l_conv2 = lasagne.layers.Conv1DLayer(
-                        l_conv1,
-                        num_filters=8,#64,
-                        filter_size=2,#filter_size=(4, 4),
-                        stride=1,#stride=(2, 2),
-                        nonlinearity=lasagne.nonlinearities.rectify,
-                        W=lasagne.init.HeUniform(),
-                        b=lasagne.init.Constant(.0)
-                    )
-                
-                    l_outs_conv.append(l_conv2)
+
+                    nfilter=[]
+
+                    newR = 1
+                    newC = dim[0]
+                    
+                    fR=1  # filter Rows
+                    fC=2  # filter Column
+                    pR=1  # pool Rows
+                    pC=1  # pool Column
+                    nfilter.append(8)
+                    stride_size=1
+
+                    l_conv1 = ConvolutionalLayer(
+                        rng=self._randomState,
+                        input=inputs[i].reshape((self._batchSize,1,newR,newC)),
+                        filter_shape=(nfilter[0],1,fR,fC),
+                        image_shape=(self._batchSize,1,newR,newC),
+                        poolsize=(pR,pC),
+                        stride=(stride_size,stride_size)
+                    )                
+                    layers.append(l_conv1)
+                    
+                    newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+
+                    fR=1  # filter Rows
+                    fC=2  # filter Column
+                    pR=1  # pool Rows
+                    pC=1  # pool Column
+                    nfilter.append(8)
+                    stride_size=1
+                    
+                    l_conv2 = ConvolutionalLayer(
+                        rng=self._randomState,
+                        input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                        filter_shape=(nfilter[1],nfilter[0],fR,fC),
+                        image_shape=(self._batchSize,nfilter[0],newR,newC),
+                        poolsize=(pR,pC),
+                        stride=(stride_size,stride_size)
+                    )                
+                    layers.append(l_conv2)
+                    
+                    newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+
+                    outs_conv.append(l_conv2.output)
+                    outs_conv_shapes.append((nfilter[1],newC))
+                    
                 else:
-                    # Building here for 1D simple
-                    l_in = lasagne.layers.InputLayer(
-                        shape=(self._batchSize, 1) + dim, 
-                        input_var=inputs[i].reshape((self._batchSize, 1) + dim),
-                    )
                                 
-                    l_outs_conv.append(l_in)
-
+                    outs_conv.append(inputs[i])
+                    outs_conv_shapes.append((1,dim[0]))
+        
+        
         ## Custom merge of layers
-        ## NB : l_output_conv=lasagne.layers.MergeLayer(l_outs_conv) gives NOT IMPLEMENTED ERROR
-        output_conv = lasagne.layers.get_output(l_outs_conv[0]).flatten().reshape((self._batchSize, np.prod(l_outs_conv[0].output_shape[1:])))       
-        shapes = [np.prod(l_outs_conv[0].output_shape[1:])]
+        output_conv = outs_conv[0].flatten().reshape((self._batchSize, np.prod(outs_conv_shapes[0])))
+        shapes=np.prod(outs_conv_shapes[0])
 
-        if (len(l_outs_conv)>1):
-            for l_out_conv in l_outs_conv[1:]:
-                output_conv=T.concatenate((output_conv, lasagne.layers.get_output(l_out_conv).flatten().reshape((self._batchSize, np.prod(l_out_conv.output_shape[1:])))) , axis=1)
-                shapes.append(np.prod(l_out_conv.output_shape[1:]))
+        if (len(outs_conv)>1):
+            for out_conv,out_conv_shape in zip(outs_conv[1:],outs_conv_shapes[1:]):
+                output_conv=T.concatenate((output_conv, out_conv.flatten().reshape((self._batchSize, np.prod(out_conv_shape)))) , axis=1)
+                shapes+=np.prod(out_conv_shape)
+                shapes
 
-        shape = sum(shapes)
+                
+        self.hiddenLayer1 = HiddenLayer(rng=self._randomState, input=output_conv,
+                                       n_in=shapes, n_out=50,
+                                       activation=T.tanh)                                       
+        layers.append(self.hiddenLayer1)
 
-        l_output_conv = lasagne.layers.InputLayer(
-            shape=([self._batchSize, shape]),
-            input_var=output_conv,
-        )
+        self.hiddenLayer2 = HiddenLayer(rng=self._randomState, input=self.hiddenLayer1.output,
+                                       n_in=50, n_out=20,
+                                       activation=T.tanh)
+        layers.append(self.hiddenLayer2)
 
-        l_hidden1 = lasagne.layers.DenseLayer(
-            l_output_conv,
-            num_units=50,#512,
-            nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.HeUniform(),
-            b=lasagne.init.Constant(.0)
-        )
+        self.outLayer = HiddenLayer(rng=self._randomState, input=self.hiddenLayer2.output,
+                                       n_in=20, n_out=self._nActions,
+                                       activation=None)
+        layers.append(self.outLayer)
 
-        l_hidden2 = lasagne.layers.DenseLayer(
-            l_hidden1,
-            num_units=20,#50,#512,
-            nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.HeUniform(),
-            b=lasagne.init.Constant(.0)
-        )
-
-        l_out = lasagne.layers.DenseLayer(
-            l_hidden2,
-            num_units=self._nActions,
-            nonlinearity=None,
-            W=lasagne.init.HeUniform(),
-            b=lasagne.init.Constant(.0)
-        )
-
-        return l_out, l_outs_conv, shapes
-
+        # Grab all the parameters together.
+        params = [param
+                       for layer in layers
+                       for param in layer.params]
+        
+        return self.outLayer.output, params, outs_conv_shapes
 
 if __name__ == '__main__':
     pass

@@ -18,7 +18,7 @@ import numpy as np
 
 
 
-def deepmind_rmsprop(loss_or_grads, params, learning_rate, 
+def deepmind_rmsprop(loss_or_grads, params, grads, learning_rate, 
                      rho, epsilon):
     """RMSProp updates [1]_.
 
@@ -63,7 +63,6 @@ def deepmind_rmsprop(loss_or_grads, params, learning_rate,
            Coursera. http://www.youtube.com/watch?v=O3sxAc4hxZU (formula @5:20)
     """
 
-    grads = get_or_compute_grads(loss_or_grads, params)
     updates = OrderedDict()
 
     for param, grad in zip(params, grads):
