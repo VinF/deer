@@ -111,6 +111,7 @@ class NeuralAgent(object):
             self._mode = mode
             self._modeEpochsLength = epochLength
             self._totalModeReward = 0
+            del self._tmpDataSet
             self._tmpDataSet = DataSet(self._environment.inputDimensions(), self._randomState, maxSize=self._replayMemorySize)
 
     def resumeTrainingMode(self):
