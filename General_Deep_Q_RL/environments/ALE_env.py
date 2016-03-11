@@ -21,7 +21,7 @@ class MyEnv(Environment):
                               {"key": "color_averaging", "value": True},
                               {"key": "repeat_action_probability", "value": 0.}]):
         self._mode = -1
-        self._modeScore = 0
+        self._modeScore = 0.0
         self._modeEpisodeCount = 0
 
         self._frameSkip = frame_skip if frame_skip >= 1 else 1
@@ -50,7 +50,7 @@ class MyEnv(Environment):
         if mode == MyEnv.VALIDATION_MODE:
             if self._mode != MyEnv.VALIDATION_MODE:
                 self._mode = MyEnv.VALIDATION_MODE
-                self._modeScore = 0
+                self._modeScore = 0.0
                 self._modeEpisodeCount = 0
             else:
                 self._modeEpisodeCount += 1
