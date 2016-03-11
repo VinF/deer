@@ -73,8 +73,8 @@ class MyEnv(Environment):
         self._ale.getScreenGrayscale(self._screen)
         cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
   
-        self._modeScore += np.sign(reward)
-        return reward
+        self._modeScore += reward
+        return np.sign(reward)
 
     def summarizePerformance(self, test_data_set):
         if self.inTerminalState() == False:
