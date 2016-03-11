@@ -1,3 +1,16 @@
+""" 
+The environment simulates the possibility of buying or selling a good. The agent can either have one unit or zero unit of that good. At each transaction with the market, the agent obtains a reward equivalent to the price of the good when selling it and the opposite when buying. In addition, a penalty of 0.5 (negative reward) is added for each transaction.
+Two actions are possible for the agent:
+- Action 0 corresponds to selling if the agent possesses one unit or idle if the agent possesses zero unit.
+- Action 1 corresponds to buying if the agent possesses zero unit or idle if the agent already possesses one unit.
+The state of the agent is made up of an history of two punctual observations:
+- The price signal
+- Either the agent possesses the good or not (1 or 0)
+The price signal is build following the same rules for the training and the validation environment. That allows the agent to learn a strategy that exploits this successfully.
+
+Authors: Vincent Francois-Lavet, David Taralla
+"""
+
 import numpy as np
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
@@ -8,16 +21,6 @@ from IPython import embed
 import copy
 
 class MyEnv(Environment):
-    """ 
-    The environment simulates the possibility of buying or selling a good. The agent can either have one unit or zero unit of that good. At each transaction with the market, the agent obtains a reward equivalent to the price of the good when selling it and the opposite when buying. In addition, a penalty of 0.5 (negative reward) is added for each transaction.
-    Two actions are possible for the agent:
-    - Action 0 corresponds to selling if the agent possesses one unit or idle if the agent possesses zero unit.
-    - Action 1 corresponds to buying if the agent possesses zero unit or idle if the agent already possesses one unit.
-    The state of the agent is made up of an history of two punctual observations:
-    - The price signal
-    - Either the agent possesses the good or not (1 or 0)
-    The price signal is build following the same rules for the training and the validation environment. That allows the agent to learn a strategy that exploits this successfully.
-    """
     
     def __init__(self, rng):
         """ Initialize environment.
