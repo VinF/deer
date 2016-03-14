@@ -287,15 +287,15 @@ class DataSet(object):
         """
 
         self._batchDimensions = env.inputDimensions()
-        self._maxHistorySize = np.max([inputDims[i][0] for i in range (len(inputDims))])
+        self._maxHistorySize = np.max([self._batchDimensions[i][0] for i in range (len(self._batchDimensions))])
         self._size = maxSize
         self._actions      = CircularBuffer(maxSize, dtype="int8")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
-        self._observations = np.zeros(len(inputDims), dtype='object')
+        self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
-        for i in range(len(inputDims)):
-            self._observations[i] = CircularBuffer(maxSize, elemShape=inputDims[i][1:], dtype=env.observationType(i))
+        for i in range(len(self._batchDimensions)):
+            self._observations[i] = CircularBuffer(maxSize, elemShape=self._batchDimensions[i][1:], dtype=env.observationType(i))
 
         if (randomState == None):
             self._randomState = np.random.RandomState()
