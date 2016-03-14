@@ -33,7 +33,7 @@ class NeuralAgent(object):
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
         self._randomState = randomState
-        self._dataSet = DataSet(inputDims, maxSize=replay_memory_size, randomState=randomState)
+        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -112,7 +112,7 @@ class NeuralAgent(object):
             self._modeEpochsLength = epochLength
             self._totalModeReward = 0
             del self._tmpDataSet
-            self._tmpDataSet = DataSet(self._environment.inputDimensions(), self._randomState, maxSize=self._replayMemorySize)
+            self._tmpDataSet = DataSet(self._environment, self._randomState, maxSize=self._replayMemorySize)
 
     def resumeTrainingMode(self):
         self._mode = -1
@@ -275,7 +275,7 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, inputDims, randomState=None, maxSize=1000):
+    def __init__(self, env, randomState=None, maxSize=1000):
         """Initializer.
 
         Parameters:
@@ -286,16 +286,16 @@ class DataSet(object):
             maxSize - The replay memory maximum size.
         """
 
-        self._batchDimensions = inputDims
+        self._batchDimensions = env.inputDimensions()
         self._maxHistorySize = np.max([inputDims[i][0] for i in range (len(inputDims))])
         self._size = maxSize
-        self._actions      = CircularBuffer(maxSize, dtype="int32")
+        self._actions      = CircularBuffer(maxSize, dtype="int8")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
         self._observations = np.zeros(len(inputDims), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(inputDims)):
-            self._observations[i] = CircularBuffer(maxSize, elemShape=inputDims[i][1:])
+            self._observations[i] = CircularBuffer(maxSize, elemShape=inputDims[i][1:], dtype=env.observationType(i))
 
         if (randomState == None):
             self._randomState = np.random.RandomState()

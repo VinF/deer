@@ -117,6 +117,15 @@ class Environment(object):
 
         pass
 
+    def observationType(self, subject):
+        """Get the most inner type (np.uint8, np.float32, ...) of [subject].
+
+        Parameters:
+            subject [int] - The subject
+        """
+
+        return np.float32
+
 class QNetwork(object):        
     def train(self, states, actions, rewards, nextStates, terminals):
         raise NotImplementedError()

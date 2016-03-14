@@ -90,6 +90,9 @@ class MyEnv(Environment):
     def inputDimensions(self):
         return [(4, 84, 84)]
 
+    def observationType(self, subject):
+        return np.uint8
+
     def nActions(self):
         return len(self._actions)
 
