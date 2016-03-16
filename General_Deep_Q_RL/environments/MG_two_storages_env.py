@@ -176,7 +176,7 @@ class MyEnv(Environment):
         # Lack of energy
             if (self._lastPonctualObservation[0]*self.battery_size>Energy_needed_from_battery):
             # If enough energy in the battery, use it
-                self._lastPonctualObservation[0]=self._lastPonctualObservation[0]-Energy_needed_from_battery/self.battery_size
+                self._lastPonctualObservation[0]=self._lastPonctualObservation[0]-Energy_needed_from_battery/self.battery_size*self.battery_eta
             else:
             # Otherwise: use what is left and then penalty                
                 reward-=(Energy_needed_from_battery-self._lastPonctualObservation[0]*self.battery_size)*2 #2euro/kWh
