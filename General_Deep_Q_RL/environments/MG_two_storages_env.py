@@ -17,11 +17,9 @@ Authors: Vincent Francois-Lavet, David Taralla
 import numpy as np
 np.set_printoptions(threshold=np.nan)
 
-from mpl_toolkits.axes_grid1 import host_subplot
-import mpl_toolkits.axisartist as AA
-import matplotlib.pyplot as plt
 from base_classes import Environment
 import copy
+from plot_MG_operation import plot_op
 
 class MyEnv(Environment):
     def __init__(self, rng):
