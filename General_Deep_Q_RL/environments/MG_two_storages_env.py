@@ -222,85 +222,31 @@ class MyEnv(Environment):
     def summarizePerformance(self, test_data_set):
         print("summary perf")
         print("self.hydrogen_storage: {}".format(self.hydrogen_storage))
-        i=0#180*24
         observations = test_data_set.observations()
-        actions = test_data_set.actions()
-        print("observations, actions")
-        print(observations[0+i:100+i], actions[0+i:100+i])
+        aaa = test_data_set.actions()
+        rewards = test_data_set.rewards()
+        actions=[]
+        for a, thea in enumerate (aaa):
+            if (thea==0):
+                actions.append(-self.hydrogen_max_power)
+            elif (thea==1):
+                actions.append(0)
+            elif (thea==2):
+                actions.append(self.hydrogen_max_power)
 
-        battery_level=observations[0][0+i:100+i]
-        consumption=observations[1][:,0][0+i:100+i]
-        production=observations[1][:,1][0+i:100+i]
-        actions=actions[0+i:100+i]
-        
-        battery_level=np.array(battery_level)*self.battery_size
-        consumption=np.array(consumption)*(self.max_consumption-self.min_consumption)+self.min_consumption
-        production=np.array(production)*(self.max_production-self.min_production)+self.min_production
+        battery_level=np.array(observations[0])*self.battery_size
+        consumption=np.array(observations[1][:,0])*(self.max_consumption-self.min_consumption)+self.min_consumption
+        production=np.array(observations[1][:,1])*(self.max_production-self.min_production)+self.min_production
 
-        steps=np.arange(100)
-        print(steps)
-        print("battery_level")
-        print(battery_level[0+i:100+i])
-        print(consumption[0+i:100+i])
-        print(production[0+i:100+i])
-        
-        steps_long=np.arange(1000)/10.
-        
-        
-        host = host_subplot(111, axes_class=AA.Axes)
-        plt.subplots_adjust(left=0.2, right=0.8)
-        
-        par1 = host.twinx()
-        par2 = host.twinx()
-        par3 = host.twinx()
-        
-        offset = 60
-        new_fixed_axis = par2.get_grid_helper().new_fixed_axis
-        par2.axis["right"] = new_fixed_axis(loc="right",
-                                            axes=par2,
-                                            offset=(offset, 0))    
-        par2.axis["right"].toggle(all=True)
-        
-        offset = -60
-        new_fixed_axis = par3.get_grid_helper().new_fixed_axis
-        par3.axis["right"] = new_fixed_axis(loc="left",
-                                            axes=par3,
-                                            offset=(offset, 0))    
-        par3.axis["right"].toggle(all=True)
-        
-        
-        host.set_xlim(-0.9, 99)
-        host.set_ylim(0, 15.9)
-        
-        host.set_xlabel("Time")
-        host.set_ylabel("Battery level")
-        par1.set_ylabel("Consumption")
-        par2.set_ylabel("Production")
-        par3.set_ylabel("H Actions")
-        
-        p1, = host.plot(steps, battery_level, marker='o', lw=1, c = 'b', alpha=0.8, ls='-', label = 'Battery level')
-        print(steps_long.shape)
-        print(np.repeat(consumption,10).shape)
-        p2, = par1.plot(steps_long-0.9, np.repeat(consumption,10), lw=3, c = 'r', alpha=0.5, ls='-', label = 'Consumption')
-        p3, = par2.plot(steps_long-0.9, np.repeat(production,10), lw=3, c = 'g', alpha=0.5, ls='-', label = 'Production')
-        p4, = par3.plot(steps_long, np.repeat(actions,10), lw=3, c = 'c', alpha=0.5, ls='-', label = 'H Actions')
-        
-        par1.set_ylim(0, 10.09)
-        par2.set_ylim(0, 10.09)
-        par3.set_ylim(-0.09, 2.09)
-        
-        host.legend(loc=1)#loc=9)
-        
-        host.axis["left"].label.set_color(p1.get_color())
-        par1.axis["right"].label.set_color(p2.get_color())
-        par2.axis["right"].label.set_color(p3.get_color())
-        par3.axis["right"].label.set_color(p4.get_color())
-        
-        plt.savefig("plot.png")
-        
-        plt.draw()
-        plt.show()
-        plt.close('all')
+        i=0
+        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter_.png")
+
+        i=180*24
+        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_summer_.png")
+
+        i=360*24
+        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter2_.png")
+
         
 def main():
     rng = np.random.RandomState(123456)
