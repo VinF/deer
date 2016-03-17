@@ -410,7 +410,6 @@ class MyQNetwork(QNetwork):
             # - observation[i] is a SCALAR -
             else:
                 if dim[0] > 3:
-
                     newR = 1
                     newC = dim[0]
                     
@@ -456,9 +455,11 @@ class MyQNetwork(QNetwork):
                     outs_conv_shapes.append((nfilter[1],newC))
                     
                 else:
-                                
+                    if(len(dim) == 2):
+                        outs_conv_shapes.append((dim[0],dim[1]))
+                    elif(len(dim) == 1):
+                        outs_conv_shapes.append((1,dim[0]))
                     outs_conv.append(inputs[i])
-                    outs_conv_shapes.append((1,dim[0]))
         
         
         ## Custom merge of layers
