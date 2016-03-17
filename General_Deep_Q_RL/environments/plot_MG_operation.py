@@ -1,5 +1,3 @@
-import matplotlib
-matplotlib.use('Agg')
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
@@ -11,28 +9,28 @@ def plot_op(actions, consumption,production,rewards,battery_level, plot_name):
     # PLOT
     ####
     
-    print "In this plot, total score"+str(np.sum(rewards)) 
-    print "H:"+str( np.sum(actions)*0.1 )
-    print "-:"+str( np.sum(rewards)-np.sum(actions)*0.1 )
+    print ( "In this plot, total score"+str(np.sum(rewards)) )
+    print ( "H:"+str( np.sum(actions)*0.1 ) )
+    print ( "-:"+str( np.sum(rewards)-np.sum(actions)*0.1 ) )
     
-    print "battery_level"
-    print battery_level
-    print "actions"
-    print actions
-    print "consumption"
-    print consumption
-    print "production"
-    print production
-    print "rewards"
-    print rewards
+    print ("battery_level")
+    print (battery_level)
+    print ("actions")
+    print (actions)
+    print ("consumption")
+    print (consumption)
+    print ("production")
+    print (production)
+    print ("rewards")
+    print (rewards)
     
     steps=np.arange(100)
-    print(steps)
-    print("battery_level")
-    print(battery_level)
-    print(consumption)
-    print(production)
-    print "demand:"
+    print (steps)
+    print ("battery_level")
+    print (battery_level)
+    print (consumption)
+    print (production)
+    print ("demand:")
     print (consumption-production)
     
     steps_long=np.arange(1000)/10.
@@ -90,4 +88,4 @@ def plot_op(actions, consumption,production,rewards,battery_level, plot_name):
     
     #plt.draw()
     #plt.show()
-    plt.close('all')
+    #plt.close('all')
