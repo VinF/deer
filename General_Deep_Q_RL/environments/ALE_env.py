@@ -10,7 +10,6 @@ from base_classes import Environment
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
-from IPython import embed
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0

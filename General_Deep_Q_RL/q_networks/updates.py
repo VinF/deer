@@ -12,7 +12,6 @@ The MIT License (MIT)
 
 import theano
 import theano.tensor as T
-from lasagne.updates import get_or_compute_grads
 from collections import OrderedDict
 import numpy as np
 

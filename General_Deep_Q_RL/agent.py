@@ -11,7 +11,6 @@ import sys
 import joblib
 import experiment.base_controllers as controllers
 from warnings import warn
-from IPython import embed
 
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in any given environment.

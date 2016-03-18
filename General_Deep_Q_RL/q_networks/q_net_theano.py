@@ -10,11 +10,10 @@ Nature, 518(7540):529-533, February 2015
 import numpy as np
 import theano
 import theano.tensor as T
-from updates import deepmind_rmsprop
+from q_networks.updates import deepmind_rmsprop
 from base_classes import QNetwork
-from IPython import embed
 
-from theano_layers import ConvolutionalLayer,HiddenLayer
+from q_networks.theano_layers import ConvolutionalLayer,HiddenLayer
 
     
 class MyQNetwork(QNetwork):
@@ -430,7 +429,7 @@ class MyQNetwork(QNetwork):
                     )                
                     layers.append(l_conv1)
                     
-                    newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+                    newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
 
                     fR=1  # filter Rows
                     fC=2  # filter Column
@@ -449,7 +448,7 @@ class MyQNetwork(QNetwork):
                     )                
                     layers.append(l_conv2)
                     
-                    newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+                    newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
 
                     outs_conv.append(l_conv2.output)
                     outs_conv_shapes.append((nfilter[1],newC))
