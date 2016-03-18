@@ -112,7 +112,8 @@ class MyQNetwork(QNetwork):
 
         q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
 
-        diff = target - q_val
+        # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
+        diff = - q_val + target 
 
         if self.clip_delta > 0:
             # If we simply take the squared clipped diff as our loss,
