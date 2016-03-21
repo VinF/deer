@@ -19,7 +19,7 @@ np.set_printoptions(threshold=np.nan)
 
 from base_classes import Environment
 import copy
-from plot_MG_operation import plot_op
+from environments.plot_MG_operation import plot_op
 
 class MyEnv(Environment):
     def __init__(self, rng):
