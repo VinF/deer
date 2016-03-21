@@ -97,14 +97,57 @@ if __name__ == "__main__":
     fname = hash(vars(parameters), hash_name="sha1")
     print("The parameters hash is: {}".format(fname))
     print("The parameters are: {}".format(parameters))
-    agent.attach(bc.VerboseController())
-    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
-    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
-    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
-    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(bc.FindBestController(VALIDATION_MODE, unique_fname=fname, testID=TEST_MODE))
-    agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
-    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=parameters.period_btw_summary_perfs))
+
+    agent.attach(bc.VerboseController(
+        evaluateOn='epoch', 
+        periodicity=1))
+
+    agent.attach(bc.TrainerController(
+        evaluateOn='action', 
+        periodicity=parameters.update_frequency, 
+        showEpisodeAvgVValue=True, 
+        showAvgBellmanResidual=True))
+
+    agent.attach(bc.LearningRateController(
+        initialLearningRate=parameters.learning_rate, 
+        learningRateDecay=parameters.learning_rate_decay,
+        periodicity=1))
+
+    agent.attach(bc.DiscountFactorController(
+        initialDiscountFactor=parameters.discount, 
+        discountFactorGrowth=parameters.discount_inc, 
+        discountFactorMax=parameters.discount_max,
+        periodicity=1))
+
+    agent.attach(bc.EpsilonController(
+        initialE=parameters.epsilon_start, 
+        eDecays=parameters.epsilon_decay, 
+        eMin=parameters.epsilon_min,
+        evaluateOn='action',
+        periodicity=1,
+        resetEvery='none'))
+
+    agent.attach(bc.FindBestController(
+        validationID=VALIDATION_MODE, 
+        testID=TEST_MODE,
+        unique_fname=fname, 
+        showPlot=False))
+    
+    agent.attach(bc.InterleavedTestEpochController(
+        id=VALIDATION_MODE, 
+        epochLength=parameters.steps_per_test, 
+        controllersToDisable=[0, 1, 2, 3, 4, 7], 
+        periodicity=2, 
+        showScore=True,
+        summarizeEvery=-1))
+
+    agent.attach(bc.InterleavedTestEpochController(
+        id=TEST_MODE,
+        epochLength=parameters.steps_per_test,
+        controllersToDisable=[0, 1, 2, 3, 4, 6],
+        periodicity=2,
+        showScore=True,
+        summarizeEvery=parameters.period_btw_summary_perfs))
     
     # Run the experiment
     try:

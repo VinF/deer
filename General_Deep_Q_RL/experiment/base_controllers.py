@@ -100,7 +100,7 @@ class Controller(object):
 class LearningRateController(Controller):
     """A controller that modifies the learning rate periodically upon epochs end."""
 
-    def __init__(self, initialLearningRate, learningRateDecay, periodicity=1):
+    def __init__(self, initialLearningRate=0.0002, learningRateDecay=1., periodicity=1):
         """Initializer.
 
         Parameters:
@@ -138,7 +138,7 @@ class LearningRateController(Controller):
 class EpsilonController(Controller):
     """A controller that modifies the probability "epsilon" of taking a random action periodically."""
 
-    def __init__(self, initialE, eDecays, eMin, evaluateOn='action', periodicity=1, resetEvery='none'):
+    def __init__(self, initialE=1., eDecays=10000, eMin=0.1, evaluateOn='action', periodicity=1, resetEvery='none'):
         """Initializer.
 
         Parameters:
@@ -217,7 +217,7 @@ class EpsilonController(Controller):
 class DiscountFactorController(Controller):
     """A controller that modifies the qnetwork discount periodically."""
 
-    def __init__(self, initialDiscountFactor, discountFactorGrowth, discountFactorMax=0.99, periodicity=1):
+    def __init__(self, initialDiscountFactor=0.9, discountFactorGrowth=1., discountFactorMax=0.99, periodicity=1):
         """Initializer.
 
         Parameters:
@@ -261,7 +261,7 @@ class DiscountFactorController(Controller):
 class InterleavedTestEpochController(Controller):
     """A controller that interleaves a test epoch between training epochs of the agent."""
 
-    def __init__(self, id, epochLength, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=1):
+    def __init__(self, id=0, epochLength=500, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=10):
         """Initializer.
 
         Parameters:
@@ -472,7 +472,7 @@ class FindBestController(Controller):
     epochs elapsed, ts: test scores, vs: validation scores}).
     """
 
-    def __init__(self, validationID, testID=None, unique_fname="nnet", showPlot=False):
+    def __init__(self, validationID=0, testID=None, unique_fname="nnet", showPlot=False):
         super(self.__class__, self).__init__()
 
         self._validationScores = []
