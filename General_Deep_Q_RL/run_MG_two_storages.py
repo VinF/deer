@@ -8,6 +8,7 @@ import logging
 import numpy as np
 from joblib import hash, dump
 import os
+import matplotlib.pyplot as plt
 
 from default_parser import process_args
 from agent import NeuralAgent
@@ -58,17 +59,18 @@ class Defaults:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-
+    
+    # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Instantiate environment
+    # --- Instantiate environment ---
     env = MG_two_storages_env(rng)
 
-    # Instantiate qnetwork
+    # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
@@ -82,7 +84,7 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
-    # Instantiate agent
+    # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
         qnetwork,
@@ -91,11 +93,12 @@ if __name__ == "__main__":
         parameters.batch_size,
         rng)
 
-    # Bind controllers to the agent
+    # --- Bind controllers to the agent ---
     VALIDATION_MODE = 0
     TEST_MODE = 1
-    fname = hash(vars(parameters), hash_name="sha1")
-    print("The parameters hash is: {}".format(fname))
+    h = hash(vars(parameters), hash_name="sha1")
+    fname = "MG2S_" + h
+    print("The parameters hash is: {}".format(h))
     print("The parameters are: {}".format(parameters))
 
     agent.attach(bc.VerboseController(
@@ -130,8 +133,7 @@ if __name__ == "__main__":
     agent.attach(bc.FindBestController(
         validationID=VALIDATION_MODE, 
         testID=TEST_MODE,
-        unique_fname=fname, 
-        showPlot=False))
+        unique_fname=fname))
     
     agent.attach(bc.InterleavedTestEpochController(
         id=VALIDATION_MODE, 
@@ -149,10 +151,21 @@ if __name__ == "__main__":
         showScore=True,
         summarizeEvery=parameters.period_btw_summary_perfs))
     
-    # Run the experiment
+    # --- Run the experiment ---
     try:
         os.mkdir("params")
     except Exception:
         pass
     dump(vars(parameters), "params/" + fname + ".jldump")
     agent.run(parameters.epochs, parameters.steps_per_epoch)
+    
+    # --- Show results ---
+    basename = "scores/" + fname
+    scores = joblib.load(basename + "_scores.jldump")
+    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
+    plt.plot(range(1, len(scores['ts'])+1), scores['ts'], label="TS", color='r')
+    plt.legend()
+    plt.xlabel("Number of epochs")
+    plt.ylabel("Score")
+    plt.savefig(basename + "_scores.pdf")
+    plt.show()

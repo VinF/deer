@@ -58,20 +58,21 @@ class Defaults:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-
+    
+    # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Instantiate environment
+    # --- Instantiate environment ---
     env = ALE_env(rng, frame_skip=parameters.frame_skip, 
                 ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
                              {"key": "color_averaging", "value": True},
                              {"key": "repeat_action_probability", "value": 0.}])
 
-    # Instantiate qnetwork
+    # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
-    # Instantiate agent
+    # --- Instantiate agent ---
     agent = ALEAgent(
         env,
         qnetwork,
@@ -94,9 +95,10 @@ if __name__ == "__main__":
         parameters.batch_size,
         rng)
 
-    # Bind controllers to the agent
-    fname = hash(vars(parameters), hash_name="sha1")
-    print("The parameters hash is: {}".format(fname))
+    # --- Bind controllers to the agent ---
+    h = hash(vars(parameters), hash_name="sha1")
+    fname = "ALE_" + h
+    print("The parameters hash is: {}".format(h))
     print("The parameters are: {}".format(parameters))
     
     agent.attach(bc.VerboseController(
@@ -131,8 +133,7 @@ if __name__ == "__main__":
     agent.attach(bc.FindBestController(
         validationID=ALE_env.VALIDATION_MODE,
         testID=None,
-        unique_fname=fname,
-        showPlot=False))
+        unique_fname=fname))
 
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE, 
@@ -142,10 +143,20 @@ if __name__ == "__main__":
         showScore=True,
         summarizeEvery=1))
     
-    # Run the experiment
+    # --- Run the experiment ---
     try:
         os.mkdir("params")
     except Exception:
         pass
     dump(vars(parameters), "params/" + fname + ".jldump")
     agent.run(parameters.epochs, parameters.steps_per_epoch)
+    
+    # --- Show results ---
+    basename = "scores/" + fname
+    scores = joblib.load(basename + "_scores.jldump")
+    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
+    plt.legend()
+    plt.xlabel("Number of epochs")
+    plt.ylabel("Score")
+    plt.savefig(basename + "_scores.pdf")
+    plt.show()

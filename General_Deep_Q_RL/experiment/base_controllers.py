@@ -8,7 +8,6 @@ an episode ends.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
-from matplotlib import pyplot as plt
 import numpy as np
 import joblib
 import os
@@ -467,12 +466,12 @@ class FindBestController(Controller):
 
     At the end of the experiment (OnEnd), if active, this controller will print information about the epoch at which 
     the best neural net was found together with its generalization score, this last information shown only if [testID] 
-    is different from None. Finally it will plot all validation and generalization (if [testID] not None) scores it 
-    memorized and save it as a PDF file, plus will dump a dictionnary containing the data of the plots ({n: number of 
-    epochs elapsed, ts: test scores, vs: validation scores}).
+    is different from None. Finally it will dump a dictionnary containing the data of the plots ({n: number of 
+    epochs elapsed, ts: test scores, vs: validation scores}). Note that if [testID] is None, the value dumped for the
+    'ts' key is [].
     """
 
-    def __init__(self, validationID=0, testID=None, unique_fname="nnet", showPlot=False):
+    def __init__(self, validationID=0, testID=None, unique_fname="nnet"):
         super(self.__class__, self).__init__()
 
         self._validationScores = []
@@ -507,29 +506,16 @@ class FindBestController(Controller):
             return
 
         bestIndex = np.argmax(self._validationScores)
-        print("Best neural net obtained after {} epochs, with validation score {}".format(self._epochNumbers[bestIndex], self._validationScores[bestIndex]))
-        
-        plt.plot(self._epochNumbers, self._validationScores, label="VS", color='b')
+        print("Best neural net obtained after {} epochs, with validation score {}".format(bestIndex+1, self._validationScores[bestIndex]))
         if self._testID != None:
             print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
-            plt.plot(self._epochNumbers, self._testScores, label="TS", color='r')
-            plt.legend()
-
-        plt.xlabel("Number of epochs")
-        plt.ylabel("Score")
-
-        
+                
         try:
             os.mkdir("scores")
         except Exception:
             pass
         basename = "scores/" + self._filename
-        joblib.dump({"n": self._epochNumbers, "vs": self._validationScores, "ts": self._testScores}, basename + "_scores.jldump")
-        plt.savefig(basename + "_scores.pdf")
-        if self._showPlot:
-            plt.show()
-        else:
-            plt.clf()
+        joblib.dump({"vs": self._validationScores, "ts": self._testScores}, basename + "_scores.jldump")
 
 
 if __name__ == "__main__":
