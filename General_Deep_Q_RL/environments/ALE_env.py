@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0
-    TEST_MODE = 1
 
     def __init__(self, rng, rom="ale/breakout.bin", frame_skip=4, 
                  ale_options=[{"key": "random_seed", "value": 0}, 

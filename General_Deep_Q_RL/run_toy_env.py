@@ -56,17 +56,18 @@ class Defaults:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-
+    
+    # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Instantiate environment
+    # --- Instantiate environment ---
     env = Toy_env(rng)
 
-    # Instantiate qnetwork
+    # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
-    # Instantiate agent
+    # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
         qnetwork,
@@ -89,13 +90,67 @@ if __name__ == "__main__":
         parameters.batch_size,
         rng)
 
-    # Bind controllers to the agent
-    agent.attach(bc.VerboseController())
-    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
-    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
-    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
-    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(bc.InterleavedTestEpochController(0, parameters.steps_per_test, [0, 1, 2, 3, 4], summarizeEvery=parameters.period_btw_summary_perfs))
+    # --- Bind controllers to the agent ---
+    # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
+    # learning rate as well as the training epoch number.
+    agent.attach(bc.VerboseController(
+        evaluateOn='epoch', 
+        periodicity=1))
+
+    # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
+    # Plus, we also want to display after each training episode (!= than after every training) the average bellman
+    # residual and the average of the V values obtained during the last episode, hence the two last arguments.
+    agent.attach(bc.TrainerController(
+        evaluateOn='action', 
+        periodicity=parameters.update_frequency, 
+        showEpisodeAvgVValue=True, 
+        showAvgBellmanResidual=True))
+
+    # Every epoch end, one has the possibility to modify the learning rate using a LearningRateController. Here we 
+    # wish to update the learning rate after every training epoch (periodicity=1), according to the parameters given.
+    agent.attach(bc.LearningRateController(
+        initialLearningRate=parameters.learning_rate,
+        learningRateDecay=parameters.learning_rate_decay,
+        periodicity=1))
+
+    # Same for the discount factor.
+    agent.attach(bc.DiscountFactorController(
+        initialDiscountFactor=parameters.discount,
+        discountFactorGrowth=parameters.discount_inc,
+        discountFactorMax=parameters.discount_max,
+        periodicity=1))
+
+    # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
+    # policy implemented by the agent. This controllers has a bit more capabilities, as it allows one to choose more
+    # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
+    # episode or epoch (or never, hence the resetEvery='none').
+    agent.attach(bc.EpsilonController(
+        initialE=parameters.epsilon_start, 
+        eDecays=parameters.epsilon_decay, 
+        eMin=parameters.epsilon_min,
+        evaluateOn='action', 
+        periodicity=1, 
+        resetEvery='none'))
+
+    # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
+    # "test epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want these 
+    # test epoch to interfere with the training of the agent, which is well established by the TrainerController, 
+    # EpsilonController and alike. Therefore, we will disable these controllers for the whole duration of the test 
+    # epochs interleaved this way, using the controllersToDisable argument of the InterleavedTestEpochController. 
+    # The value of this argument is a list of the indexes of all controllers to disable, their index reflecting in 
+    # which order they were added. Here, "0" is refering to the firstly attached controller, thus the 
+    # VerboseController; "2" refers to the thirdly attached controller, thus the LearningRateController; etc. The order 
+    # in which the indexes are listed is not important.
+    # For each test epoch, we want also to display the sum of all rewards obtained, hence the showScore=True.
+    # Finally, we want to call the summarizePerformance method of Toy_Env every [parameters.period_btw_summary_perfs]
+    # *test* epochs.
+    agent.attach(bc.InterleavedTestEpochController(
+        id=0, 
+        epochLength=parameters.steps_per_test, 
+        controllersToDisable=[0, 1, 2, 3, 4], 
+        periodicity=2, 
+        showScore=True,
+        summarizeEvery=parameters.period_btw_summary_perfs))
         
-    # Run the experiment
+    # --- Run the experiment ---
     agent.run(parameters.epochs, parameters.steps_per_epoch)

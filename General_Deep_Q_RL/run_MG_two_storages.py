@@ -8,6 +8,7 @@ import logging
 import numpy as np
 from joblib import hash, dump
 import os
+import matplotlib.pyplot as plt
 
 from default_parser import process_args
 from agent import NeuralAgent
@@ -58,17 +59,18 @@ class Defaults:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-
+    
+    # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
-    # Instantiate environment
+    # --- Instantiate environment ---
     env = MG_two_storages_env(rng)
 
-    # Instantiate qnetwork
+    # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
@@ -82,7 +84,7 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
-    # Instantiate agent
+    # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
         qnetwork,
@@ -90,26 +92,116 @@ if __name__ == "__main__":
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng)
-
-    # Bind controllers to the agent
-    VALIDATION_MODE = 0
-    TEST_MODE = 1
-    fname = hash(vars(parameters), hash_name="sha1")
-    print("The parameters hash is: {}".format(fname))
-    print("The parameters are: {}".format(parameters))
-    agent.attach(bc.VerboseController())
-    agent.attach(bc.TrainerController(periodicity=parameters.update_frequency))
-    agent.attach(bc.LearningRateController(parameters.learning_rate, parameters.learning_rate_decay))
-    agent.attach(bc.DiscountFactorController(parameters.discount, parameters.discount_inc, parameters.discount_max))
-    agent.attach(bc.EpsilonController(parameters.epsilon_start, parameters.epsilon_decay, parameters.epsilon_min))
-    agent.attach(bc.FindBestController(VALIDATION_MODE, unique_fname=fname, testID=TEST_MODE))
-    agent.attach(bc.InterleavedTestEpochController(VALIDATION_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 7], periodicity=2, summarizeEvery=-1))
-    agent.attach(bc.InterleavedTestEpochController(TEST_MODE, parameters.steps_per_test, [0, 1, 2, 3, 4, 6], periodicity=2, summarizeEvery=parameters.period_btw_summary_perfs))
     
-    # Run the experiment
+    # --- Create unique filename for FindBestController ---
+    h = hash(vars(parameters), hash_name="sha1")
+    fname = "MG2S_" + h
+    print("The parameters hash is: {}".format(h))
+    print("The parameters are: {}".format(parameters))
+
+    # --- Bind controllers to the agent ---
+    # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
+    # learning rate as well as the training epoch number.
+    agent.attach(bc.VerboseController(
+        evaluateOn='epoch', 
+        periodicity=1))
+    
+    # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
+    # Plus, we also want to display after each training episode (!= than after every training) the average bellman
+    # residual and the average of the V values obtained during the last episode, hence the two last arguments.
+    agent.attach(bc.TrainerController(
+        evaluateOn='action', 
+        periodicity=parameters.update_frequency, 
+        showEpisodeAvgVValue=True, 
+        showAvgBellmanResidual=True))
+    
+    # Every epoch end, one has the possibility to modify the learning rate using a LearningRateController. Here we 
+    # wish to update the learning rate after every training epoch (periodicity=1), according to the parameters given.
+    agent.attach(bc.LearningRateController(
+        initialLearningRate=parameters.learning_rate, 
+        learningRateDecay=parameters.learning_rate_decay,
+        periodicity=1))
+    
+    # Same for the discount factor.
+    agent.attach(bc.DiscountFactorController(
+        initialDiscountFactor=parameters.discount, 
+        discountFactorGrowth=parameters.discount_inc, 
+        discountFactorMax=parameters.discount_max,
+        periodicity=1))
+    
+    # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
+    # policy implemented by the agent. This controllers has a bit more capabilities, as it allows one to choose more
+    # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
+    # episode or epoch (or never, hence the resetEvery='none').
+    agent.attach(bc.EpsilonController(
+        initialE=parameters.epsilon_start, 
+        eDecays=parameters.epsilon_decay, 
+        eMin=parameters.epsilon_min,
+        evaluateOn='action',
+        periodicity=1,
+        resetEvery='none'))
+
+    # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
+    # seems to generalize the better, thus which one has the highest validation score. However we also want to keep 
+    # track of a "true generalization score", the "test score". Indeed, what if we overfit the validation score ?
+    # To achieve these goals, one can use the FindBestController along two InterleavedTestEpochControllers, one for
+    # each mode (validation and test). It is important that the validationID and testID are the same than the id 
+    # argument of the two InterleavedTestEpochControllers (implementing the validation mode and test mode 
+    # respectively). The FindBestController will dump on disk the validation and test scores for each and every 
+    # network, as well as the structure of the neural network having the best validation score. These dumps can then
+    # used to plot the evolution of the validation and test scores (see below) or simply recover the resulting neural 
+    # network for your application.
+    agent.attach(bc.FindBestController(
+        validationID=MG_two_storages_env.VALIDATION_MODE, 
+        testID=MG_two_storages_env.TEST_MODE,
+        unique_fname=fname))
+    
+    # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
+    # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
+    # these validation epoch to interfere with the training of the agent, which is well established by the 
+    # TrainerController, EpsilonController and alike, nor with its testing (see next controller). Therefore, we will 
+    # disable these controllers for the whole duration of the validation epochs interleaved this way, using the 
+    # controllersToDisable argument of the InterleavedTestEpochController. For each validation epoch, we want also to 
+    # display the sum of all rewards obtained, hence the showScore=True. Finally, we never want this controller to call 
+    # the summarizePerformance method of MG_two_storage_env.
+    agent.attach(bc.InterleavedTestEpochController(
+        id=MG_two_storages_env.VALIDATION_MODE, 
+        epochLength=parameters.steps_per_test, 
+        controllersToDisable=[0, 1, 2, 3, 4, 7], 
+        periodicity=2, 
+        showScore=True,
+        summarizeEvery=-1))
+    
+    # Besides inserting a validation epoch (required if one wants to find the best neural network over all training
+    # epochs), we also wish to interleave a "test epoch" between each training epoch ("one of two epochs", hence the 
+    # periodicity=2). We do not want these test epoch to interfere with the training of the agent nor with its 
+    # validation. Therefore, we will disable these controllers for the whole duration of the test epochs interleaved 
+    # this way, using the controllersToDisable argument of the InterleavedTestEpochController. For each test epoch, we 
+    # want also to display the sum of all rewards obtained, hence the showScore=True. Finally, we want to call the 
+    # summarizePerformance method of MG_two_storage_env every [parameters.period_btw_summary_perfs] *test* epochs.
+    agent.attach(bc.InterleavedTestEpochController(
+        id=MG_two_storages_env.TEST_MODE,
+        epochLength=parameters.steps_per_test,
+        controllersToDisable=[0, 1, 2, 3, 4, 6],
+        periodicity=2,
+        showScore=True,
+        summarizeEvery=parameters.period_btw_summary_perfs))
+    
+    # --- Run the experiment ---
     try:
         os.mkdir("params")
     except Exception:
         pass
     dump(vars(parameters), "params/" + fname + ".jldump")
     agent.run(parameters.epochs, parameters.steps_per_epoch)
+    
+    # --- Show results ---
+    basename = "scores/" + fname
+    scores = joblib.load(basename + "_scores.jldump")
+    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
+    plt.plot(range(1, len(scores['ts'])+1), scores['ts'], label="TS", color='r')
+    plt.legend()
+    plt.xlabel("Number of epochs")
+    plt.ylabel("Score")
+    plt.savefig(basename + "_scores.pdf")
+    plt.show()
