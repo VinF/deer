@@ -111,7 +111,6 @@ class MyQNetwork(QNetwork):
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
         q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
-
         # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
         diff = - q_val + target 
 
@@ -310,8 +309,8 @@ class MyQNetwork(QNetwork):
                 )
                 layers.append(l_conv1)
 
-                newR = (newR - fR + 1 - pR) / stride_size + 1
-                newC = (newC - fC + 1 - pC) / stride_size + 1
+                newR = (newR - fR + 1 - pR) // stride_size + 1
+                newC = (newC - fC + 1 - pC) // stride_size + 1
 
                 ### Second layer
                 fR=4  # filter Rows
@@ -330,8 +329,8 @@ class MyQNetwork(QNetwork):
                 )
                 layers.append(l_conv2)
 
-                newR = (newR - fR + 1 - pR) / stride_size + 1
-                newC = (newC - fC + 1 - pC) / stride_size + 1
+                newR = (newR - fR + 1 - pR) // stride_size + 1
+                newC = (newC - fC + 1 - pC) // stride_size + 1
 
                 ### Third layer
                 fR=3  # filter Rows
@@ -350,8 +349,8 @@ class MyQNetwork(QNetwork):
                 )
                 layers.append(l_conv3)
 
-                newR = (newR - fR + 1 - pR) / stride_size + 1
-                newC = (newC - fC + 1 - pC) / stride_size + 1
+                newR = (newR - fR + 1 - pR) // stride_size + 1
+                newC = (newC - fC + 1 - pC) // stride_size + 1
 
                 outs_conv.append(l_conv3.output)
                 outs_conv_shapes.append((nfilter[2],newR,newC))
@@ -380,8 +379,8 @@ class MyQNetwork(QNetwork):
                 )                
                 layers.append(l_conv1)
                 
-                newR = (newR - fR + 1 - pR) / stride_size + 1  # stride 2
-                newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+                newR = (newR - fR + 1 - pR) // stride_size + 1  # stride 2
+                newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
 
                 fR=2  # filter Rows
                 fC=2  # filter Column
@@ -389,7 +388,7 @@ class MyQNetwork(QNetwork):
                 pC=1  # pool Column
                 nfilter.append(16)
                 stride_size=1
-                                
+
                 l_conv2 = ConvolutionalLayer(
                     rng=self._randomState,
                     input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
@@ -400,8 +399,8 @@ class MyQNetwork(QNetwork):
                 )                
                 layers.append(l_conv2)
                 
-                newR = (newR - fR + 1 - pR) / stride_size + 1  # stride 2
-                newC = (newC - fC + 1 - pC) / stride_size + 1  # stride 2
+                newR = (newR - fR + 1 - pR) // stride_size + 1  # stride 2
+                newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
 
                 outs_conv.append(l_conv2.output)
                 outs_conv_shapes.append((nfilter[1],newR,newC))
