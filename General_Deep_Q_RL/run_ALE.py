@@ -12,7 +12,7 @@ import os
 from default_parser import process_args
 from agent_ale import ALEAgent
 from q_networks.q_net_theano import MyQNetwork
-from environments.ALE_env import MyEnv
+from environments import ALE_env
 import experiment.base_controllers as bc
 
 class Defaults:
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # Instantiate environment
-    env = MyEnv(rng, frame_skip=parameters.frame_skip, 
+    env = ALE_env(rng, frame_skip=parameters.frame_skip, 
                 ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
                              {"key": "color_averaging", "value": True},
                              {"key": "repeat_action_probability", "value": 0.}])

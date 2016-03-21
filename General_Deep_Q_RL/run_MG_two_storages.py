@@ -12,7 +12,7 @@ import os
 from default_parser import process_args
 from agent import NeuralAgent
 from q_networks.q_net_theano import MyQNetwork
-from environments.MG_two_storages_env import MyEnv
+from environments import MG_two_storages_env
 import experiment.base_controllers as bc
 
 class Defaults:
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # Instantiate environment
-    env = MyEnv(rng)
+    env = MG_two_storages_env(rng)
 
     # Instantiate qnetwork
     qnetwork = MyQNetwork(
