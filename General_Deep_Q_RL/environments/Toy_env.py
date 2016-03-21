@@ -28,11 +28,7 @@ class MyEnv(Environment):
             rng - the numpy random number generator            
         """
         # Defining the type of environment
-        self._nActions = 2                     # The environment allows two different actions to be taken at each time step
         self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
-        self._inputDimensions = [(6,), (1,)]   # We consider an observation made up of an history of 
-                                               # - the last six for the first scalar element obtained
-                                               # - the last one for the second scalar element
         
         self._randomState = rng
                 
@@ -132,10 +128,14 @@ class MyEnv(Environment):
         plt.show()
 
     def inputDimensions(self):
-        return self._inputDimensions
+        return [(6,), (1,)]     # We consider an observation made up of an history of 
+                                # - the last six for the first scalar element obtained
+                                # - the last one for the second scalar element
+
 
     def nActions(self):
-        return self._nActions
+        return 2                     # The environment allows two different actions to be taken at each time step
+
 
     def inTerminalState(self):
         return False

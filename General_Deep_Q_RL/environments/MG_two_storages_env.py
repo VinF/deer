@@ -34,8 +34,6 @@ class MyEnv(Environment):
         
         inc_sizing=1.
         
-        self._nActions = 3 
-
         if (self._dist_equinox==1 and self._pred==1):
             self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
             self._inputDimensions = [(1,), (12,2), (1,),(1,2)]
@@ -212,7 +210,7 @@ class MyEnv(Environment):
         return self._inputDimensions
 
     def nActions(self):
-        return self._nActions
+        return 3
 
     def observe(self):
         return copy.deepcopy(self._lastPonctualObservation)     
