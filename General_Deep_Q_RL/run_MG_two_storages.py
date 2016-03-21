@@ -94,8 +94,6 @@ if __name__ == "__main__":
         rng)
 
     # --- Bind controllers to the agent ---
-    VALIDATION_MODE = 0
-    TEST_MODE = 1
     h = hash(vars(parameters), hash_name="sha1")
     fname = "MG2S_" + h
     print("The parameters hash is: {}".format(h))
@@ -131,12 +129,12 @@ if __name__ == "__main__":
         resetEvery='none'))
 
     agent.attach(bc.FindBestController(
-        validationID=VALIDATION_MODE, 
-        testID=TEST_MODE,
+        validationID=MG_two_storages_env.VALIDATION_MODE, 
+        testID=MG_two_storages_env.TEST_MODE,
         unique_fname=fname))
     
     agent.attach(bc.InterleavedTestEpochController(
-        id=VALIDATION_MODE, 
+        id=MG_two_storages_env.VALIDATION_MODE, 
         epochLength=parameters.steps_per_test, 
         controllersToDisable=[0, 1, 2, 3, 4, 7], 
         periodicity=2, 
@@ -144,7 +142,7 @@ if __name__ == "__main__":
         summarizeEvery=-1))
 
     agent.attach(bc.InterleavedTestEpochController(
-        id=TEST_MODE,
+        id=MG_two_storages_env.TEST_MODE,
         epochLength=parameters.steps_per_test,
         controllersToDisable=[0, 1, 2, 3, 4, 6],
         periodicity=2,

@@ -22,6 +22,9 @@ import copy
 from environments.plot_MG_operation import plot_op
 
 class MyEnv(Environment):
+    VALIDATION_MODE = 0
+    TEST_MODE = 1
+
     def __init__(self, rng):
         """ Initialize environment
 
@@ -109,7 +112,7 @@ class MyEnv(Environment):
             self.production=self.production_train
             self.consumption_norm=self.consumption_train_norm
             self.consumption=self.consumption_train
-        elif mode == 0:
+        elif mode == VALIDATION_MODE:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
             self.consumption_norm=self.consumption_valid_norm
