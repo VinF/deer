@@ -9,7 +9,7 @@ import numpy as np
 from joblib import hash, dump
 import os
 
-from arg_parser import process_args
+from default_parser import process_args
 from agent_ale import ALEAgent
 from q_networks.q_net_theano import MyQNetwork
 from environments.ALE_env import MyEnv

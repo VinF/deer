@@ -9,7 +9,7 @@ import numpy as np
 from joblib import hash, dump
 import os
 
-from arg_parser import process_args
+from default_parser import process_args
 from agent import NeuralAgent
 from q_networks.q_net_theano import MyQNetwork
 from environments.Toy_env import MyEnv
