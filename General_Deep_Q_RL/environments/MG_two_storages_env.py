@@ -112,7 +112,7 @@ class MyEnv(Environment):
             self.production=self.production_train
             self.consumption_norm=self.consumption_train_norm
             self.consumption=self.consumption_train
-        elif mode == VALIDATION_MODE:
+        elif mode == MyEnv.VALIDATION_MODE:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
             self.consumption_norm=self.consumption_valid_norm
