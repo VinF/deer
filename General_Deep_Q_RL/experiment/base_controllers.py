@@ -481,7 +481,6 @@ class FindBestController(Controller):
         self._testID = testID
         self._validationID = validationID
         self._filename = unique_fname
-        self._showPlot = showPlot
         self._bestValidationScoreSoFar = -9999999
 
     def OnEpochEnd(self, agent):
