@@ -10,11 +10,11 @@ from joblib import hash, dump
 import os
 import matplotlib.pyplot as plt
 
-from default_parser import process_args
-from agent import NeuralAgent
-from q_networks.q_net_theano import MyQNetwork
-from environments import MG_two_storages_env
-import experiment.base_controllers as bc
+from deeprl.default_parser import process_args
+from deeprl.agent import NeuralAgent
+from deeprl.q_networks.q_net_theano import MyQNetwork
+from deeprl.environments import MG_two_storages_env
+import deeprl.experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------

@@ -9,7 +9,7 @@ import numpy as np
 import copy
 import sys
 import joblib
-import experiment.base_controllers as controllers
+from .experiment import base_controllers as controllers
 from warnings import warn
 
 class NeuralAgent(object):

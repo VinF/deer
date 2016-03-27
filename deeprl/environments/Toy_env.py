@@ -16,8 +16,9 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 import theano
-from base_classes import Environment
 import copy
+
+from ..base_classes import Environment
 
 class MyEnv(Environment):
     
