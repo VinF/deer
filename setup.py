@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-import General_Deep_Q_RL
+import deeprl
 
 NAME = 'deeprl'
 VERSION = '0.1'
