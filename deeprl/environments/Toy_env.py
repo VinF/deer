@@ -49,7 +49,7 @@ class MyEnv(Environment):
         """ Reset environment for a new episode.
 
         Arguments:
-            testing - whether we are in test mode or train mode (boolean)  
+            mode - whether we are in test mode or train mode
         """
         if mode == -1:
             self.prices = self._priceSignalTrain
@@ -68,7 +68,6 @@ class MyEnv(Environment):
         Perform one time step on the environment.
         Arguments:
             action - chosen action (integer)
-            testing - whether we are in test mode or train mode (boolean)  
         Returns:
            reward - obtained reward for this transition
         """
