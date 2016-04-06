@@ -157,8 +157,7 @@ def main():
     myenv.act(0, False)
     myenv.act(0, False)
     myenv.act(1, False)
-
-    print (myenv._state)
+    print (myenv.observe())
     
 if __name__ == "__main__":
     main()
