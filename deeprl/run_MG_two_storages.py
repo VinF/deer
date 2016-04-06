@@ -6,7 +6,7 @@ Authors: Vincent Francois-Lavet, David Taralla
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
+from joblib import hash, dump, load
 import os
 import matplotlib.pyplot as plt
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     
     # --- Show results ---
     basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
+    scores = load(basename + "_scores.jldump")
     plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
     plt.plot(range(1, len(scores['ts'])+1), scores['ts'], label="TS", color='r')
     plt.legend()
