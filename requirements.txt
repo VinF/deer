@@ -1,0 +1,4 @@
+numpy>=1.10
+joblib>=0.9
+theano>=0.7
+matplotlib>=1.1.1
