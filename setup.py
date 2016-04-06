@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 import deeprl
 
@@ -38,4 +38,4 @@ if __name__ == '__main__':
           license='BSD',
           classifiers=CLASSIFIERS,
           platforms='any',
-          packages=['deeprl'])
+          packages=find_packages())
