@@ -1,0 +1,100 @@
+""" Interface with the PLE environment
+
+Authors: Vincent Francois-Lavet, David Taralla
+Modified by: Norman Tasfi
+"""
+import numpy as np
+import cv2
+from ple import PLE
+
+from base_classes import Environment
+
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
+import matplotlib.pyplot as plt
+
+class MyEnv(Environment):
+    VALIDATION_MODE = 0
+
+    def __init__(self, rng, game=None, frame_skip=4, 
+            ple_options={"display_screen": True, "force_fps":True, "fps":30}):
+
+        self._mode = -1
+        self._modeScore = 0.0
+        self._modeEpisodeCount = 0
+
+        self._frameSkip = frame_skip if frame_skip >= 1 else 1
+        self._randomState = rng
+       
+        if game is None:
+            raise ValueError("Game must be provided")
+
+        self._ple = PLE(game, **ple_options)
+        self._ple.init()
+
+        w, h = self._ple.getScreenDims()
+        self._screen = np.empty((h, w), dtype=np.uint8)
+        self._reducedScreen = np.empty((48, 48), dtype=np.uint8)
+        self._actions = self._ple.getActionSet()
+
+                
+    def reset(self, mode):
+        if mode == MyEnv.VALIDATION_MODE:
+            if self._mode != MyEnv.VALIDATION_MODE:
+                self._mode = MyEnv.VALIDATION_MODE
+                self._modeScore = 0.0
+                self._modeEpisodeCount = 0
+            else:
+                self._modeEpisodeCount += 1
+        elif self._mode != -1: # and thus mode == -1
+            self._mode = -1
+
+        self._ple.reset_game()
+        for _ in range(self._randomState.randint(15)):
+            self._ple.act(self._ple.NOOP)
+        self._screen = self._ple.getScreenGrayscale()
+        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        
+        return [4 * [48 * [48 * [0]]]]
+        
+        
+    def act(self, action):
+        action = self._actions[action]
+        
+        reward = 0
+        for _ in range(self._frameSkip):
+            reward += self._ple.act(action)
+            if self.inTerminalState():
+                break
+            
+        self._screen = self._ple.getScreenGrayscale()
+        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+  
+        self._modeScore += reward
+        return np.sign(reward)
+
+    def summarizePerformance(self, test_data_set):
+        if self.inTerminalState() == False:
+            self._modeEpisodeCount += 1
+        print("== Mean score per episode is {} over {} episodes ==".format(self._modeScore / self._modeEpisodeCount, self._modeEpisodeCount))
+
+
+    def inputDimensions(self):
+        return [(4, 48, 48)]
+
+    def observationType(self, subject):
+        return np.uint8
+
+    def nActions(self):
+        return len(self._actions)
+
+    def observe(self):
+        return [np.array(self._reducedScreen)]
+
+    def inTerminalState(self):
+        return self._ple.game_over()
+                
+
+
+if __name__ == "__main__":
+    pass
