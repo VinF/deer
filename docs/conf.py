@@ -1,8 +1,9 @@
 import mock
+import sys
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
 for mod_name in MOCK_MODULES:
-sys.modules[mod_name] = mock.Mock()
+    sys.modules[mod_name] = mock.Mock()
 
 # -*- coding: utf-8 -*-
 #
