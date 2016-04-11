@@ -1,16 +1,16 @@
-import sys
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+#import sys
+#try:
+#    from unittest.mock import Mock
+#except ImportError:
+#    from mock import Mock
+#
+#class Mock(MagicMock):
+#    @classmethod
+#    def __getattr__(cls, name):
+#            return Mock()
+#
+#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
+#sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 #import mock
 #import sys
