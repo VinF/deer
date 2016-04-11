@@ -16,10 +16,10 @@ Authors: Vincent Francois-Lavet, David Taralla
 
 import numpy as np
 np.set_printoptions(threshold=np.nan)
-
-from base_classes import Environment
 import copy
-from environments.plot_MG_operation import plot_op
+
+from ..base_classes import Environment
+from .plot_MG_operation import plot_op
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0

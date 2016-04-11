@@ -5,7 +5,7 @@ See environments.ALE_env, run_ALE.
 Authors: Vincent Francois-Lavet, David Taralla
 """
 
-from agent import NeuralAgent
+from .agent import NeuralAgent
 
 class ALEAgent(NeuralAgent):
     def _chooseAction(self):

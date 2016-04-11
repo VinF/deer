@@ -16,8 +16,9 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
 import theano
-from base_classes import Environment
 import copy
+
+from ..base_classes import Environment
 
 class MyEnv(Environment):
     
@@ -48,7 +49,7 @@ class MyEnv(Environment):
         """ Reset environment for a new episode.
 
         Arguments:
-            testing - whether we are in test mode or train mode (boolean)  
+            mode - whether we are in test mode or train mode
         """
         if mode == -1:
             self.prices = self._priceSignalTrain
@@ -67,7 +68,6 @@ class MyEnv(Environment):
         Perform one time step on the environment.
         Arguments:
             action - chosen action (integer)
-            testing - whether we are in test mode or train mode (boolean)  
         Returns:
            reward - obtained reward for this transition
         """
@@ -157,8 +157,7 @@ def main():
     myenv.act(0, False)
     myenv.act(0, False)
     myenv.act(1, False)
-
-    print (myenv._state)
+    print (myenv.observe())
     
 if __name__ == "__main__":
     main()

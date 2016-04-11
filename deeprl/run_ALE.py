@@ -1,4 +1,4 @@
-"""2-Storage Microgrid launcher. See Wiki for more details about this experiment.
+"""ALE launcher. See Wiki for more details about this experiment.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
@@ -6,52 +6,51 @@ Authors: Vincent Francois-Lavet, David Taralla
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
+from joblib import hash, dump,load
 import os
-import matplotlib.pyplot as plt
 
-from default_parser import process_args
-from agent import NeuralAgent
-from q_networks.q_net_theano import MyQNetwork
-from environments import MG_two_storages_env
-import experiment.base_controllers as bc
+from deeprl.default_parser import process_args
+from deeprl.agent_ale import ALEAgent
+from deeprl.q_networks.q_net_theano import MyQNetwork
+from deeprl.environments import ALE_env
+import deeprl.experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 365*24-1
-    EPOCHS = 200
-    STEPS_PER_TEST = 365*24-1
-    PERIOD_BTW_SUMMARY_PERFS = -1  # Set to -1 for avoiding call to env.summarizePerformance
+    STEPS_PER_EPOCH = 250000
+    EPOCHS = 40
+    STEPS_PER_TEST = 125000
+    PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------
     # Environment Parameters
     # ----------------------
-    FRAME_SKIP = 1
+    FRAME_SKIP = 4
 
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.0005
     LEARNING_RATE_DECAY = 0.99
-    DISCOUNT = 0.9
+    DISCOUNT = 0.95
     DISCOUNT_INC = 0.99
-    DISCOUNT_MAX = 0.98
+    DISCOUNT_MAX = 0.99
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
-    EPSILON_MIN = .3
-    EPSILON_DECAY = 500000
+    EPSILON_MIN = .1
+    EPSILON_DECAY = 100000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     NETWORK_TYPE = "General_DQN_0"
-    FREEZE_INTERVAL = 1000
+    FREEZE_INTERVAL = 10000
     DETERMINISTIC = True
 
 
@@ -68,7 +67,10 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = MG_two_storages_env(rng)
+    env = ALE_env(rng, frame_skip=parameters.frame_skip, 
+                ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
+                             {"key": "color_averaging", "value": True},
+                             {"key": "repeat_action_probability", "value": 0.}])
 
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -85,17 +87,17 @@ if __name__ == "__main__":
         rng)
     
     # --- Instantiate agent ---
-    agent = NeuralAgent(
+    agent = ALEAgent(
         env,
         qnetwork,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng)
-    
+
     # --- Create unique filename for FindBestController ---
     h = hash(vars(parameters), hash_name="sha1")
-    fname = "MG2S_" + h
+    fname = "ALE_" + h
     print("The parameters hash is: {}".format(h))
     print("The parameters are: {}".format(parameters))
 
@@ -140,52 +142,36 @@ if __name__ == "__main__":
         evaluateOn='action',
         periodicity=1,
         resetEvery='none'))
-
+    
     # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
-    # seems to generalize the better, thus which one has the highest validation score. However we also want to keep 
-    # track of a "true generalization score", the "test score". Indeed, what if we overfit the validation score ?
-    # To achieve these goals, one can use the FindBestController along two InterleavedTestEpochControllers, one for
-    # each mode (validation and test). It is important that the validationID and testID are the same than the id 
-    # argument of the two InterleavedTestEpochControllers (implementing the validation mode and test mode 
-    # respectively). The FindBestController will dump on disk the validation and test scores for each and every 
-    # network, as well as the structure of the neural network having the best validation score. These dumps can then
-    # used to plot the evolution of the validation and test scores (see below) or simply recover the resulting neural 
-    # network for your application.
+    # seems to generalize the better, thus which one has the highest validation score. Here, we do not care about the
+    # "true generalization score", or "test score".
+    # To achieve this goal, one can use the FindBestController along with an InterleavedTestEpochControllers. It is 
+    # important that the validationID is the same than the id argument of the InterleavedTestEpochController.
+    # The FindBestController will dump on disk the validation scores for each and every network, as well as the 
+    # structure of the neural network having the best validation score. These dumps can then used to plot the evolution 
+    # of the validation and test scores (see below) or simply recover the resulting neural network for your 
+    # application.
     agent.attach(bc.FindBestController(
-        validationID=MG_two_storages_env.VALIDATION_MODE, 
-        testID=MG_two_storages_env.TEST_MODE,
+        validationID=ALE_env.VALIDATION_MODE,
+        testID=None,
         unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
     # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
     # these validation epoch to interfere with the training of the agent, which is well established by the 
-    # TrainerController, EpsilonController and alike, nor with its testing (see next controller). Therefore, we will 
-    # disable these controllers for the whole duration of the validation epochs interleaved this way, using the 
-    # controllersToDisable argument of the InterleavedTestEpochController. For each validation epoch, we want also to 
-    # display the sum of all rewards obtained, hence the showScore=True. Finally, we never want this controller to call 
-    # the summarizePerformance method of MG_two_storage_env.
+    # TrainerController, EpsilonController and alike. Therefore, we will disable these controllers for the whole 
+    # duration of the validation epochs interleaved this way, using the controllersToDisable argument of the 
+    # InterleavedTestEpochController. For each validation epoch, we want also to display the sum of all rewards 
+    # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
+    # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=MG_two_storages_env.VALIDATION_MODE, 
-        epochLength=parameters.steps_per_test, 
-        controllersToDisable=[0, 1, 2, 3, 4, 7], 
-        periodicity=2, 
-        showScore=True,
-        summarizeEvery=-1))
-    
-    # Besides inserting a validation epoch (required if one wants to find the best neural network over all training
-    # epochs), we also wish to interleave a "test epoch" between each training epoch ("one of two epochs", hence the 
-    # periodicity=2). We do not want these test epoch to interfere with the training of the agent nor with its 
-    # validation. Therefore, we will disable these controllers for the whole duration of the test epochs interleaved 
-    # this way, using the controllersToDisable argument of the InterleavedTestEpochController. For each test epoch, we 
-    # want also to display the sum of all rewards obtained, hence the showScore=True. Finally, we want to call the 
-    # summarizePerformance method of MG_two_storage_env every [parameters.period_btw_summary_perfs] *test* epochs.
-    agent.attach(bc.InterleavedTestEpochController(
-        id=MG_two_storages_env.TEST_MODE,
+        id=ALE_env.VALIDATION_MODE, 
         epochLength=parameters.steps_per_test,
-        controllersToDisable=[0, 1, 2, 3, 4, 6],
+        controllersToDisable=[0, 1, 2, 3, 4],
         periodicity=2,
         showScore=True,
-        summarizeEvery=parameters.period_btw_summary_perfs))
+        summarizeEvery=1))
     
     # --- Run the experiment ---
     try:
@@ -197,9 +183,8 @@ if __name__ == "__main__":
     
     # --- Show results ---
     basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
+    scores = load(basename + "_scores.jldump")
     plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
-    plt.plot(range(1, len(scores['ts'])+1), scores['ts'], label="TS", color='r')
     plt.legend()
     plt.xlabel("Number of epochs")
     plt.ylabel("Score")
