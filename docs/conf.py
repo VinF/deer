@@ -12,12 +12,6 @@
 #MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
 #sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
-#import mock
-#import sys
-#
-#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
-#for mod_name in MOCK_MODULES:
-#    sys.modules[mod_name] = mock.Mock()
 
 # -*- coding: utf-8 -*-
 #
@@ -49,7 +43,17 @@ import os
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.mathjax',
+#    'sphinx.ext.viewcode',  # create HTML file of source code and link to it
+#    'sphinx.ext.linkcode',  # link to github, see linkcode_resolve() below
+#    'numpydoc',
+#    'sphinx.ext.napoleon',  # alternative to numpydoc -- looks a bit worse.
+]
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -119,7 +123,19 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+#html_theme = 'default'
+### Read the docs style:
+if os.environ.get('READTHEDOCS') != 'True':
+    try:
+        import sphinx_rtd_theme
+    except ImportError:
+        pass  # assume we have sphinx >= 1.3
+    else:
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    html_theme = 'sphinx_rtd_theme'
+def setup(app):
+    app.add_stylesheet("fix_rtd.css")
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

@@ -11,6 +11,7 @@ Contrary to the original code, this package provides a more general framework wh
 Another advantage of this framework is that it is build in such a way that you can easily add up a validation phase that allows to stop the training process before overfitting. This possibility is useful when the environment is dependent on scarce data (e.g. limited time series).
 
 The framework is made in such a way that it is easy to 
+
 * build any environment
 * modify any part of the learning process
 * use your favorite python-based framework to code your own neural network architecture. The provided neural network architectures use Theano (with or without the lasagne library).
@@ -18,6 +19,7 @@ The framework is made in such a way that it is easy to
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
 Future extensions include:
+
 * Add planning (e.g. MCTS based when deterministic environment)
 * Several agents interacting in the same environment
 * ...
@@ -27,15 +29,12 @@ The available documentation is limited for now. For details, the user can refer 
 User Guide
 ------------
 
-The DeepRL user guide explains how to install the package and . 
-
 .. toctree::
   :maxdepth: 2
 
   installation
-  environements
-  agent
-  controllers
+  examples/environments
+  agents/agents
 
 Indices and tables
 ------------------
