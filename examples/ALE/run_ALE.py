@@ -6,16 +6,14 @@ Authors: Vincent Francois-Lavet, David Taralla
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
+from joblib import hash, dump,load
 import os
 
-from default_parser import process_args
-from agent_ale import ALEAgent
-from q_networks.q_net_theano import MyQNetwork
-from environments.PLE_env import MyEnv as PLE_env
-import experiment.base_controllers as bc
-
-from ple.games.snake import Snake
+from deeprl.default_parser import process_args
+from deeprl.agent_ale import ALEAgent
+from deeprl.q_networks.q_net_theano import MyQNetwork
+from ALE_env import MyEnv as ALE_env
+import deeprl.experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------
@@ -59,7 +57,6 @@ class Defaults:
 
 
 if __name__ == "__main__":
-    game = Snake(width=64, height=64) 
     logging.basicConfig(level=logging.INFO)
     
     # --- Parse parameters ---
@@ -70,9 +67,11 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = PLE_env(rng, game=game, frame_skip=parameters.frame_skip,
-            ple_options={"display_screen": True, "force_fps":True, "fps":30})
-    
+    env = ALE_env(rng, frame_skip=parameters.frame_skip, 
+                ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
+                             {"key": "color_averaging", "value": True},
+                             {"key": "repeat_action_probability", "value": 0.}])
+
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
@@ -98,7 +97,7 @@ if __name__ == "__main__":
 
     # --- Create unique filename for FindBestController ---
     h = hash(vars(parameters), hash_name="sha1")
-    fname = "PLE_" + h
+    fname = "ALE_" + h
     print("The parameters hash is: {}".format(h))
     print("The parameters are: {}".format(parameters))
 
@@ -154,7 +153,7 @@ if __name__ == "__main__":
     # of the validation and test scores (see below) or simply recover the resulting neural network for your 
     # application.
     agent.attach(bc.FindBestController(
-        validationID=PLE_env.VALIDATION_MODE,
+        validationID=ALE_env.VALIDATION_MODE,
         testID=None,
         unique_fname=fname))
     
@@ -167,7 +166,7 @@ if __name__ == "__main__":
     # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
     # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=PLE_env.VALIDATION_MODE, 
+        id=ALE_env.VALIDATION_MODE, 
         epochLength=parameters.steps_per_test,
         controllersToDisable=[0, 1, 2, 3, 4],
         periodicity=2,
@@ -184,7 +183,7 @@ if __name__ == "__main__":
     
     # --- Show results ---
     basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
+    scores = load(basename + "_scores.jldump")
     plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
     plt.legend()
     plt.xlabel("Number of epochs")

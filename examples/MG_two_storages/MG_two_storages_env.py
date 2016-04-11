@@ -18,8 +18,8 @@ import numpy as np
 np.set_printoptions(threshold=np.nan)
 import copy
 
-from ..base_classes import Environment
-from .plot_MG_operation import plot_op
+from deeprl.base_classes import Environment
+from plot_MG_operation import plot_op
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0

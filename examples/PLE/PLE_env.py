@@ -1,11 +1,13 @@
-""" Interface with the ALE environment
+""" Interface with the PLE environment
 
 Authors: Vincent Francois-Lavet, David Taralla
+Modified by: Norman Tasfi
 """
 import numpy as np
 import cv2
-from ale_python_interface import ALEInterface
-from ..base_classes import Environment
+from ple import PLE
+
+from deeprl.base_classes import Environment
 
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
@@ -14,34 +16,26 @@ import matplotlib.pyplot as plt
 class MyEnv(Environment):
     VALIDATION_MODE = 0
 
-    def __init__(self, rng, rom="ale/breakout.bin", frame_skip=4, 
-                 ale_options=[{"key": "random_seed", "value": 0}, 
-                              {"key": "color_averaging", "value": True},
-                              {"key": "repeat_action_probability", "value": 0.}]):
+    def __init__(self, rng, game=None, frame_skip=4, 
+            ple_options={"display_screen": True, "force_fps":True, "fps":30}):
+
         self._mode = -1
         self._modeScore = 0.0
         self._modeEpisodeCount = 0
 
         self._frameSkip = frame_skip if frame_skip >= 1 else 1
         self._randomState = rng
+       
+        if game is None:
+            raise ValueError("Game must be provided")
 
-        self._ale = ALEInterface()
-        for option in ale_options:
-            t = type(option["value"])
-            if t is int:
-                self._ale.setInt(option["key"], option["value"])
-            elif t is float:
-                self._ale.setFloat(option["key"], option["value"])
-            elif t is bool:
-                self._ale.setBool(option["key"], option["value"])
-            else:
-                raise ValueError("Option {} ({}) is not an int, bool or float.".format(option["key"], t))
-        self._ale.loadROM(rom)
+        self._ple = PLE(game, **ple_options)
+        self._ple.init()
 
-        w, h = self._ale.getScreenDims()
+        w, h = self._ple.getScreenDims()
         self._screen = np.empty((h, w), dtype=np.uint8)
-        self._reducedScreen = np.empty((84, 84), dtype=np.uint8)
-        self._actions = self._ale.getMinimalActionSet()
+        self._reducedScreen = np.empty((48, 48), dtype=np.uint8)
+        self._actions = self._ple.getActionSet()
 
                 
     def reset(self, mode):
@@ -55,13 +49,13 @@ class MyEnv(Environment):
         elif self._mode != -1: # and thus mode == -1
             self._mode = -1
 
-        self._ale.reset_game()
+        self._ple.reset_game()
         for _ in range(self._randomState.randint(15)):
-            self._ale.act(0)
-        self._ale.getScreenGrayscale(self._screen)
-        cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+            self._ple.act(self._ple.NOOP)
+        self._screen = self._ple.getScreenGrayscale()
+        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
         
-        return [4 * [84 * [84 * [0]]]]
+        return [4 * [48 * [48 * [0]]]]
         
         
     def act(self, action):
@@ -69,12 +63,12 @@ class MyEnv(Environment):
         
         reward = 0
         for _ in range(self._frameSkip):
-            reward += self._ale.act(action)
+            reward += self._ple.act(action)
             if self.inTerminalState():
                 break
             
-        self._ale.getScreenGrayscale(self._screen)
-        cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        self._screen = self._ple.getScreenGrayscale()
+        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
   
         self._modeScore += reward
         return np.sign(reward)
@@ -86,7 +80,7 @@ class MyEnv(Environment):
 
 
     def inputDimensions(self):
-        return [(4, 84, 84)]
+        return [(4, 48, 48)]
 
     def observationType(self, subject):
         return np.uint8
@@ -98,7 +92,7 @@ class MyEnv(Environment):
         return [np.array(self._reducedScreen)]
 
     def inTerminalState(self):
-        return self._ale.game_over()
+        return self._ple.game_over()
                 
 
 

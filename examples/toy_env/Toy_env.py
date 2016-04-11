@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import theano
 import copy
 
-from ..base_classes import Environment
+from deeprl.base_classes import Environment
 
 class MyEnv(Environment):
     
