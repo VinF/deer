@@ -63,14 +63,14 @@ def save_mp4(data, n):
     )
     cart_plot.axes.get_yaxis().set_visible(False)
 
-    time_bar, = cart_time_line.plot([0,0], [10, -10], lw=3)
-
     # Draw cart and pole
     t = 0
     fps = 25.
     frame_number = 1
     x_min = min([min(data[:,1]), -1.1])
     x_max = max([max(data[:,1]), 1.1])
+
+    time_bar, = cart_time_line.plot([0,0], [10000, -10000], lw=3)
     for point in data:
         if point[0] >= t + 1./fps or not t:
             _draw_point(point, time_bar, t, x_min, x_max, cart_plot)
