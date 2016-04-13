@@ -88,12 +88,14 @@ def _draw_point(point, time_bar, t, x_min, x_max, cart_plot):
     time_bar.set_xdata([t, t])
     cart_plot.cla()
     cart_plot.axis([x_min,x_max,-.5,.5])
-    cart_plot.plot([point[1]-.1,point[1]+.1],[0,0],'r-',lw=5)
+    l_cart = 0.05 * (x_max + abs(x_min))
+    cart_plot.plot([point[1]-l_cart,point[1]+l_cart], [0,0], 'r-', lw=5)
 
     # Draw pole
     theta = point[3] 
     x = sin(theta)
     y = cos(theta)
-    cart_plot.plot([point[1],point[1]+.4*x],[0,.4*y],'g-', lw=4)
+    l_pole = 0.2 * (x_max + abs(x_min))
+    cart_plot.plot([point[1],point[1]+l_pole*x],[0,.4*y],'g-', lw=4)
 
     return 
