@@ -1,10 +1,9 @@
 Welcome to DeepRL's documentation!
-==================
+==================================
 
 DeepRL is a lightweight library to train an agent how to behave in a given environement so as to maximize a cumulative sum of rewards.
-
 It is based on the original deep Q learning algorithm described in :
-Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529-533.
+Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529-533. (see :ref:`what-is-deeprl`)
 
 Contrary to the original code, this package provides a more general framework where observations are made up of any number of elements : scalars, vectors and frames (instead of one type of frame only in the above mentionned paper). At each time step, an action is taken by the agent and one observation is gathered (along with one reward). The belief state on which the agent is based to build the Q function is made up of any length history of each element provided in the observation.
 
@@ -31,7 +30,7 @@ User Guide
 
 .. toctree::
   :maxdepth: 2
-
+  
   installation
   tutorial/tutorial
   examples/environments
