@@ -23,6 +23,8 @@ L = 0.5
 F = 10
 DELTA_T = 0.02
 PI = np.pi
+MU_C = 0.0005
+MU_P = 0.000002
 
 class MyEnv(Environment):
     def __init__(self, rng):
@@ -34,7 +36,7 @@ class MyEnv(Environment):
         # Defining the type of environment
         self._rng = rng
         # Observations = (x, x_dot, theta, theta_dot, timestamp)
-        self._last_observation = [0, 0, self._rng.uniform(-PI/2, PI/2), 0, 0]
+        self._last_observation = [0, 0, 0, 0, 0]
         self._input_dim = [(1,), (1,), (1,), (1,), (1,)]
         self._video = 0
 
@@ -54,12 +56,6 @@ class MyEnv(Environment):
         if (action == 0):
             force = -F
 
-        # The cart cannot move beyond -1 or 1
-        if (self._last_observation[0] <= -1 and force < 0):
-            force = 0
-        elif (self._last_observation[0] >= 1 and force > 0):
-            force = 0
-
         # Divide DELTA_T into smaller tau's, to better take into account
         # the transitions
         n_tau = 10
@@ -70,9 +66,13 @@ class MyEnv(Environment):
             cos_theta = np.cos(theta)
             sin_theta = np.sin(theta)
 
-            tmp = (force + M_POLE*L*sin_theta*theta_dot**2) / (M_POLE + M_CART)
-            theta_dd = (G*sin_theta - cos_theta*tmp) / \
-                       (L*(4/3. - M_POLE*cos_theta**2/(M_POLE + M_CART)))
+            f_cart = MU_C * np.sign(x_dot)
+            f_pole = MU_P * theta_dot / (M_POLE*L)
+
+            tmp = (force + M_POLE*L*sin_theta*theta_dot**2 - f_cart) \
+                  / (M_POLE + M_CART)
+            theta_dd = (G*sin_theta - cos_theta*tmp - f_pole) \
+                       / (L*(4/3. - M_POLE*cos_theta**2/(M_POLE + M_CART))) 
             x_dd = tmp - M_POLE*theta_dd*cos_theta/(M_POLE + M_CART)
 
             # Update observation vector
@@ -84,20 +84,8 @@ class MyEnv(Environment):
                 self._last_observation[4] + tau
                 ]
 
-            # As mentionned, the cart cannot move beyond -1 or 1
-            if (self._last_observation[0] < -1):
-                self._last_observation[0] = -1
-                self._last_observation[1] = max([0, self._last_observation[1]])
-            elif (self._last_observation[0] > 1):
-                self._last_observation[0] = 1
-                self._last_observation[1] = min([0, self._last_observation[1]])
-
         # Simple reward
-        theta = self._last_observation[2]
-        reward = -abs(theta) 
-
-        # Penalize the reward with respect to the position x
-        reward -= abs(self._last_observation[0])
+        reward = - abs(theta) 
 
         return reward
                 
@@ -108,7 +96,9 @@ class MyEnv(Environment):
             mode - Not used in this example.
         """
         # Reset initial observation to a random theta
-        self._last_observation = [0, 0, self._rng.uniform(-PI/2, PI/2), 0, 0]
+        x = self._rng.uniform(-8, 8)
+        theta = self._rng.uniform(-PI, PI)
+        self._last_observation = [x, 0, theta, 0, 0]
 
         return self._last_observation
         
@@ -119,6 +109,7 @@ class MyEnv(Environment):
             test_data_set - Simulation data returned by the agent.
         """
         print ("Summary Perf")
+        # Ignore epoch 1
         if (self._video < 1):
             self._video += 1
             return
@@ -155,7 +146,7 @@ class MyEnv(Environment):
     def nActions(self):
         # The environment allows two different actions to be taken
         # at each time step
-        return 2                   
+        return 2             
 
     def observe(self):
         return copy.deepcopy(self._last_observation)  
