@@ -33,11 +33,11 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'deepmind_rmsprop'
     BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = 0.0002
-    LEARNING_RATE_DECAY = 1
+    LEARNING_RATE = 0.001
+    LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = .99
-    DISCOUNT_MAX = 0.98
+    DISCOUNT_MAX = 0.95
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
@@ -49,7 +49,7 @@ class Defaults:
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     NETWORK_TYPE = "General_DQN_0"
-    FREEZE_INTERVAL = 1000
+    FREEZE_INTERVAL = 100
     DETERMINISTIC = True
 
 if __name__ == "__main__":

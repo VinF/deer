@@ -20,7 +20,7 @@ G = 9.8
 M_CART = 1.0
 M_POLE = 0.1
 L = 0.5
-F = 10
+F = 100
 DELTA_T = 0.02
 PI = np.pi
 MU_C = 0.0005
@@ -36,8 +36,8 @@ class MyEnv(Environment):
         # Defining the type of environment
         self._rng = rng
         # Observations = (x, x_dot, theta, theta_dot, timestamp)
-        self._last_observation = [0, 0, 0, 0, 0]
-        self._input_dim = [(1,), (1,), (1,), (1,), (1,)]
+        self._last_observation = [0, 0, 0, 0]
+        self._input_dim = [(1,), (1,), (1,), (1,)]
         self._video = 0
 
     def act(self, action):
@@ -62,7 +62,7 @@ class MyEnv(Environment):
         tau = DELTA_T / n_tau
         for i in range(n_tau):
             # Physics -> See wiki for the formulas
-            x, x_dot, theta, theta_dot, _ = self._last_observation
+            x, x_dot, theta, theta_dot, = self._last_observation#_ = self._last_observation
             cos_theta = np.cos(theta)
             sin_theta = np.sin(theta)
 
@@ -81,11 +81,18 @@ class MyEnv(Environment):
                 x_dot + tau*x_dd,
                 self._to_range(theta + tau*theta_dot),
                 theta_dot + tau*theta_dd,
-                self._last_observation[4] + tau
                 ]
 
         # Simple reward
         reward = - abs(theta) 
+        reward -= abs(self._last_observation[0])/2.
+
+        # The cart cannot move beyond -5 or 5
+        if(self._last_observation[0]<-5):
+            self._last_observation[0]=-5
+        if(self._last_observation[0]>5):
+            self._last_observation[0]=5
+ 
 
         return reward
                 
@@ -95,10 +102,10 @@ class MyEnv(Environment):
         Arguments:
             mode - Not used in this example.
         """
-        # Reset initial observation to a random theta
-        x = self._rng.uniform(-8, 8)
+        # Reset initial observation to a random x and theta
+        x = self._rng.uniform(-1, 1)
         theta = self._rng.uniform(-PI, PI)
-        self._last_observation = [x, 0, theta, 0, 0]
+        self._last_observation = [x, 0, theta, 0]
 
         return self._last_observation
         
@@ -117,10 +124,9 @@ class MyEnv(Environment):
         # Save the data in the correct input format for video generation
         observations = test_data_set.observations()
         data = np.zeros((len(observations[0]), len(observations)))
-        for i in range(1, 5):
+        for i in range(1, 4):
             data[:,i] = observations[i - 1]
-        data[:,0] = observations[4]
-        
+        data[:,0]=np.arange(len(observations[0]))*0.02
         save_mp4(data, self._video)
         self._video += 1
         return
