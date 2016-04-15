@@ -26,7 +26,7 @@ popd
 # provided versions
 conda create -n testenv --yes python=$PYTHON_VERSION pip nose \
       numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION \
-      matplotlib theano
+      matplotlib theano joblib
 
 source activate testenv
 
