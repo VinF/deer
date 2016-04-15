@@ -20,7 +20,7 @@ if [[ ! -f miniconda.sh ]]
    fi
 chmod +x miniconda.sh && ./miniconda.sh -b
 cd ..
-ls PATH=/home/travis
+ls /home/travis
 export PATH=/home/travis/miniconda/bin:$PATH
 export PATH=/home/travis/miniconda2/bin:$PATH
 export PATH=/home/travis/miniconda3/bin:$PATH
