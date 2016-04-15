@@ -13,7 +13,7 @@ env:
     # Directory where tests are run from
     - TEST_DIR=/tmp/test_dir/
     - MODULE=deeprl
-    - THEANO_VERSION=0.8
+    - THEANO_VERSION="0.8"
   matrix:
     - DISTRIB="conda" PYTHON_VERSION="2.7" TEST="toy_env"
       NUMPY_VERSION="1.6.2" SCIPY_VERSION="0.11.0"
