@@ -12,7 +12,7 @@ else
     nosetests -s $MODULE
 fi
 
-cd $HOME/examples
+cd
 
 if [[ "$EXAMPLE" == "toy_env"]]; then
     cd toy_env
