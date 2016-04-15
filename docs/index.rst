@@ -31,10 +31,10 @@ User Guide
 .. toctree::
   :maxdepth: 2
   
-  installation
-  tutorial/tutorial
-  examples/environments
-  agents/agents
+  user/installation
+  user/tutorial
+  user/environments
+  user/agents
 
 Indices and tables
 ------------------
