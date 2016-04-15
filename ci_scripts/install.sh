@@ -20,6 +20,7 @@ if [[ ! -f miniconda.sh ]]
    fi
 chmod +x miniconda.sh && ./miniconda.sh -b
 cd ..
+export PATH=/home/travis/miniconda/bin:$PATH
 export PATH=/home/travis/miniconda2/bin:$PATH
 conda update --yes conda
 popd
