@@ -18,7 +18,7 @@ env:
     - SCIPY_VERSION="0.17"
   matrix:
     - PYTHON_VERSION="2.7"
-    - PYTHON_VERSION="3.5" COVERAGE="true"
+    - PYTHON_VERSION="3.5"
     - PYTHON_VERSION="2.7" EXAMPLE="toy_env"
     - PYTHON_VERSION="3.5" EXAMPLE="toy_env"
 
