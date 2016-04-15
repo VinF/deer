@@ -12,7 +12,7 @@ else
     nosetests -s $MODULE
 fi
 
-cd
+
 pwd
 ls
 
