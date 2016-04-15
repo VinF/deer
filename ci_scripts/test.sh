@@ -13,8 +13,10 @@ else
 fi
 
 cd
+pwd
+ls
 
-if [[ "$EXAMPLE" == "toy_env"]]; then
-    cd toy_env
+if [[ "$EXAMPLE" == "toy_env" ]]; then
+    cd examples/toy_env
     python run_toy_env.py
 fi
