@@ -1,3 +1,5 @@
+# inspired from scikit-learn contrib
+
 set -e
 
 if [[ "$EXAMPLE" == "toy_env" ]]; then
