@@ -21,7 +21,7 @@ git clone -b 0.1 https://github.com/VinF/General_Deep_Q_RL.git
 That version is not a package yet, so you can simply launch it as a standalone python code.
 
 
-For the latest developments, you can clone the bleeding-edge version of this framework by using the following command:
+For the latest developments, you can instead clone the bleeding-edge version of this framework by using the following command:
 ```
 git clone -b master https://github.com/VinF/General_Deep_Q_RL.git
 ```
