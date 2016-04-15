@@ -124,9 +124,6 @@ class MyEnv(Environment):
     
         plt.savefig("plot.png")
     
-        plt.draw()
-        plt.show()
-
     def inputDimensions(self):
         return [(6,), (1,)]     # We consider an observation made up of an history of 
                                 # - the last six for the first scalar element obtained
