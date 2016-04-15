@@ -12,9 +12,9 @@ else
     cd $TEST_DIR
 
     if [[ "$COVERAGE" == "true" ]]; then
-        nosetests -s --with-coverage --cover-package=$MODULE $MODULE
+        nosetests -vs --with-coverage --cover-package=$MODULE $MODULE
     else
-        nosetests -s $MODULE
+        nosetests -vs $MODULE
     fi
 
 fi
