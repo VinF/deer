@@ -2,7 +2,7 @@ set -e
 
 if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
-    python run_toy_env.py --epochs 10
+    python run_toy_env.py --epochs 5
 
 else
     # Get into a temp directory to run test from the installed and
