@@ -2,6 +2,10 @@
 The goal of the agent, as suggested by the reward function, is 
 to balance a pole on a cart that can either move left or right.
 
+Code is based on the following inverted pendulum implementations
+in C : http://webdocs.cs.ualberta.ca/%7Esutton/book/code/pole.c
+in Python : https://github.com/toddsifleet/inverted_pendulum
+
 Please refer to the wiki for a complete decription of the problem.
 
 Author: Aaron Zixiao Qiu
@@ -116,10 +120,6 @@ class MyEnv(Environment):
             test_data_set - Simulation data returned by the agent.
         """
         print ("Summary Perf")
-        # Ignore epoch 1
-        if (self._video < 1):
-            self._video += 1
-            return
 
         # Save the data in the correct input format for video generation
         observations = test_data_set.observations()

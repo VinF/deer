@@ -252,7 +252,7 @@ class DiscountFactorController(Controller):
 
         self._epochCount += 1
         if self._periodicity <= 1 or self._epochCount % self._periodicity == 0:
-            if (self._df < 0.99):
+            if (self._df < self._dfMax):
                 agent.setDiscountFactor(self._df)
                 self._df = 1 - (1 - self._df) * self._dfGrowth
 
@@ -313,11 +313,11 @@ class InterleavedTestEpochController(Controller):
             agent.startMode(self._id, self._epochLength)
             agent.setControllersActive(self._toDisable, False)
         elif mod == 1:
+            self._summaryCounter += 1
             if self._showScore:
                 print("Testing score (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
             if self._summaryPeriodicity > 0 and self._summaryCounter % self._summaryPeriodicity == 0:
                 agent.summarizeTestPerformance()
-            self._summaryCounter += 1
             agent.resumeTrainingMode()
             agent.setControllersActive(self._toDisable, True)
 

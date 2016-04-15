@@ -151,7 +151,7 @@ class NeuralAgent(object):
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.OnStart(self)
         i = 0
-        while i < nEpochs:
+        while i < nEpochs or self._modeEpochsLength > 0:
             if self._mode != -1:
                 while self._modeEpochsLength > 0:
                     self._modeEpochsLength = self._runEpisode(self._modeEpochsLength)
@@ -160,7 +160,6 @@ class NeuralAgent(object):
                 while length > 0:
                     length = self._runEpisode(length)
                 i += 1
-
             for c in self._controllers: c.OnEpochEnd(self)
             
         for c in self._controllers: c.OnEnd(self)
