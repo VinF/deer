@@ -13,8 +13,8 @@ else
 fi
 
 
+cd ..
 pwd
-ls
 
 if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
