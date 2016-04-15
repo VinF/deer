@@ -17,10 +17,10 @@ env:
     - NUMPY_VERSION="1.10"
     - SCIPY_VERSION="0.17"
   matrix:
-    - DISTRIB="conda" PYTHON_VERSION="2.7" TEST="toy_env"
-
-    # - DISTRIB="conda" PYTHON_VERSION="3.5" EXAMPLE="toy_env"
-    #   NUMPY_VERSION="1.10.4" SCIPY_VERSION="0.17.0"
+    - PYTHON_VERSION="2.7"
+    - PYTHON_VERSION="3.5"
+    - PYTHON_VERSION="2.7" EXAMPLE="toy_env"
+    - PYTHON_VERSION="3.5" EXAMPLE="toy_env"
 
 install: source ci_scripts/install.sh
 script: bash ci_scripts/test.sh

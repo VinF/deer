@@ -1,10 +1,6 @@
 set -e
 
-
-pwd
-ls
-
-if [[ "$TEST" == "toy_env" ]]; then
+if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
     python run_toy_env.py --epochs 10
 
