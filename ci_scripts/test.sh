@@ -4,9 +4,9 @@ set -e
 pwd
 ls
 
-if [[ "$EXAMPLE" == "toy_env" ]]; then
+if [[ "$TEST" == "toy_env" ]]; then
     cd examples/toy_env
-    python run_toy_env.py
+    python run_toy_env.py --epochs 10
 
 else
     # Get into a temp directory to run test from the installed and
