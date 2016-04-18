@@ -17,7 +17,7 @@ import copy
 import theano
 
 from render_movie import save_mp4
-from deeprl.base_classes import Environment
+from deer.base_classes import Environment
 
 # Physics constants
 G = 9.8 
