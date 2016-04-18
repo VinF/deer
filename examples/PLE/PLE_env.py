@@ -7,7 +7,7 @@ import numpy as np
 import cv2
 from ple import PLE
 
-from deeprl.base_classes import Environment
+from deer.base_classes import Environment
 
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA

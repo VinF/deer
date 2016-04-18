@@ -9,11 +9,11 @@ import numpy as np
 from joblib import hash, dump
 import os
 
-from deeprl.default_parser import process_args
-from deeprl.agent_ale import ALEAgent
-from deeprl.q_networks.q_net_theano import MyQNetwork
+from deer.default_parser import process_args
+from deer.agent_ale import ALEAgent
+from deer.q_networks.q_net_theano import MyQNetwork
 from PLE_env import MyEnv as PLE_env
-import deeprl.experiment.base_controllers as bc
+import deer.experiment.base_controllers as bc
 
 from ple.games.snake import Snake
 

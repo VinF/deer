@@ -18,7 +18,7 @@ import numpy as np
 np.set_printoptions(threshold=np.nan)
 import copy
 
-from deeprl.base_classes import Environment
+from deer.base_classes import Environment
 from plot_MG_operation import plot_op
 
 class MyEnv(Environment):

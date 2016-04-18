@@ -1,13 +1,14 @@
 .. _two_storages:
 
 :mod:`Two storage devices environment`
-======================================
+========================================
 
 This second example is slightly more complex and realistic. It simulates the operation of a micro-grid (such as a smart home for instance) that is not connected to the main utility grid (off-grid) and that is provided with PV panels, batteries and hydrogen storage. The battery has the advantage that it is not limited in instaneous power that it can provide or store. The hydrogen storage has the advantage that is can store very large quantity of energy.
 
 .. code-block:: bash
-    
-python run_MG_two_storage_devices
+
+    python run_MG_two_storage_devices
+
 
 This example uses the environment defined in MG_two_storage_devices_env.py. The agent can either choose to store in the long term storage or take energy out of it while the short term storage handle at best the lack or surplus of energy by discharging itself or charging itself respectively. Whenever the short term storage is empty and cannot handle the net demand a penalty (negative reward) is obtained equal to the value of loss load set to 2euro/kWh.
 

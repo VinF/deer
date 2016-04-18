@@ -5,7 +5,7 @@ Authors: Vincent Francois-Lavet, David Taralla
 import numpy as np
 import cv2
 from ale_python_interface import ALEInterface
-from deeprl.base_classes import Environment
+from deer.base_classes import Environment
 
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA

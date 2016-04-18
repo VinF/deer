@@ -8,10 +8,10 @@ import sys
 import logging
 import numpy as np
 
-import deeprl.experiment.base_controllers as bc
-from deeprl.default_parser import process_args
-from deeprl.agent import NeuralAgent
-from deeprl.q_networks.q_net_theano import MyQNetwork
+import deer.experiment.base_controllers as bc
+from deer.default_parser import process_args
+from deer.agent import NeuralAgent
+from deer.q_networks.q_net_theano import MyQNetwork
 from pendulum_env import MyEnv as pendulum_env
 
 class Defaults:
