@@ -1,8 +1,6 @@
-#General_Deep_Q_RL
-
 ## Full Documentation
 
-See the [Wiki](https://github.com/VinF/General_Deep_Q_RL/wiki) for full documentation, examples and other information.
+See the [Wiki](https://github.com/VinF/deer/wiki) for full documentation, examples and other information.
 
 ## Dependencies
 
@@ -16,14 +14,14 @@ For running the atari games environment, you need to install ALE >= 0.4.
 ## How to install
 You can simply clone the version 0.1 of this framework by using the following command:
 ```
-git clone -b 0.1 https://github.com/VinF/General_Deep_Q_RL.git
+git clone -b 0.1 https://github.com/VinF/deer.git
 ```
 That version is not a package yet, so you can simply launch it as a standalone python code.
 
 
 For the latest developments, you can instead clone the bleeding-edge version of this framework by using the following command:
 ```
-git clone -b master https://github.com/VinF/General_Deep_Q_RL.git
+git clone -b master https://github.com/VinF/deer.git
 ```
 
 Assuming you already have a python environment with pip, you can automatically install all the dependencies (except ALE that you may need for atari games) with:
