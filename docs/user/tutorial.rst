@@ -1,7 +1,7 @@
 Tutorial
 ==================
 
-.. _what-is-deeprl:
+.. _what-is-deer:
 
 What is deep reinforcement learning?
 ------------------------------------

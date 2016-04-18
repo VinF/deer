@@ -9,11 +9,11 @@ import numpy as np
 from joblib import hash, dump
 import os
 
-from deeprl.default_parser import process_args
-from deeprl.agent import NeuralAgent
-from deeprl.q_networks.q_net_theano import MyQNetwork
+from deer.default_parser import process_args
+from deer.agent import NeuralAgent
+from deer.q_networks.q_net_theano import MyQNetwork
 from Toy_env import MyEnv as Toy_env
-import deeprl.experiment.base_controllers as bc
+import deer.experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------

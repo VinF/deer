@@ -9,11 +9,11 @@ import numpy as np
 from joblib import hash, dump,load
 import os
 
-from deeprl.default_parser import process_args
-from deeprl.agent_ale import ALEAgent
-from deeprl.q_networks.q_net_theano import MyQNetwork
+from deer.default_parser import process_args
+from deer.agent_ale import ALEAgent
+from deer.q_networks.q_net_theano import MyQNetwork
 from ALE_env import MyEnv as ALE_env
-import deeprl.experiment.base_controllers as bc
+import deer.experiment.base_controllers as bc
 
 class Defaults:
     # ----------------------

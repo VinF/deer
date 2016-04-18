@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
-import deeprl
+import deer
 
-NAME = 'deeprl'
+NAME = 'deer'
 VERSION = '0.1'
 AUTHOR = "Vincent Francois-Lavet"
 AUTHOR_EMAIL = "v.francois@ulg.ac.be"
