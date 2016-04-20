@@ -131,7 +131,7 @@ class MyEnv(Environment):
 
 
     def nActions(self):
-        return 2                     # The environment allows two different actions to be taken at each time step
+        return 2                # The environment allows two different actions to be taken at each time step
 
 
     def inTerminalState(self):

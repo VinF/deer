@@ -1,10 +1,10 @@
 """
 Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 
-Inspired from "Human-level control through deep reinforcement learning",
-Nature, 518(7540):529-533, February 2015
+.. Inspired from "Human-level control through deep reinforcement learning",
+.. Nature, 518(7540):529-533, February 2015
 """
 
 import numpy as np
@@ -19,21 +19,24 @@ from .theano_layers import ConvolutionalLayer,HiddenLayer
 class MyQNetwork(QNetwork):
     """
     Deep Q-learning network using Theano
+    
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
                  update_rule, batch_accumulator, randomState, frame_scale=255.0):
         """ Initialize environment
-
-        Arguments:
-            environment - the environment (class Env) 
-            num_elements_in_batch - list of k integers for the number of each element kept as belief state
-            num_actions - int
-            discount - float
-            learning_rate - float
-            rho, rms_epsilon, momentum - float, float, float
-            ...
-            network_type - string 
+        Parameters
+        -----------
+            environment : object from class Env
+            num_elements_in_batch : list of k integers 
+                Number of each element kept as belief state
+            num_actions : int
+            discount : float
+            learning_rate : float
+            rho : float
+            rms_epsilon : float
+            momentum : float
+            network_type : string 
             ...           
         """
 
@@ -206,15 +209,18 @@ class MyQNetwork(QNetwork):
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
         Train one batch.
+
         1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
         2. perform batch training
-        
-        Arguments:
-        states_val - list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        actions_val - b x 1 numpy array of integers
-        rewards_val - b x 1 numpy array
-        next_states_val - list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val - b x 1 numpy boolean array (currently ignored)
+
+        Parameters
+        -----------
+            states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
+            actions_val : b x 1 numpy array of integers
+            rewards_val : b x 1 numpy array
+            next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
+            terminals_val : b x 1 numpy boolean array (currently ignored)
+
 
         Returns: average loss of the batch training
         """

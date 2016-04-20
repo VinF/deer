@@ -1,7 +1,7 @@
 Welcome to DeeR's documentation!
 ==================================
 
-DeeR is a lightweight library to train an agent how to behave in a given environement so as to maximize a cumulative sum of rewards.
+DeeR (Deep Reinforcement) is a lightweight python library to train an agent how to behave in a given environement so as to maximize a cumulative sum of rewards.
 It is based on the original deep Q learning algorithm described in :
 Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529-533. (see :ref:`what-is-deer`)
 
@@ -17,7 +17,16 @@ The framework is made in such a way that it is easy to
 
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
-Future extensions include:
+What is new
+------------
+Version 0.2
+***********
+- Standalone python package (you can simply do ``pip install deer``)
+- New environments : :ref:`toy_env_pendulum` and PLE
+- First automated tests
+
+Future extensions:
+******************
 
 * Add planning (e.g. MCTS based when deterministic environment)
 * Several agents interacting in the same environment
@@ -34,7 +43,22 @@ User Guide
   user/installation
   user/tutorial
   user/environments
-  user/agents
+  dev/development
+    
+API reference
+-------------
+
+If you are looking for information on a specific function, class or method, this API is for you.
+
+.. toctree::
+  :maxdepth: 2
+  
+  dev/agents
+  dev/controllers
+  dev/environments
+  dev/q-networks
+  
+  
 
 Indices and tables
 ------------------

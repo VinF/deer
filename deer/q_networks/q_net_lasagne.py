@@ -11,7 +11,8 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
-from .updates import deepmind_rmsprop, get_or_compute_grads
+from .updates import deepmind_rmsprop
+from lasagne.updates import get_or_compute_grads
 from ..base_classes import QNetwork
 
 class MyQNetwork(QNetwork):
@@ -209,6 +210,7 @@ class MyQNetwork(QNetwork):
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
         Train one batch.
+
         1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
         2. perform batch training
         

@@ -1,12 +1,12 @@
 """This file defines the base Controller class and some presets controllers that you can use for controlling 
 the training and the various parameters of your agents.
 
-Controllers can be attached to an agent using the agent's attach(Controller) method. The order in which controllers 
+Controllers can be attached to an agent using the agent's ``attach(Controller)`` method. The order in which controllers 
 are attached matters. Indeed, if controllers C1, C2 and C3 were attached in this order and C1 and C3 both listen to the
 OnEpisodeEnd signal, the OnEpisodeEnd() method of C1 will be called *before* the OnEpisodeEnd() method of C3, whenever 
 an episode ends.
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 """
 import numpy as np
 import joblib
@@ -41,8 +41,10 @@ class Controller(object):
         
         This corresponds to the moment where the agent's run() method is called.
 
-        Parameters:
-            agent [NeuralAgent] - The agent firing the event
+        Parameters
+        ----------
+             agent : NeuralAgent
+                The agent firing the event
         """
 
         pass
@@ -51,11 +53,16 @@ class Controller(object):
         """Called whenever the agent ends an episode, just after this episode ended and before any OnEpochEnd() signal
         could be sent.
 
-        Parameters:
-            agent [NeuralAgent] - The agent firing the event
-            terminalReached [bool] - Whether the episode ended because a terminal transition occured. This could be 
-                False if the episode was stopped because its step budget was exhausted.
-            reward [number] - The reward obtained on the last transition performed in this episode.
+        Parameters
+        ----------
+            agent : NeuralAgent
+                The agent firing the event
+            terminalReached : bool
+                Whether the episode ended because a terminal transition occured. This could be False 
+                if the episode was stopped because its step budget was exhausted.
+            reward : float
+                The reward obtained on the last transition performed in this episode.
+        
         """
 
         pass
@@ -64,8 +71,10 @@ class Controller(object):
         """Called whenever the agent ends an epoch, just after the last episode of this epoch was ended and after any 
         OnEpisodeEnd() signal was processed.
 
-        Parameters:
-            agent [NeuralAgent] - The agent firing the event
+        Parameters
+        ----------
+            agent : NeuralAgent
+                The agent firing the event
         """
 
         pass
@@ -97,16 +106,21 @@ class Controller(object):
 
 
 class LearningRateController(Controller):
-    """A controller that modifies the learning rate periodically upon epochs end."""
+    """A controller that modifies the learning rate periodically upon epochs end.
+    
+    Parameters
+    ----------
+        initialLearningRate : float
+            The learning rate upon agent start
+        learningRateDecay : float
+            The factor by which the previous learning rate is multiplied every [periodicity] epochs.
+        periodicity : int
+            How many epochs are necessary before an update of the learning rate occurs
+    """
 
     def __init__(self, initialLearningRate=0.0002, learningRateDecay=1., periodicity=1):
         """Initializer.
 
-        Parameters:
-            initialLearningRate [number] - The learning rate upon agent start
-            learningRateDecay [number] - The factor by which the previous learning rate is multiplied every
-                [periodicity] epochs.
-            periodicity [int] - How many epochs are necessary before an update of the learning rate occurs
         """
 
         super(self.__class__, self).__init__()
@@ -135,20 +149,27 @@ class LearningRateController(Controller):
 
 
 class EpsilonController(Controller):
-    """A controller that modifies the probability "epsilon" of taking a random action periodically."""
+    """ A controller that modifies the probability "epsilon" of taking a random action periodically.
+    
+    Parameters
+    ----------
+        initialE : float
+            Start epsilon
+        eDecays : int
+            How many updates are necessary for epsilon to reach eMin
+        eMin : float
+            End epsilon
+        evaluateOn : str
+            After what type of event epsilon shoud be updated periodically. Possible values: 'action', 'episode', 'epoch'.
+        periodicity : int
+            How many [evaluateOn] are necessary before an update of epsilon occurs
+        resetEvery : str
+            After what type of event epsilon should be reset to its initial value. Possible values: 
+            'none', 'episode', 'epoch'.
+    """
 
     def __init__(self, initialE=1., eDecays=10000, eMin=0.1, evaluateOn='action', periodicity=1, resetEvery='none'):
         """Initializer.
-
-        Parameters:
-            initialE [number] - Start epsilon
-            eDecays [int] - How many updates are necessary for epsilon to reach eMin
-            eMin [number] - End epsilon
-            evaluateOn [str] - After what type of event epsilon shoud be updated periodically. Possible values: 
-                'action', 'episode', 'epoch'.
-            periodicity [int] - How many [evaluateOn] are necessary before an update of epsilon occurs
-            resetEvery [str] - After what type of event epsilon should be reset to its initial value. Possible values: 
-                'none', 'episode', 'epoch'.
         """
 
         super(self.__class__, self).__init__()
@@ -214,17 +235,22 @@ class EpsilonController(Controller):
 
 
 class DiscountFactorController(Controller):
-    """A controller that modifies the qnetwork discount periodically."""
+    """A controller that modifies the qnetwork discount periodically.
 
+    Parameters
+    ----------
+        initialDiscountFactor : float
+            Start discount
+        discountFactorGrowth : float
+            The factor by which the previous discount is multiplied every [periodicity]
+            epochs.
+        discountFactorMax : float
+            Maximum reachable discount
+        periodicity [int] - How many epochs are necessary before an update of the discount occurs
+    """
+    
     def __init__(self, initialDiscountFactor=0.9, discountFactorGrowth=1., discountFactorMax=0.99, periodicity=1):
         """Initializer.
-
-        Parameters:
-            initialDiscountFactor [number] - Start discount
-            discountFactorGrowth [number] - The factor by which the previous discount is multiplied every [periodicity]
-                epochs.
-            discountFactorMax [number] - Maximum reachable discount
-            periodicity [int] - How many epochs are necessary before an update of the discount occurs
         """
 
         super(self.__class__, self).__init__()
@@ -258,28 +284,36 @@ class DiscountFactorController(Controller):
 
 
 class InterleavedTestEpochController(Controller):
-    """A controller that interleaves a test epoch between training epochs of the agent."""
+    """A controller that interleaves a test epoch between training epochs of the agent.
+    
+    Parameters
+    ----------
+        id : int
+            The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
+            Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
+            will be given to your environment's reset() method when starting the test epoch).
+        epochLength : float
+            The total number of transitions that will occur during a test epoch. This means that
+            this epoch could feature several episodes if a terminal transition is reached before this budget is 
+            exhausted.
+        controllersToDisable : list of int
+            A list of controllers to disable when this controller wants to start a
+            test epoch. These same controllers will be reactivated after this controller has finished dealing with
+            its test epoch.
+        periodicity : int 
+            How many epochs are necessary before a test epoch is ran (these controller's epochs
+            included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
+        showScore : bool
+            Whether to print an informative message on stdout at the end of each test epoch, about 
+            the total reward obtained in the course of the test epoch.
+        summarizeEvery : int
+            How many of this controller's test epochs are necessary before the attached agent's 
+            summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
+            occur just after the first test epoch.
+    """
 
     def __init__(self, id=0, epochLength=500, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=10):
         """Initializer.
-
-        Parameters:
-            id [int] - The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
-                Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
-                will be given to your environment's reset() method when starting the test epoch).
-            epochLength [number] - The total number of transitions that will occur during a test epoch. This means that
-                this epoch could feature several episodes if a terminal transition is reached before this budget is 
-                exhausted.
-            controllersToDisable [list of int] - A list of controllers to disable when this controller wants to start a
-                test epoch. These same controllers will be reactivated after this controller has finished dealing with
-                its test epoch.
-            periodicity [int] - How many epochs are necessary before a test epoch is ran (these controller's epochs
-                included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
-            showScore [bool] - Whether to print an informative message on stdout at the end of each test epoch, about 
-                the total reward obtained in the course of the test epoch.
-            summarizeEvery [int] - How many of this controller's test epochs are necessary before the attached agent's 
-                summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
-                occur just after the first test epoch.
         """
 
         super(self.__class__, self).__init__()
@@ -323,19 +357,19 @@ class InterleavedTestEpochController(Controller):
 
 
 class TrainerController(Controller):
-    """A controller that make the agent train on its current database periodically."""
+    """A controller that make the agent train on its current database periodically.
 
+    Parameters:
+        evaluateOn [str] - After what type of event the agent shoud be trained periodically. Possible values: 
+            'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
+        periodicity [int] - How many [evaluateOn] are necessary before a training occurs
+        _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
+            training if [evaluateOn] is 'episode') about the average bellman residual of this episode
+        showEpisodeAvgVValue [bool] - Whether to show an informative message after each episode end (and after a 
+            training if [evaluateOn] is 'episode') about the average V value of this episode
+    """
     def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
         """Initializer.
-
-        Parameters:
-            evaluateOn [str] - After what type of event the agent shoud be trained periodically. Possible values: 
-                'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
-            periodicity [int] - How many [evaluateOn] are necessary before a training occurs
-            _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
-                training if [evaluateOn] is 'episode') about the average bellman residual of this episode
-            showEpisodeAvgVValue [bool] - Whether to show an informative message after each episode end (and after a 
-                training if [evaluateOn] is 'episode') about the average V value of this episode
         """
 
         super(self.__class__, self).__init__()
@@ -388,19 +422,22 @@ class TrainerController(Controller):
 
 class VerboseController(Controller):
     """A controller that print various agent information periodically:
-    - Count of passed [evaluateOn]
-    - Agent current learning rate
-    - Agent current discount factor
-    - Agent current epsilon
+    
+    * Count of passed [evaluateOn]
+    * Agent current learning rate
+    * Agent current discount factor
+    * Agent current epsilon
+
+    Parameters:
+        evaluateOn : str
+            After what type of event the printing should occur periodically. Possible values: 
+            'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
+        periodicity : int
+            How many [evaluateOn] are necessary before a printing occurs
     """
 
     def __init__(self, evaluateOn='epoch', periodicity=1):
         """Initializer.
-
-        Parameters:
-            evaluateOn [str] - After what type of event the printing should occur periodically. Possible values: 
-                'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
-            periodicity [int] - How many [evaluateOn] are necessary before a printing occurs
         """
 
         super(self.__class__, self).__init__()
@@ -469,6 +506,15 @@ class FindBestController(Controller):
     is different from None. Finally it will dump a dictionnary containing the data of the plots ({n: number of 
     epochs elapsed, ts: test scores, vs: validation scores}). Note that if [testID] is None, the value dumped for the
     'ts' key is [].
+    
+    Parameters
+    ----------
+    validationID : int 
+        See synopsis
+    testID : int 
+        See synopsis
+    unique_fname : str
+        A unique filename (basename for score and network dumps).
     """
 
     def __init__(self, validationID=0, testID=None, unique_fname="nnet"):
@@ -515,6 +561,7 @@ class FindBestController(Controller):
             pass
         basename = "scores/" + self._filename
         joblib.dump({"vs": self._validationScores, "ts": self._testScores}, basename + "_scores.jldump")
+
 
 
 if __name__ == "__main__":
