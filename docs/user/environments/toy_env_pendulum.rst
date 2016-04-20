@@ -1,6 +1,6 @@
 .. _toy_env_pendulum:
 
-:mod:`Toy environment : the pendulum on a cart`
+:mod:`The pendulum on a cart`
 ================================================
 
 
@@ -28,14 +28,14 @@ The goal of the agent is to balance the pole above its supporting cart (:math:`\
 * A vector (position, speed, angle, angular speed);
 * The reward associated to the action chosen by the agent. 
 
-Implementation
-##############
-
-The work is done in `pendulum_env.py`. The main focus is to implement `act(self, action)` which specifies how the cart-pole system behaves in response to an input action. So first, we transcript the physical laws that rule the motion of the pole and the cart. The simulation timestep of the agent is :math:`\Delta_t=0.02` second. But we discretize this value even further in `act(self, action)`, in order to obtain dynamics that are closer to the exact differential equations. 
-Secondly, we chose the reward function as :math:`- abs(\theta)` the agent receives 0 when the pole is standing up, and a negative reward proportional to the angle otherwise.
-
 Results
-##############
+########
+
+In a terminal windown go to the folder ``examples/pendulum``. The example can then be run with 
+
+.. code-block:: bash
+
+    python run_pendulum.py
 
 Here are the outputs of the agent after respectively 20 and 70 learning epochs, with 1000 steps in each. We clearly see the final success of the agent in controlling the inverted pendulum. 
 
@@ -48,3 +48,12 @@ Note: a MP4 is generated every `PERIOD_BTW_SUMMARY_PERFS` epochs and you need th
 .. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif
    :width: 500 px
    :align: center
+
+Details on the implementation
+##############################
+
+The main focus in the environment is to implement `act(self, action)` which specifies how the cart-pole system behaves in response to an input action. So first, we transcript the physical laws that rule the motion of the pole and the cart. The simulation timestep of the agent is :math:`\Delta_t=0.02` second. But we discretize this value even further in `act(self, action)`, in order to obtain dynamics that are closer to the exact differential equations. 
+Secondly, we chose the reward function as the sum of :
+
+* :math:`- |\theta|` such that the agent receives 0 when the pole is standing up, and a negative reward proportional to the angle otherwise.
+* :math:`- \frac{|x|}{2}` such that the agent receives a negative reward when it is far from :math:`x=0`.

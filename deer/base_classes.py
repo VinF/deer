@@ -1,7 +1,7 @@
 """This file defines the base Environment and QNetwork interfaces you should inherit from when creating new 
 environments and new algorithms.
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 """
 
 from theano import config
@@ -10,31 +10,17 @@ import numpy as np
 class Environment(object): 
     """All your Environment classes should inherit this interface.
     
-    An agent aways lies in a given environment. The environment surrounds the agent, and the agent can take actions
-    on this environment that will change its state. At any time the environment can be observed by the agent. Its in 
-    your environment that you will define the shape of your algorithm's input space.
+    The environment defines the dynamics and the reward signal that the agent observes when interacting with it.
     
-    An environment can be seen as a collection of observable elements, named its *subjects*. Observing the environment 
-    at time t thus corresponds to observing each of the subject at time t: your Environment class is the place where 
-    you describe these subjects, i.e. the shape of the observations of these subjects. According to the control problem
-    to solve, it might be useful for the agent to not only take action based on the current state of a subject 's' but 
-    rather on the last 'n_s' observations of 's', the current one included. Such a memory size (or "batch size") is 
-    also defined in your Environment class.
+    An agent sees at any time-step from the environment a collection of observable elements. Observing the environment 
+    at time t thus corresponds to obtaining a punctual observation for each of these elements. According to the control 
+    problem to solve, it might be useful for the agent to not only take action based on the current punctual observations 
+    but rather on a collection of the last punctual observations. In this framework, it's the environment that defines 
+    the number of each punctual observation to be considered.
 
-    For instance, let an environment E be a collection of 3 subjects S1, S2, S3. S1 is the view of a given camera, S2 
-    the view of a second camera and S3 the hour of the day. If both camera views have W * H gray-scaled pixels, and if
-    we want to take decisions based on the last 4 frames of each camera view and on the current hours of the day, it 
-    means that the shape of the agent's input space will be [(4, W, H), (4, W, H), ()].
-
-    Furthermore, the environment can be controlled so that experiments and simulations can be carried on. For instance,
-    an environment can be reset to an initial state when the agent wants to start a new episode. The agent can act on 
-    it (take an action on it) and ask it whether it reached a terminal state or not. However, as the actions one can
-    take on the environment are closely related to the environment itself, these actions are defined as unique integers
-    by your Environment class again, that should also be able to give the number of possible actions.
-
-    Finally, an environment might have different behaviors based on the mode it is in. For instance, in training mode,
-    the environment could only modify its state according to a part of a given database, while in a validation mode it 
-    would modify its state according to the other part of this database.
+    Different "modes" are used in this framework to allow the environment to have different dynamics and/or reward signal. 
+    For instance, in training mode, only a part of the dynamics may be available so that it is possible to see how well 
+    the agent generalizes to a slightly different one.
     """
                
     def reset(self, mode):
@@ -126,7 +112,9 @@ class Environment(object):
 
         return np.float32
 
-class QNetwork(object):        
+class QNetwork(object):
+    """ All the Q-networks classes should inherit this interface.
+    """     
     def train(self, states, actions, rewards, nextStates, terminals):
         raise NotImplementedError()
 

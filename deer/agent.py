@@ -13,7 +13,7 @@ from .experiment import base_controllers as controllers
 from warnings import warn
 
 class NeuralAgent(object):
-    """The NeuralAgent class wraps a deep Q-network for training and testing in any given environment.
+    """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
     """
