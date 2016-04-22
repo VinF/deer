@@ -29,3 +29,4 @@ All the Environment that the user wants to use should inherit the :ref:`env_inte
   environments/toy_env_pendulum.rst
   environments/two_storages.rst  
   environments/ALE.rst
+  environments/PLE.rst
