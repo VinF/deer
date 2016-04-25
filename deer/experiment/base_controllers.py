@@ -359,13 +359,17 @@ class InterleavedTestEpochController(Controller):
 class TrainerController(Controller):
     """A controller that make the agent train on its current database periodically.
 
-    Parameters:
-        evaluateOn [str] - After what type of event the agent shoud be trained periodically. Possible values: 
+    Parameters
+    ----------
+        evaluateOn : str
+            After what type of event the agent shoud be trained periodically. Possible values: 
             'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
-        periodicity [int] - How many [evaluateOn] are necessary before a training occurs
-        _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
+        periodicity : int
+            How many [evaluateOn] are necessary before a training occurs
+            _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
             training if [evaluateOn] is 'episode') about the average bellman residual of this episode
-        showEpisodeAvgVValue [bool] - Whether to show an informative message after each episode end (and after a 
+        showEpisodeAvgVValue : bool
+            Whether to show an informative message after each episode end (and after a 
             training if [evaluateOn] is 'episode') about the average V value of this episode
     """
     def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
