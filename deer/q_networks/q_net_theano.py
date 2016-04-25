@@ -129,14 +129,14 @@ class MyQNetwork(QNetwork):
             # there, which is what the DeepMind implementation does.
             quadratic_part = T.minimum(abs(diff), self.clip_delta)
             linear_part = abs(diff) - quadratic_part
-            loss = 0.5 * quadratic_part ** 2 + self.clip_delta * linear_part
+            loss_ind = 0.5 * quadratic_part ** 2 + self.clip_delta * linear_part
         else:
-            loss = 0.5 * diff ** 2
-
+            loss_ind = 0.5 * diff ** 2
+        #loss_printed=theano.printing.Print('this is loss')(loss)
         if batch_accumulator == 'sum':
-            loss = T.sum(loss)
+            loss = T.sum(loss_ind)
         elif batch_accumulator == 'mean':
-            loss = T.mean(loss)
+            loss = T.mean(loss_ind)
         else:
             raise ValueError("Bad accumulator: {}".format(batch_accumulator))
 
@@ -178,7 +178,7 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized update: {}".format(update_rule))
     
         
-        self._train = theano.function([thediscount, thelr], [loss, q_vals], updates=updates,
+        self._train = theano.function([thediscount, thelr], [loss, loss_ind, q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
         givens2={}
@@ -238,9 +238,10 @@ class MyQNetwork(QNetwork):
         if self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
         
-        loss, _ = self._train(self._df, self._lr)
+        loss, diff, _ = self._train(self._df, self._lr)
+
         self.update_counter += 1
-        return np.sqrt(loss)
+        return np.sqrt(loss), diff
 
     def qValues(self, state_val):
         """ Get the q value for one belief state

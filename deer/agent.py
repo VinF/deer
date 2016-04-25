@@ -11,6 +11,8 @@ import sys
 import joblib
 from .experiment import base_controllers as controllers
 from warnings import warn
+from scipy import stats
+
 
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
@@ -18,7 +20,7 @@ class NeuralAgent(object):
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):
         inputDims = environment.inputDimensions()
 
         if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
@@ -32,7 +34,11 @@ class NeuralAgent(object):
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
         self._randomState = randomState
-        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState)
+        self._exp_priority = exp_priority
+        if (self._exp_priority>0):
+            self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=True)
+        else:
+            self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=False)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -44,7 +50,7 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-
+    
     def setControllersActive(self, toDisable, active):
         for i in toDisable:
             self._controllers[i].setActive(active)
@@ -127,9 +133,15 @@ class NeuralAgent(object):
             return
 
         try:
-            states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
-            loss = self._network.train(states, actions, rewards, next_states, terminals)
+            if (self._exp_priority>0):
+                states, actions, rewards, next_states, terminals, priorities, rndValidIndices = self._dataSet.randomBatch(self._batchSize, True)
+            else:
+                states, actions, rewards, next_states, terminals, _, _ = self._dataSet.randomBatch(self._batchSize, False)
+            loss, diff = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
+            if (self._exp_priority>0):
+                self._dataSet.update_priorities(pow(diff,self._exp_priority)+0.0001, rndValidIndices)
+
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 
@@ -223,9 +235,9 @@ class NeuralAgent(object):
 
     def _addSample(self, ponctualObs, action, reward, isTerminal):
         if self._mode != -1:
-            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal)
+            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal, priority=sys.float_info.max)
         else:
-            self._dataSet.addSample(ponctualObs, action, reward, isTerminal)
+            self._dataSet.addSample(ponctualObs, action, reward, isTerminal, priority=sys.float_info.max)
 
 
     def _chooseAction(self):
@@ -248,7 +260,6 @@ class NeuralAgent(object):
         for c in self._controllers: c.OnActionChosen(self, action)
         return action, V
 
- 
 class AgentError(RuntimeError):
     """Exception raised for errors when calling the various Agent methods at wrong times.
 
@@ -273,7 +284,7 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, randomState=None, maxSize=1000):
+    def __init__(self, env, randomState=None, maxSize=1000, use_priority=False):
         """Initializer.
 
         Parameters:
@@ -287,9 +298,12 @@ class DataSet(object):
         self._batchDimensions = env.inputDimensions()
         self._maxHistorySize = np.max([self._batchDimensions[i][0] for i in range (len(self._batchDimensions))])
         self._size = maxSize
+        self._use_priority = use_priority
         self._actions      = CircularBuffer(maxSize, dtype="int8")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
+        if (self._use_priority==True):
+            self._priorities   = CircularBuffer(maxSize)
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
@@ -312,6 +326,11 @@ class DataSet(object):
 
         return self._rewards.getSlice(0)
 
+    def priorities(self):
+        """Get all priorities currently in the replay memory, ordered by time where they were received."""
+
+        return self._priorities.getSlice(0)
+
     def terminals(self):
         """Get all terminals currently in the replay memory, ordered by time where they were observed.
         
@@ -332,9 +351,16 @@ class DataSet(object):
             ret[input] = self._observations[input].getSlice(0)
 
         return ret
+
+    def update_priorities(self, priorities, rndValidIndices):
+        """
+        """
+        self._priorities.setSliceBySeq(dat=priorities, seq=rndValidIndices)
+
+
             
 
-    def randomBatch(self, size):
+    def randomBatch(self, size, use_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
         each subject s.
@@ -369,6 +395,10 @@ class DataSet(object):
         actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
+        if (self._use_priority==True):
+            priorities = self._priorities.getSliceBySeq(rndValidIndices)
+        else:
+            priorities = 0
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
         
@@ -382,15 +412,33 @@ class DataSet(object):
                 else:
                     next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
 
-        return states, actions, rewards, next_states, terminals
+        return states, actions, rewards, next_states, terminals, priorities, rndValidIndices
 
     def _randomValidStateIndex(self):
         index_lowerBound = self._maxHistorySize - 1
-        try:
-            index = self._randomState.randint(index_lowerBound, self._nElems)
-        except ValueError:
-            raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
-                             "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
+
+        if (self._use_priority==True):
+            # Simple hack to keep computation time low while not having to keep track of the sum of all priorities in Dataset (FIXME)
+            try:
+                candidate_indices = self._randomState.randint(index_lowerBound, self._nElems, size=50)
+            except ValueError:
+                raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
+                                 "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
+
+            prio_seq=self._priorities.getSliceBySeq(candidate_indices)
+            sum_prio_seq=sum(prio_seq)
+            if (sum_prio_seq>sys.float_info.max):
+                sum_prio_seq=sys.float_info.max
+            pk=prio_seq/sum_prio_seq
+            xk = np.arange(50)
+            custm=stats.rv_discrete(name='custm', values=( xk, pk ),seed=self._randomState ) # FIXME : too slow
+            index = candidate_indices[custm.rvs(size=1)]
+        else:
+            try:
+                index = self._randomState.randint(index_lowerBound, self._nElems)
+            except ValueError:
+                raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
+                                 "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
 
         # Check if slice is valid wrt terminals
         firstTry = index
@@ -404,8 +452,12 @@ class DataSet(object):
 
                 i -= 1
                 processed += 1
-            
+
             if (processed < self._maxHistorySize - 1):
+                # Update priority to 0 if we know that it can't be used
+                if (self._use_priority==True):
+                    for ind in range (i+1,index+1):
+                        self._priorities[i]=0
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
                 if (index < index_lowerBound):
@@ -424,7 +476,7 @@ class DataSet(object):
         return self._nElems
 
 
-    def addSample(self, obs, action, reward, isTerminal):
+    def addSample(self, obs, action, reward, isTerminal, priority):
         """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
 
         Arguments:
@@ -433,6 +485,8 @@ class DataSet(object):
             action - The action taken after having observed [obs].
             reward - The reward associated to taking this [action].
             isTerminal - Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
+            priority : bool
+                The priority to be associated with the sample
 
         """        
         # Store observations
@@ -443,6 +497,9 @@ class DataSet(object):
         self._actions.append(action)
         self._rewards.append(reward)
         self._terminals.append(isTerminal)
+
+        if (self._use_priority==True):
+            self._priorities.append(priority)
 
         if (self._nElems < self._size):
             self._nElems += 1
@@ -479,6 +536,9 @@ class CircularBuffer(object):
 
     def getSliceBySeq(self, seq):
         return self._data[seq + self._lb]
+
+    def setSliceBySeq(self, dat, seq):
+        self._data[seq + self._lb]=dat
 
     def getSlice(self, start, end=sys.maxsize):
         if end == sys.maxsize:
