@@ -147,13 +147,7 @@ def main():
     # Can be used for debug purposes
     rng = np.random.RandomState(123456)
     myenv = MyEnv(rng)
-    myenv.reset(False)
-    
-    myenv.act(1, False)
-    myenv.act(1, False)
-    myenv.act(0, False)
-    myenv.act(0, False)
-    myenv.act(1, False)
+
     print (myenv.observe())
     
 if __name__ == "__main__":
