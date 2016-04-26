@@ -36,7 +36,7 @@ import os
 # sys.path.insert(0, os.path.abspath('.'))
 sys.path.append(os.path.abspath('sphinxext'))
 
-import sphinx_bootstrap_theme
+#import sphinx_bootstrap_theme
 
 # Try to override the matplotlib configuration as early as possible
 try:
