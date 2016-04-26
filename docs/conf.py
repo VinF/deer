@@ -20,8 +20,10 @@ sys.modules['pylearn2.sandbox.cuda_convnet.filter_acts'] = \
 sys.modules['scipy'] = Mock()
 sys.modules['theano'] = Mock()
 sys.modules['theano.tensor'] = Mock()
+sys.modules['theano.tensor.signal'] = Mock()
 sys.modules['joblib'] = Mock()
 sys.modules['lasagne'] = Mock()
+sys.modules['lasagne.updates'] = Mock()
 
 
 # -*- coding: utf-8 -*-
