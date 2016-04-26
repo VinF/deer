@@ -53,10 +53,10 @@ If you are looking for information on a specific function, class or method, this
 .. toctree::
   :maxdepth: 2
   
-  dev/agents
-  dev/controllers
-  dev/environments
-  dev/q-networks
+  modules/agents
+  modules/controllers
+  modules/environments
+  modules/q-networks
   
   
 
