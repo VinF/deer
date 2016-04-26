@@ -33,7 +33,8 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.abspath('sphinxext'))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,7 +51,7 @@ extensions = [
     'sphinx.ext.mathjax',
 #    'sphinx.ext.viewcode',  # create HTML file of source code and link to it
 #    'sphinx.ext.linkcode',  # link to github, see linkcode_resolve() below
-    'numpydoc',
+    'numpy_ext.numpydoc',
 #    'sphinx.ext.napoleon',  # alternative to numpydoc -- looks a bit worse.
 ]
 
