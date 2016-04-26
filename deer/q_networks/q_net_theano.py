@@ -25,21 +25,22 @@ class MyQNetwork(QNetwork):
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
                  update_rule, batch_accumulator, randomState, DoubleQ=False):
         """ Initialize environment
+        
         Parameters
         -----------
-            environment : object from class Environment
-            rho : float
-            rms_epsilon : float
-            momentum : float
-            clip_delta : 
-            freeze_interval :
-            batch_size : int
-                Number of tuples taken into account for each iteration of gradient descent
-            network_type : str
-            update_rule: str
-            batch_accumulator : str
-            randomState : numpy random number generator
-            DoubleQ : bool, optional
+        environment : object from class Environment
+        rho : float
+        rms_epsilon : float
+        momentum : float
+        clip_delta : 
+        freeze_interval :
+        batch_size : int
+            Number of tuples taken into account for each iteration of gradient descent
+        network_type : str
+        update_rule: str
+        batch_accumulator : str
+        randomState : numpy random number generator
+        DoubleQ : bool, optional
         """
         QNetwork.__init__(self, environment, batchSize)
         

@@ -117,10 +117,10 @@ class QNetwork(object):
 
     Parameters
     -----------
-        environment : object from class Environment
-            The environment linked to the Q-network
-        batch_size : int
-            Number of tuples taken into account for each iteration of gradient descent
+    environment : object from class Environment
+        The environment linked to the Q-network
+    batch_size : int
+        Number of tuples taken into account for each iteration of gradient descent
     """
     def __init__(self, environment, batchSize):
         self._environment = environment
@@ -144,8 +144,8 @@ class QNetwork(object):
 
         Parameters
         -----------
-            lr : float
-                The learning rate that has to bet set
+        lr : float
+            The learning rate that has to bet set
         """
         self._lr = lr
 
@@ -154,8 +154,8 @@ class QNetwork(object):
 
         Parameters
         -----------
-            df : float
-                The discount factor that has to bet set
+        df : float
+            The discount factor that has to bet set
         """
         if df < 0. or df > 1.:
             raise AgentError("The discount factor should be in [0,1]")
