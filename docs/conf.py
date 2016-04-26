@@ -9,7 +9,7 @@ except ImportError:
 #    def __getattr__(cls, name):
 #            return Mock()
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'theano.tensor', 'joblib', 'lasagne']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
