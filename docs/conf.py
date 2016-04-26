@@ -8,9 +8,18 @@ except ImportError:
 #    @classmethod
 #    def __getattr__(cls, name):
 #            return Mock()
+#
+#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'theano.tensor', 'joblib', 'lasagne']
+#sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'theano.tensor', 'joblib', 'lasagne']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules['pylearn2'] = Mock()
+sys.modules['pylearn2.sandbox'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet.filter_acts'] = \
+    Mock(FilterActs=None)
+sys.modules['scipy'] = Mock()
+sys.modules['theano'] = Mock()
+sys.modules['theano.tensor'] = Mock()
 
 
 # -*- coding: utf-8 -*-
