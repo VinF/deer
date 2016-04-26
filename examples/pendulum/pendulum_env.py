@@ -130,7 +130,7 @@ class MyEnv(Environment):
         save_mp4(data, self._video)
         self._video += 1
         return
-    
+
     def _to_range(self, angle):
         # Convert theta in the range [-PI, PI]
         n = abs(angle) // (2*PI)
