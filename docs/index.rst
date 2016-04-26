@@ -43,7 +43,7 @@ User Guide
   user/installation
   user/tutorial
   user/environments
-  dev/development
+  modules/development
     
 API reference
 -------------
