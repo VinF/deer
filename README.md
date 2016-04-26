@@ -21,13 +21,6 @@ That version is not a package yet, so you can simply launch it as a standalone p
 
 For the latest developments, you can instead clone the bleeding-edge version of this framework by using the following command:
 ```
-git clone -b master https://github.com/VinF/deer.git
-```
-That version is not a package yet, so you can simply launch it as a standalone python code.
-
-
-For the latest developments, you can instead clone the bleeding-edge version of this framework by using the following command:
-```
 git clone -b master https://github.com/VinF/General_Deep_Q_RL.git
 ```
 
