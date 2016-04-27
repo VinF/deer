@@ -64,10 +64,14 @@ class NeuralAgent(object):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
 
     def setControllersActive(self, toDisable, active):
+        """ Activate controller
+        """
         for i in toDisable:
             self._controllers[i].setActive(active)
 
     def setEpsilon(self, e):
+        """ Set the epsilon (for :math:`\epsilon`-greedy exploration)
+        """
         self._epsilon = e
 
     def epsilon(self):
