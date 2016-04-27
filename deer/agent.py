@@ -1,6 +1,6 @@
 """This module contains classes used to define any agent wrapping a DQN.
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 """
 
 from theano import config
