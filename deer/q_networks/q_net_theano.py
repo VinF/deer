@@ -32,8 +32,8 @@ class MyQNetwork(QNetwork):
         rho : float
         rms_epsilon : float
         momentum : float
-        clip_delta : 
-        freeze_interval :
+        clip_delta : float
+        freeze_interval : int
         batch_size : int
             Number of tuples taken into account for each iteration of gradient descent
         network_type : str
