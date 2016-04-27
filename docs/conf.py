@@ -1,16 +1,30 @@
-#import sys
-#try:
-#    from unittest.mock import Mock
-#except ImportError:
-#    from mock import Mock
-#
+import sys
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
 #class Mock(MagicMock):
 #    @classmethod
 #    def __getattr__(cls, name):
 #            return Mock()
 #
-#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'joblib']
+#MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'theano', 'theano.tensor', 'joblib', 'lasagne']
 #sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+sys.modules['pylearn2'] = Mock()
+sys.modules['pylearn2.sandbox'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet'] = Mock()
+sys.modules['pylearn2.sandbox.cuda_convnet.filter_acts'] = \
+    Mock(FilterActs=None)
+sys.modules['scipy'] = Mock()
+sys.modules['theano'] = Mock()
+sys.modules['theano.tensor'] = Mock()
+sys.modules['theano.tensor.signal'] = Mock()
+sys.modules['theano.tensor.nnet'] = Mock()
+sys.modules['joblib'] = Mock()
+sys.modules['lasagne'] = Mock()
+sys.modules['lasagne.updates'] = Mock()
 
 
 # -*- coding: utf-8 -*-
@@ -33,7 +47,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- General configuration ------------------------------------------------
 
@@ -50,7 +64,7 @@ extensions = [
     'sphinx.ext.mathjax',
 #    'sphinx.ext.viewcode',  # create HTML file of source code and link to it
 #    'sphinx.ext.linkcode',  # link to github, see linkcode_resolve() below
-#    'numpydoc',
+    'numpydoc',
 #    'sphinx.ext.napoleon',  # alternative to numpydoc -- looks a bit worse.
 ]
 

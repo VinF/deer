@@ -25,32 +25,26 @@ class MyQNetwork(QNetwork):
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
                  update_rule, batch_accumulator, randomState, DoubleQ=False):
         """ Initialize environment
+        
         Parameters
         -----------
-            environment : object from class Env
-            num_elements_in_batch : list of k integers 
-                Number of each element kept as belief state
-            num_actions : int
-            discount : float
-            learning_rate : float
-            rho : float
-            rms_epsilon : float
-            momentum : float
-            network_type : str
-            update_rule: str
-            batch_accumulator : str
-            randomState : numpy random number generator
-            DoubleQ : bool, optional
+        environment : object from class Environment
+        rho : float
+        rms_epsilon : float
+        momentum : float
+        clip_delta : float
+        freeze_interval : int
+        batch_size : int
+            Number of tuples taken into account for each iteration of gradient descent
+        network_type : str
+        update_rule: str
+        batch_accumulator : str
+        randomState : numpy random number generator
+        DoubleQ : bool, optional
         """
-
-        self._environment = environment
+        QNetwork.__init__(self, environment, batchSize)
         
-        self._batchSize = batchSize
-        self._inputDimensions = self._environment.inputDimensions()
-        self._nActions = self._environment.nActions()
-        self._df = 0
         self.rho = rho
-        self._lr = 0
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.clip_delta = clip_delta
@@ -215,17 +209,6 @@ class MyQNetwork(QNetwork):
                                       givens=givens2,
                                       on_unused_input='warn')
 
-    def setLearningRate(self, lr):
-        self._lr = lr
-
-    def setDiscountFactor(self, df):
-        self._df = df
-
-    def learningRate(self):
-        return self._lr
-
-    def discountFactor(self):
-        return self._df
             
     def toDump(self):
         # FIXME

@@ -1,6 +1,6 @@
 """This module contains classes used to define any agent wrapping a DQN.
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 """
 
 from theano import config
@@ -16,9 +16,27 @@ class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
+
+    Parameters
+    -----------
+    environment : object from class Environment
+        The environment in which the agent interacts
+    q_network : object from class QNetwork
+        The q_network associated to the agent
+    replay_memory_size : int
+        Size of the replay memory
+    replay_start_size : int
+        Number of observations (=number of time steps taken) in the replay memory before starting learning
+    batch_size : int
+        Number of tuples taken into account for each iteration of gradient descent
+    randomState : numpy random number generator
+        Seed
     """
 
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
+        """ Initialize agent
+        """
+
         inputDims = environment.inputDimensions()
 
         if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
