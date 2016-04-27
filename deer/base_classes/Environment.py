@@ -1,6 +1,4 @@
-"""This file defines the base Environment interface you should inherit from when creating new 
-environments.
-
+"""
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 

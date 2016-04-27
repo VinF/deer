@@ -1,2 +1,2 @@
-from Environment import Environment
-from QNetwork import QNetwork
+from .Environment import Environment
+from .QNetwork import QNetwork

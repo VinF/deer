@@ -1,6 +1,4 @@
-"""This file defines the base QNetwork interface you should inherit from when creating new 
-Q-networks.
-
+"""
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
