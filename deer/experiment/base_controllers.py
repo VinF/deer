@@ -349,7 +349,7 @@ class InterleavedTestEpochController(Controller):
         elif mod == 1:
             self._summaryCounter += 1
             if self._showScore:
-                print("Testing score (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
+                print("Testing score per episode (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
             if self._summaryPeriodicity > 0 and self._summaryCounter % self._summaryPeriodicity == 0:
                 agent.summarizeTestPerformance()
             agent.resumeTrainingMode()

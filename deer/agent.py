@@ -70,42 +70,62 @@ class NeuralAgent(object):
             self._controllers[i].setActive(active)
 
     def setEpsilon(self, e):
-        """ Set the epsilon (for :math:`\epsilon`-greedy exploration)
+        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
         """
         self._epsilon = e
 
     def epsilon(self):
+        """ Get the epsilon for :math:`\epsilon`-greedy exploration
+        """
         return self._epsilon
 
     def setLearningRate(self, lr):
+        """ Set the learning rate for the gradient descent
+        """
         self._network.setLearningRate(lr)
 
     def learningRate(self):
+        """ Get the learning rate
+        """
         return self._network.learningRate()
 
     def setDiscountFactor(self, df):
+        """ Set the discount factor
+        """
         self._network.setDiscountFactor(df)
 
     def discountFactor(self):
+        """ Get the discount factor
+        """
         return self._network.discountFactor()
 
     def overrideNextAction(self, action):
+        """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
+        """
         self._selectedAction = action
 
     def avgBellmanResidual(self):
+        """ Returns the average training loss on the epoch
+        """
         if (len(self._trainingLossAverages) == 0):
             return -1
         return np.average(self._trainingLossAverages)
 
     def avgEpisodeVValue(self):
+        """ Returns the average V value on the episode
+        """
         if (len(self._VsOnLastEpisode) == 0):
             return -1
         return np.average(self._VsOnLastEpisode)
 
     def totalRewardOverLastTest(self):
-        return self._totalModeReward
+        """ Returns the average sum of reward per episode
+        """
+        return self._totalModeReward/self._totalModeNbrEpisode
 
     def bestAction(self):
+        """ Returns the best Action
+        """
         action = self._network.chooseBestAction(self._state)
         V = max(self._network.qValues(self._state))
         return action, V
@@ -174,8 +194,12 @@ class NeuralAgent(object):
         for c in self._controllers: c.OnStart(self)
         i = 0
         while i < nEpochs or self._modeEpochsLength > 0:
+            self._trainingLossAverages = []
+
             if self._mode != -1:
+                self._totalModeNbrEpisode=0
                 while self._modeEpochsLength > 0:
+                    self._totalModeNbrEpisode += 1
                     self._modeEpochsLength = self._runEpisode(self._modeEpochsLength)
             else:
                 length = epochLength
@@ -194,21 +218,25 @@ class NeuralAgent(object):
             if inputDims[i][0] > 1:
                 self._state[i][1:] = initState[i][1:]
         
-        self._trainingLossAverages = []
         self._VsOnLastEpisode = []
         while maxSteps > 0:
             maxSteps -= 1
 
             obs = self._environment.observe()
-            for i in range(len(obs)):
-                self._state[i][0:-1] = self._state[i][1:]
-                self._state[i][-1] = obs[i]
-
-            V, action, reward = self._step()
-            self._VsOnLastEpisode.append(V)
             isTerminal = self._environment.inTerminalState()
-            if self._mode != -1:
-                self._totalModeReward += reward
+
+            if (isTerminal==True):
+                action=0
+                reward=0
+            else:
+                for i in range(len(obs)):
+                    self._state[i][0:-1] = self._state[i][1:]
+                    self._state[i][-1] = obs[i]
+
+                V, action, reward = self._step()
+                self._VsOnLastEpisode.append(V)
+                if self._mode != -1:
+                    self._totalModeReward += reward
                 
             self._addSample(obs, action, reward, isTerminal)
             for c in self._controllers: c.OnActionTaken(self)
