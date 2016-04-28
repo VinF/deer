@@ -520,8 +520,8 @@ class CircularBuffer(object):
             self._lb += 1
             self._ub += 1
 
-        if self._ub >= self._trueSize:
-            self._data[0:self._size-1] = self._data[self._lb+1:]
+        if self._ub > self._trueSize:
+            self._data[0:self._size-1] = self._data[self._lb:]
             self._lb  = 0
             self._ub  = self._size
             self._cur = self._size - 1
