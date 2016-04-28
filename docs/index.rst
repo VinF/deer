@@ -24,7 +24,7 @@ Version 0.2 (soon)
 - Standalone python package (you can simply do ``pip install deer``)
 - New environments : :ref:`toy_env_pendulum` and PLE
 - First automated tests
-- Double Q-learning and prioritized Experience Replay - arXiv.org
+- Double Q-learning and prioritized Experience Replay
 - Augmented documentation
 
 Future extensions:
