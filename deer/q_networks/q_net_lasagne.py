@@ -18,26 +18,25 @@ from ..base_classes import QNetwork
 class MyQNetwork(QNetwork):
     """
     Deep Q-learning network using Lasagne.
+
+    Arguments:
+    environment : object from class Environment
+    rho : float
+    rms_epsilon : float
+    momentum : float
+    clip_delta : float
+    freeze_interval : int
+    batch_size : int
+        Number of tuples taken into account for each iteration of gradient descent
+    network_type : str
+    update_rule: str
+    batch_accumulator : str
+    randomState : numpy random number generator
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
                  update_rule, batch_accumulator, randomState):
         """ Initialize environment
-
-        Arguments:
-        environment : object from class Environment
-        rho : float
-        rms_epsilon : float
-        momentum : float
-        clip_delta : float
-        freeze_interval : int
-        batch_size : int
-            Number of tuples taken into account for each iteration of gradient descent
-        network_type : str
-        update_rule: str
-        batch_accumulator : str
-        randomState : numpy random number generator
-        DoubleQ : bool, optional
         """
         QNetwork.__init__(self, environment, batchSize)
 
@@ -230,11 +229,13 @@ class MyQNetwork(QNetwork):
     def qValues(self, state_val):
         """ Get the q value for one belief state
 
-        Arguments:
-            states_val - list of max_num_elements* [list of k * [element 2D,1D or scalar]]
+        Arguments
+        ---------
+        state_val : one belief state
 
-        Returns:
-           The q value for the provided belief state
+        Returns
+        -------
+        The q value for the provided belief state
         """ 
         for i in range(len(self.states_shared)):
             aa = self.states_shared[i].get_value()
@@ -243,16 +244,18 @@ class MyQNetwork(QNetwork):
         
         return self._q_vals()[0]
 
-    def chooseBestAction(self, states):
-        """ Get the best action for a batch of states
+    def chooseBestAction(self, state):
+        """ Get the best action for a belief state
 
-        Arguments:
-            states - list of lists of max_num_elements* [list of k * [element 2D,1D or scalar]]
+        Arguments
+        ---------
+        state : one belief state
 
-        Returns:
-           The q value for the provided belief state
+        Returns
+        -------
+        The best action : int
         """        
-        q_vals = self.qValues(states)
+        q_vals = self.qValues(state)
 
         return np.argmax(q_vals)
         

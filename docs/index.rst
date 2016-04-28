@@ -19,11 +19,13 @@ It is a work in progress and input is welcome. Please submit any contribution vi
 
 What is new
 ------------
-Version 0.2
-***********
+Version 0.2 (soon)
+******************
 - Standalone python package (you can simply do ``pip install deer``)
 - New environments : :ref:`toy_env_pendulum` and PLE
 - First automated tests
+- Double Q-learning and prioritized Experience Replay
+- Augmented documentation
 
 Future extensions:
 ******************
