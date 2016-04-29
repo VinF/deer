@@ -254,7 +254,7 @@ class MyQNetwork(QNetwork):
             loss, diff, _ = self._train(self._df, self._lr)
 
         self.update_counter += 1
-        return np.sqrt(loss)
+        return np.sqrt(loss),diff
 
     def qValues(self, state_val):
         """ Get the q value for one belief state
