@@ -16,6 +16,8 @@ class QNetwork(object):
         Number of tuples taken into account for each iteration of gradient descent
     """
     def __init__(self, environment, batchSize):
+        print "here!!"
+        #super(QNetwork, self).__init__()
         self._environment = environment
         self._df = 0
         self._lr = 0
@@ -26,6 +28,7 @@ class QNetwork(object):
     def train(self, states, actions, rewards, nextStates, terminals):
         """ This method performs the Bellman iteration for one batch of tuples.
         """
+        print "here"
         raise NotImplementedError()
 
     def chooseBestAction(self, state):
