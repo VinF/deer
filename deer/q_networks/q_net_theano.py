@@ -23,36 +23,34 @@ class MyQNetwork(QNetwork):
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
-                 update_rule, batch_accumulator, randomState, frame_scale=255.0):
+                 update_rule, batch_accumulator, randomState, DoubleQ=False):
         """ Initialize environment
+        
         Parameters
         -----------
-            environment : object from class Env
-            num_elements_in_batch : list of k integers 
-                Number of each element kept as belief state
-            num_actions : int
-            discount : float
-            learning_rate : float
-            rho : float
-            rms_epsilon : float
-            momentum : float
-            network_type : string 
-            ...           
+        environment : object from class Environment
+        rho : float
+        rms_epsilon : float
+        momentum : float
+        clip_delta : float
+        freeze_interval : int
+        batch_size : int
+            Number of tuples taken into account for each iteration of gradient descent
+        network_type : str
+        update_rule: str
+        batch_accumulator : str
+        randomState : numpy random number generator
+        DoubleQ : bool, optional
         """
-
-        self._environment = environment
+        QNetwork.__init__(self, environment, batchSize)
         
-        self._batchSize = batchSize
-        self._inputDimensions = self._environment.inputDimensions()
-        self._nActions = self._environment.nActions()
-        self._df = 0
         self.rho = rho
-        self._lr = 0
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
         self._randomState = randomState
+        self._DoubleQ = DoubleQ
         
         self.update_counter = 0
         
@@ -107,10 +105,27 @@ class MyQNetwork(QNetwork):
             broadcastable=(False, True))
         
         
-        max_next_q_vals=T.max(next_q_vals, axis=1, keepdims=True)
-        
+        if(self._DoubleQ==True):
+            givens_next={}
+            for i, x in enumerate(self.next_states_shared):
+                givens_next[ states[i] ] = x
+
+            self.next_q_vals_current_qnet=theano.function([], q_vals,
+                                          givens=givens_next)
+
+            next_q_curr_qnet = theano.clone(next_q_vals)
+
+            argmax_next_q_vals=T.argmax(next_q_curr_qnet, axis=1, keepdims=True)
+
+            max_next_q_vals=next_q_vals[T.arange(batchSize),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
+
+
+        else:
+            max_next_q_vals=T.max(next_q_vals, axis=1, keepdims=True)
+
+
         T_ones_like=T.ones_like(T.ones_like(terminals) - terminals)
-                
+
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
         q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
@@ -132,7 +147,7 @@ class MyQNetwork(QNetwork):
             loss_ind = 0.5 * quadratic_part ** 2 + self.clip_delta * linear_part
         else:
             loss_ind = 0.5 * diff ** 2
-        #loss_printed=theano.printing.Print('this is loss')(loss)
+
         if batch_accumulator == 'sum':
             loss = T.sum(loss_ind)
         elif batch_accumulator == 'mean':
@@ -178,7 +193,12 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized update: {}".format(update_rule))
     
         
-        self._train = theano.function([thediscount, thelr], [loss, loss_ind, q_vals], updates=updates,
+        if(self._DoubleQ==True):
+            self._train = theano.function([thediscount, thelr, next_q_curr_qnet], [loss, loss_ind, q_vals], updates=updates,
+                                      givens=givens,
+                                      on_unused_input='warn')
+        else:
+            self._train = theano.function([thediscount, thelr], [loss, loss_ind, q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
         givens2={}
@@ -189,17 +209,6 @@ class MyQNetwork(QNetwork):
                                       givens=givens2,
                                       on_unused_input='warn')
 
-    def setLearningRate(self, lr):
-        self._lr = lr
-
-    def setDiscountFactor(self, df):
-        self._df = df
-
-    def learningRate(self):
-        return self._lr
-
-    def discountFactor(self):
-        return self._df
             
     def toDump(self):
         # FIXME
@@ -238,10 +247,14 @@ class MyQNetwork(QNetwork):
         if self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
         
-        loss, diff, _ = self._train(self._df, self._lr)
+        if(self._DoubleQ==True):
+            self._next_q_curr_qnet = self.next_q_vals_current_qnet()
+            loss, diff, _ = self._train(self._df, self._lr,self._next_q_curr_qnet)
+        else:
+            loss, diff, _ = self._train(self._df, self._lr)
 
         self.update_counter += 1
-        return np.sqrt(loss), diff
+        return np.sqrt(loss)
 
     def qValues(self, state_val):
         """ Get the q value for one belief state

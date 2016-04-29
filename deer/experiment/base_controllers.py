@@ -55,13 +55,13 @@ class Controller(object):
 
         Parameters
         ----------
-            agent : NeuralAgent
-                The agent firing the event
-            terminalReached : bool
-                Whether the episode ended because a terminal transition occured. This could be False 
-                if the episode was stopped because its step budget was exhausted.
-            reward : float
-                The reward obtained on the last transition performed in this episode.
+        agent : NeuralAgent
+            The agent firing the event
+        terminalReached : bool
+            Whether the episode ended because a terminal transition occured. This could be False 
+            if the episode was stopped because its step budget was exhausted.
+        reward : float
+            The reward obtained on the last transition performed in this episode.
         
         """
 
@@ -110,12 +110,12 @@ class LearningRateController(Controller):
     
     Parameters
     ----------
-        initialLearningRate : float
-            The learning rate upon agent start
-        learningRateDecay : float
-            The factor by which the previous learning rate is multiplied every [periodicity] epochs.
-        periodicity : int
-            How many epochs are necessary before an update of the learning rate occurs
+    initialLearningRate : float
+        The learning rate upon agent start
+    learningRateDecay : float
+        The factor by which the previous learning rate is multiplied every [periodicity] epochs.
+    periodicity : int
+        How many epochs are necessary before an update of the learning rate occurs
     """
 
     def __init__(self, initialLearningRate=0.0002, learningRateDecay=1., periodicity=1):
@@ -129,7 +129,7 @@ class LearningRateController(Controller):
         self._lr = initialLearningRate
         self._lrDecay = learningRateDecay
         self._periodicity = periodicity
-
+    
     def OnStart(self, agent):
         if (self._active == False):
             return

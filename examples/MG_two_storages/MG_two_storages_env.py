@@ -251,35 +251,7 @@ def main():
     rng = np.random.RandomState(123456)
     myenv=MyEnv(rng)
 
-    myenv.reset(False)
-    
-    
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(0, False))
-    print(myenv.observe())
-    print(myenv.act(1, False))
-    print(myenv.observe())
-    print(myenv.act(1, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(2, False))
-    print(myenv.observe())
-    print(myenv.act(1, False))
-    print(myenv.observe())
-    print(myenv.act(1, False))
-    print(myenv.observe())
-    
+    print (myenv.observe())
     
 if __name__ == "__main__":
     main()
