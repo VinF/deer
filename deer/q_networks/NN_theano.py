@@ -257,7 +257,7 @@ class NN():
                        for layer in layers
                        for param in layer.params]
         
-        return self.outLayer.output, params, outs_conv_shapes, [None,None]
+        return self.outLayer.output, params, outs_conv_shapes
 
 if __name__ == '__main__':
     pass

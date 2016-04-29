@@ -83,11 +83,11 @@ class MyQNetwork(QNetwork):
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
         QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
-        self.q_vals, self.params, shape_after_conv, [self.l_outs, self.l_outs_conv] = QNet._buildG_DQN_0(states)
+        self.q_vals, self.params, shape_after_conv = QNet._buildG_DQN_0(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_q_vals, self.next_params, shape_after_conv, [self.next_l_outs, self.next_l_outs_conv] = QNet._buildG_DQN_0(next_states)
+        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildG_DQN_0(next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(

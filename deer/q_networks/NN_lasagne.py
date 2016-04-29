@@ -1,10 +1,10 @@
 """
 Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
 
-Authors: Vincent Francois-Lavet, David Taralla
+.. Authors: Vincent Francois-Lavet, David Taralla
 
-Inspired from "Human-level control through deep reinforcement learning",
-Nature, 518(7540):529-533, February 2015
+.. Inspired from "Human-level control through deep reinforcement learning",
+.. Nature, 518(7540):529-533, February 2015
 """
 
 import lasagne
@@ -39,7 +39,19 @@ class NN():
         self._inputDimensions=inputDimensions
         self._batchSize=batchSize
         self._randomState=randomState
-        self._nActions=n_Actions        
+        self._nActions=n_Actions
+        
+#    def _resetQHat(self):
+#        all_params = lasagne.layers.helper.get_all_param_values(self.l_outs)
+#        
+#        all_params_conv=[]
+#        for conv_param in self.l_outs_conv:
+#            all_params_conv.append( lasagne.layers.helper.get_all_param_values(conv_param) )
+#
+#        lasagne.layers.helper.set_all_param_values(self.next_l_outs, all_params)
+#        for i,param_conv in enumerate(all_params_conv):
+#            lasagne.layers.helper.set_all_param_values(self.next_l_outs_conv[i], param_conv)        
+        
 
     def _buildG_DQN_0(self, inputs):
         """
@@ -208,7 +220,7 @@ class NN():
                 params.append(p)
 
         
-        return lasagne.layers.get_output(l_out), params, shapes, [l_out,l_outs_conv]
+        return lasagne.layers.get_output(l_out), params, shapes
 
 
 if __name__ == '__main__':
