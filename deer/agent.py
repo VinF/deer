@@ -2,16 +2,16 @@
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
-
-from theano import config
 import os
 import numpy as np
 import copy
 import sys
 import joblib
-from .experiment import base_controllers as controllers
 from warnings import warn
-from scipy import stats
+from theano import config
+
+from .experiment import base_controllers as controllers
+from .helper import tree 
 
 
 class NeuralAgent(object):
@@ -35,10 +35,7 @@ class NeuralAgent(object):
         self._batchSize = batch_size
         self._randomState = randomState
         self._exp_priority = exp_priority
-        if (self._exp_priority>0):
-            self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=True)
-        else:
-            self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=False)
+        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=self._exp_priority)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -133,13 +130,10 @@ class NeuralAgent(object):
             return
 
         try:
-            if (self._exp_priority>0):
-                states, actions, rewards, next_states, terminals, priorities, rndValidIndices = self._dataSet.randomBatch(self._batchSize, True)
-            else:
-                states, actions, rewards, next_states, terminals, _, _ = self._dataSet.randomBatch(self._batchSize, False)
+            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataSet.randomBatch(self._batchSize, self._exp_priority)
             loss, diff = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
-            if (self._exp_priority>0):
+            if (self._exp_priority):
                 self._dataSet.update_priorities(pow(diff,self._exp_priority)+0.0001, rndValidIndices)
 
         except SliceError as e:
@@ -235,9 +229,9 @@ class NeuralAgent(object):
 
     def _addSample(self, ponctualObs, action, reward, isTerminal):
         if self._mode != -1:
-            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal, priority=sys.float_info.max)
+            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
         else:
-            self._dataSet.addSample(ponctualObs, action, reward, isTerminal, priority=sys.float_info.max)
+            self._dataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
 
 
     def _chooseAction(self):
@@ -302,8 +296,8 @@ class DataSet(object):
         self._actions      = CircularBuffer(maxSize, dtype="int8")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
-        if (self._use_priority==True):
-            self._priorities   = CircularBuffer(maxSize)
+        if (self._use_priority):
+            self._prioritiy_tree = tree.SumTree(maxSize) 
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
@@ -325,11 +319,6 @@ class DataSet(object):
         """Get all rewards currently in the replay memory, ordered by time where they were received."""
 
         return self._rewards.getSlice(0)
-
-    def priorities(self):
-        """Get all priorities currently in the replay memory, ordered by time where they were received."""
-
-        return self._priorities.getSlice(0)
 
     def terminals(self):
         """Get all terminals currently in the replay memory, ordered by time where they were observed.
@@ -355,10 +344,11 @@ class DataSet(object):
     def update_priorities(self, priorities, rndValidIndices):
         """
         """
-        self._priorities.setSliceBySeq(dat=priorities, seq=rndValidIndices)
-
-
+        for i in range(len(rndValidIndices)):
+            if (rndValidIndices[i] >= self._size):
+                rndValidIndices[i] -= self._size
             
+            self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
     def randomBatch(self, size, use_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
@@ -386,19 +376,25 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        rndValidIndices = np.zeros(size, dtype='int32')
+        if (self._maxHistorySize - 1 >= self._nElems):
+            raise SliceError(
+                "Not enough elements in the dataset to create a "
+                "complete state. {} elements in dataset; requires {}"
+                .format(self._nElems, self._maxHistorySize))
 
-        for i in range(size): # TODO: multithread this loop?
-            rndValidIndices[i] = self._randomValidStateIndex()
-            
-        
+        if (self._use_priority):
+            rndValidIndices = self._random_prioritized_batch(size)
+            if (rndValidIndices == -1):
+                raise SliceError("Could not find a state with full histories")
+        else:
+            rndValidIndices = np.zeros(size, dtype='int32')
+            for i in range(size): # TODO: multithread this loop?
+                rndValidIndices[i] = self._randomValidStateIndex()
+                
         actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
-        if (self._use_priority==True):
-            priorities = self._priorities.getSliceBySeq(rndValidIndices)
-        else:
-            priorities = 0
+    
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
         
@@ -412,33 +408,11 @@ class DataSet(object):
                 else:
                     next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
 
-        return states, actions, rewards, next_states, terminals, priorities, rndValidIndices
+        return states, actions, rewards, next_states, terminals, rndValidIndices
 
     def _randomValidStateIndex(self):
         index_lowerBound = self._maxHistorySize - 1
-
-        if (self._use_priority==True):
-            # Simple hack to keep computation time low while not having to keep track of the sum of all priorities in Dataset (FIXME)
-            try:
-                candidate_indices = self._randomState.randint(index_lowerBound, self._nElems, size=50)
-            except ValueError:
-                raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
-                                 "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
-
-            prio_seq=self._priorities.getSliceBySeq(candidate_indices)
-            sum_prio_seq=sum(prio_seq)
-            if (sum_prio_seq>sys.float_info.max):
-                sum_prio_seq=sys.float_info.max
-            pk=prio_seq/sum_prio_seq
-            xk = np.arange(50)
-            custm=stats.rv_discrete(name='custm', values=( xk, pk ),seed=self._randomState ) # FIXME : too slow
-            index = candidate_indices[custm.rvs(size=1)]
-        else:
-            try:
-                index = self._randomState.randint(index_lowerBound, self._nElems)
-            except ValueError:
-                raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
-                                 "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
+        index = self._randomState.randint(index_lowerBound, self._nElems)
 
         # Check if slice is valid wrt terminals
         firstTry = index
@@ -454,10 +428,6 @@ class DataSet(object):
                 processed += 1
 
             if (processed < self._maxHistorySize - 1):
-                # Update priority to 0 if we know that it can't be used
-                if (self._use_priority==True):
-                    for ind in range (i+1,index+1):
-                        self._priorities[i]=0
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
                 if (index < index_lowerBound):
@@ -468,7 +438,19 @@ class DataSet(object):
             else:
                 # else index was ok according to terminals
                 return index
-       
+    
+    def _random_prioritized_batch(self, size):
+        indices = self._prioritiy_tree.get_batch(
+            size, self._randomState, self)
+
+        # The SumTree will only return indices in [0, size-1].
+        # Numbers below the lower bound in the circular buffer += size.
+        lb = self._actions.get_lower_bound()
+        for i in range(len(indices)):
+            if (indices[i] < lb):
+                indices[i] += self._size
+        
+        return indices
 
     def nElems(self):
         """Get the number of samples in this dataset (i.e. the current memory replay size)."""
@@ -494,12 +476,14 @@ class DataSet(object):
             self._observations[i].append(obs[i])
         
         # Store rest of sample
+        if (self._use_priority):
+            # Current index of the other Circular Buffers
+            index = self._actions.get_index() 
+            self._prioritiy_tree.update(index)
+
         self._actions.append(action)
         self._rewards.append(reward)
         self._terminals.append(isTerminal)
-
-        if (self._use_priority==True):
-            self._priorities.append(priority)
 
         if (self._nElems < self._size):
             self._nElems += 1
@@ -537,14 +521,17 @@ class CircularBuffer(object):
     def getSliceBySeq(self, seq):
         return self._data[seq + self._lb]
 
-    def setSliceBySeq(self, dat, seq):
-        self._data[seq + self._lb]=dat
-
     def getSlice(self, start, end=sys.maxsize):
         if end == sys.maxsize:
             return self._data[self._lb+start:self._cur]
         else:
             return self._data[self._lb+start:self._lb+end]
+
+    def get_lower_bound(self):
+        return self._lb
+
+    def get_index(self):
+        return self._cur
 
 
 class SliceError(LookupError):

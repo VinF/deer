@@ -77,7 +77,7 @@ class SumTree:
         node.right = self._create_subtree(node, mid, end)
         return node
 
-    def update(self, index, priority):
+    def update(self, index, priority=1):
         """ Update a leaf and the tree priorities. 
         When the replay memory is updated with a new transition, it is 
         also updated in the tree. The priority of the successive parent
@@ -129,7 +129,7 @@ class SumTree:
         else:
             return self._find_index(index, node.right)
 
-    def get_batch(self, n, rng):
+    def get_batch(self, n, rng, dataset):
         """ Generate the indices of a random batch of size n.
         The samples within the random batch are selected following
         the priorities (probabilities) of each transition in the replay
@@ -143,13 +143,62 @@ class SumTree:
         """
         pmax = self._root.priority
         step = pmax / n
-        indices = []
+        indices = np.zeros(n, dtype='int32')
         for i in range(n):
             p = rng.uniform(i*step, (i+1)*step)
             node = self.find(p)
-            indices.append(node.position)
+            index = self._check_terminal(node.position, dataset)
+            if (index >= 0):
+                indices[i] = index
+            else:
+                return -1
 
         return indices
+
+    def _check_terminal(self, index, dataset):
+        """ Avoid terminal states in the x samples preceding the chosen 
+        index.
+        
+        Argument:
+            index - chosen index based on priority
+            dataset - contains the circular buffers
+        Return:
+            index - checked or corrected value of the input index.
+        """
+        history_size = dataset._maxHistorySize
+        terminals = dataset._terminals
+        n_elems = dataset._nElems
+
+        lower_bound = history_size - 1
+
+        # Check if the index is valid wrt terminals
+        first_try = index
+        start_wrapped = False
+        while True:
+            i = index - 1
+            processed = 0
+            for _ in range(history_size - 1):
+                if (i < 0 or terminals[i]):
+                    break;
+
+                i -= 1
+                processed += 1
+
+            if (processed < history_size - 1):
+                # Update priority to 0 if we know that it can't be used
+                for ind in range (i + 1, index + 1):
+                    self.update(ind, 0)
+
+                # if we stopped prematurely, shift slice to the left and try again
+                index = i
+                if (index < lower_bound):
+                    start_wrapped = True
+                    index = n_elems - 1
+                if (start_wrapped and index <= first_try):
+                    return -1
+            else:
+                # else index was ok according to terminals
+                return index
 
     def find(self, priority):
         """ Find a leaf based on the priority. 
