@@ -384,7 +384,7 @@ class DataSet(object):
 
         if (self._use_priority):
             rndValidIndices = self._random_prioritized_batch(size)
-            if (rndValidIndices == -1):
+            if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
             rndValidIndices = np.zeros(size, dtype='int32')

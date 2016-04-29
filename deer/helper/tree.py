@@ -4,7 +4,7 @@ Each parent node is the sum of the priorities of its children.
 The tree data structure serves purpose of efficient O(log(n)) priority 
 update and random batch generation.
 
-One may chech out Schaul et al. (2016) - Prioritized Experience Replay.
+One may check out Schaul et al. (2016) - Prioritized Experience Replay.
 
 Author: Aaron Zixiao Qiu
 """
@@ -151,7 +151,7 @@ class SumTree:
             if (index >= 0):
                 indices[i] = index
             else:
-                return -1
+                return np.zeros(0)
 
         return indices
 
