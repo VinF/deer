@@ -26,7 +26,6 @@ class QNetwork(object):
     def train(self, states, actions, rewards, nextStates, terminals):
         """ This method performs the Bellman iteration for one batch of tuples.
         """
-        print "here"
         raise NotImplementedError()
 
     def chooseBestAction(self, state):

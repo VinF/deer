@@ -38,6 +38,7 @@ class MyQNetwork(QNetwork):
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
                  update_rule, batch_accumulator, randomState, DoubleQ=False):
         """ Initialize environment
+        
         """
         QNetwork.__init__(self,environment, batchSize)
         
