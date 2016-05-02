@@ -12,9 +12,7 @@ import theano
 import theano.tensor as T
 from .updates import deepmind_rmsprop
 from ..base_classes import QNetwork
-
-from .theano_layers import ConvolutionalLayer,HiddenLayer
-
+from .NN_theano import NN # Default Neural network used
     
 class MyQNetwork(QNetwork):
     """
@@ -35,23 +33,28 @@ class MyQNetwork(QNetwork):
     batch_accumulator : str
     randomState : numpy random number generator
     DoubleQ : bool, optional
+    TheQNet : object, optional
+        default is deer.qnetworks.NN_theano
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
-                 update_rule, batch_accumulator, randomState, DoubleQ=False):
+                 update_rule, batch_accumulator, randomState, DoubleQ=False, TheQNet=NN):
         """ Initialize environment
         
         """
-        QNetwork.__init__(self, environment, batchSize)
+        QNetwork.__init__(self,environment, batchSize)
+
         
         self.rho = rho
         self.rms_epsilon = rms_epsilon
         self.momentum = momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
-        self._randomState = randomState
         self._DoubleQ = DoubleQ
+        self._randomState = randomState
         
+        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -85,11 +88,12 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        q_vals, self.params, shape_after_conv = self._build(network_type, states)
+        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+        self.q_vals, self.params, shape_after_conv = QNet._buildG_DQN_0(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        next_q_vals, self.next_params, shape_after_conv = self._build(network_type, next_states)
+        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildG_DQN_0(next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(
@@ -110,25 +114,25 @@ class MyQNetwork(QNetwork):
             for i, x in enumerate(self.next_states_shared):
                 givens_next[ states[i] ] = x
 
-            self.next_q_vals_current_qnet=theano.function([], q_vals,
+            self.next_q_vals_current_qnet=theano.function([], self.q_vals,
                                           givens=givens_next)
 
-            next_q_curr_qnet = theano.clone(next_q_vals)
+            next_q_curr_qnet = theano.clone(self.next_q_vals)
 
             argmax_next_q_vals=T.argmax(next_q_curr_qnet, axis=1, keepdims=True)
 
-            max_next_q_vals=next_q_vals[T.arange(batchSize),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
+            max_next_q_vals=self.next_q_vals[T.arange(batchSize),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
 
 
         else:
-            max_next_q_vals=T.max(next_q_vals, axis=1, keepdims=True)
+            max_next_q_vals=T.max(self.next_q_vals, axis=1, keepdims=True)
 
 
         T_ones_like=T.ones_like(T.ones_like(terminals) - terminals)
 
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
-        q_val=q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
+        q_val=self.q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
         # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
         diff = - q_val + target 
 
@@ -194,18 +198,18 @@ class MyQNetwork(QNetwork):
     
         
         if(self._DoubleQ==True):
-            self._train = theano.function([thediscount, thelr, next_q_curr_qnet], [loss, loss_ind, q_vals], updates=updates,
+            self._train = theano.function([thediscount, thelr, next_q_curr_qnet], [loss, loss_ind, self.q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
         else:
-            self._train = theano.function([thediscount, thelr], [loss, loss_ind, q_vals], updates=updates,
+            self._train = theano.function([thediscount, thelr], [loss, loss_ind, self.q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
         givens2={}
         for i, x in enumerate(self.states_shared):
             givens2[ states[i] ] = x 
 
-        self._q_vals = theano.function([], q_vals,
+        self._q_vals = theano.function([], self.q_vals,
                                       givens=givens2,
                                       on_unused_input='warn')
 
@@ -299,226 +303,7 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized network: {}".format(network_type))
 
     def _resetQHat(self):
+        
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             next_param.set_value(param.get_value())        
-        
-    def _buildG_DQN_0(self, inputs):
-        """
-        Build a network consistent with each type of inputs
-        """
-        layers=[]
-        outs_conv=[]
-        outs_conv_shapes=[]
-        
-        for i, dim in enumerate(self._inputDimensions):
-            nfilter=[]
-            
-            # - observation[i] is a FRAME -
-            if len(dim) == 3: 
 
-                ### First layer
-                newR = dim[1]
-                newC = dim[2]
-                fR=8  # filter Rows
-                fC=8  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(32)
-                stride_size=4
-                l_conv1 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=inputs[i].reshape((self._batchSize,dim[0],newR,newC)),
-                    filter_shape=(nfilter[0],dim[0],fR,fC),
-                    image_shape=(self._batchSize,dim[0],newR,newC),
-                    poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)
-                )
-                layers.append(l_conv1)
-
-                newR = (newR - fR + 1 - pR) // stride_size + 1
-                newC = (newC - fC + 1 - pC) // stride_size + 1
-
-                ### Second layer
-                fR=4  # filter Rows
-                fC=4  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(64)
-                stride_size=2
-                l_conv2 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
-                    filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                    image_shape=(self._batchSize,nfilter[0],newR,newC),
-                    poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)
-                )
-                layers.append(l_conv2)
-
-                newR = (newR - fR + 1 - pR) // stride_size + 1
-                newC = (newC - fC + 1 - pC) // stride_size + 1
-
-                ### Third layer
-                fR=3  # filter Rows
-                fC=3  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(64)
-                stride_size=1
-                l_conv3 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv2.output.reshape((self._batchSize,nfilter[1],newR,newC)),
-                    filter_shape=(nfilter[2],nfilter[1],fR,fC),
-                    image_shape=(self._batchSize,nfilter[1],newR,newC),
-                    poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)
-                )
-                layers.append(l_conv3)
-
-                newR = (newR - fR + 1 - pR) // stride_size + 1
-                newC = (newC - fC + 1 - pC) // stride_size + 1
-
-                outs_conv.append(l_conv3.output)
-                outs_conv_shapes.append((nfilter[2],newR,newC))
-
-                
-            # - observation[i] is a VECTOR -
-            elif len(dim) == 2 and dim[0] > 3:                
-                
-                newR = dim[0]
-                newC = dim[1]
-                
-                fR=2  # filter Rows
-                fC=1  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(16)
-                stride_size=1
-
-                l_conv1 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=inputs[i].reshape((self._batchSize,1,newR,newC)),
-                    filter_shape=(nfilter[0],1,fR,fC),
-                    image_shape=(self._batchSize,1,newR,newC),
-                    poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)                    
-                )                
-                layers.append(l_conv1)
-                
-                newR = (newR - fR + 1 - pR) // stride_size + 1  # stride 2
-                newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
-
-                fR=2  # filter Rows
-                fC=2  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(16)
-                stride_size=1
-
-                l_conv2 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
-                    filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                    image_shape=(self._batchSize,nfilter[0],newR,newC),
-                    poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)
-                )                
-                layers.append(l_conv2)
-                
-                newR = (newR - fR + 1 - pR) // stride_size + 1  # stride 2
-                newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
-
-                outs_conv.append(l_conv2.output)
-                outs_conv_shapes.append((nfilter[1],newR,newC))
-
-
-            # - observation[i] is a SCALAR -
-            else:
-                if dim[0] > 3:
-                    newR = 1
-                    newC = dim[0]
-                    
-                    fR=1  # filter Rows
-                    fC=2  # filter Column
-                    pR=1  # pool Rows
-                    pC=1  # pool Column
-                    nfilter.append(8)
-                    stride_size=1
-
-                    l_conv1 = ConvolutionalLayer(
-                        rng=self._randomState,
-                        input=inputs[i].reshape((self._batchSize,1,newR,newC)),
-                        filter_shape=(nfilter[0],1,fR,fC),
-                        image_shape=(self._batchSize,1,newR,newC),
-                        poolsize=(pR,pC),
-                        stride=(stride_size,stride_size)
-                    )                
-                    layers.append(l_conv1)
-                    
-                    newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
-
-                    fR=1  # filter Rows
-                    fC=2  # filter Column
-                    pR=1  # pool Rows
-                    pC=1  # pool Column
-                    nfilter.append(8)
-                    stride_size=1
-                    
-                    l_conv2 = ConvolutionalLayer(
-                        rng=self._randomState,
-                        input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
-                        filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                        image_shape=(self._batchSize,nfilter[0],newR,newC),
-                        poolsize=(pR,pC),
-                        stride=(stride_size,stride_size)
-                    )                
-                    layers.append(l_conv2)
-                    
-                    newC = (newC - fC + 1 - pC) // stride_size + 1  # stride 2
-
-                    outs_conv.append(l_conv2.output)
-                    outs_conv_shapes.append((nfilter[1],newC))
-                    
-                else:
-                    if(len(dim) == 2):
-                        outs_conv_shapes.append((dim[0],dim[1]))
-                    elif(len(dim) == 1):
-                        outs_conv_shapes.append((1,dim[0]))
-                    outs_conv.append(inputs[i])
-        
-        
-        ## Custom merge of layers
-        output_conv = outs_conv[0].flatten().reshape((self._batchSize, np.prod(outs_conv_shapes[0])))
-        shapes=np.prod(outs_conv_shapes[0])
-
-        if (len(outs_conv)>1):
-            for out_conv,out_conv_shape in zip(outs_conv[1:],outs_conv_shapes[1:]):
-                output_conv=T.concatenate((output_conv, out_conv.flatten().reshape((self._batchSize, np.prod(out_conv_shape)))) , axis=1)
-                shapes+=np.prod(out_conv_shape)
-                shapes
-
-                
-        self.hiddenLayer1 = HiddenLayer(rng=self._randomState, input=output_conv,
-                                       n_in=shapes, n_out=50,
-                                       activation=T.tanh)                                       
-        layers.append(self.hiddenLayer1)
-
-        self.hiddenLayer2 = HiddenLayer(rng=self._randomState, input=self.hiddenLayer1.output,
-                                       n_in=50, n_out=20,
-                                       activation=T.tanh)
-        layers.append(self.hiddenLayer2)
-
-        self.outLayer = HiddenLayer(rng=self._randomState, input=self.hiddenLayer2.output,
-                                       n_in=20, n_out=self._nActions,
-                                       activation=None)
-        layers.append(self.outLayer)
-
-        # Grab all the parameters together.
-        params = [param
-                       for layer in layers
-                       for param in layer.params]
-        
-        return self.outLayer.output, params, outs_conv_shapes
-
-if __name__ == '__main__':
-    pass
