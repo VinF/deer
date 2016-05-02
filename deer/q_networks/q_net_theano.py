@@ -12,7 +12,7 @@ import theano
 import theano.tensor as T
 from .updates import deepmind_rmsprop
 from ..base_classes import QNetwork
-from .NN_theano import NN as TheQNet
+from .NN_theano import NN # Default Neural network used
     
 class MyQNetwork(QNetwork):
     """
@@ -33,14 +33,17 @@ class MyQNetwork(QNetwork):
     batch_accumulator : str
     randomState : numpy random number generator
     DoubleQ : bool, optional
+    TheQNet : object, optional
+        default is deer.qnetworks.NN_theano
     """
 
     def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
-                 update_rule, batch_accumulator, randomState, DoubleQ=False):
+                 update_rule, batch_accumulator, randomState, DoubleQ=False, TheQNet=NN):
         """ Initialize environment
         
         """
         QNetwork.__init__(self,environment, batchSize)
+
         
         self.rho = rho
         self.rms_epsilon = rms_epsilon
@@ -50,6 +53,8 @@ class MyQNetwork(QNetwork):
         self._DoubleQ = DoubleQ
         self._randomState = randomState
         
+        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state

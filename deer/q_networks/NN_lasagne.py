@@ -31,7 +31,6 @@ class NN():
         self._randomState=randomState
         self._nActions=n_Actions
         
-
     def _buildG_DQN_0(self, inputs):
         """
         Build a network consistent with each type of inputs
