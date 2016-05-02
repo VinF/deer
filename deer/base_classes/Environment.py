@@ -28,8 +28,10 @@ class Environment(object):
         validation or generalization score. The mode the environment is in should always be redefined by resetting the
         environment using this method, meaning that the mode should be preserved until the next call to reset().
 
-        Parameters:
-            mode [int] - The mode to put the environment into. Mode "-1" is reserved and always means "training".
+        Parameters
+        -----------
+            mode : int
+                The mode to put the environment into. Mode "-1" is reserved and always means "training".
         """
 
         raise NotImplementedError()
@@ -37,8 +39,10 @@ class Environment(object):
     def act(self, action):
         """Apply the agent action [action] on the environment.
 
-        Parameters:
-            action [int] - The action selected by the agent to operate on the environment. Should be an identifier 
+        Parameters
+        -----------
+            action : int
+                The action selected by the agent to operate on the environment. Should be an identifier 
                 included between 0 included and nActions() excluded.
         """
 
@@ -72,6 +76,11 @@ class Environment(object):
         As the majority of control tasks considered have no end (a continuous control should be operated), by default 
         this returns always False. But in the context of a video game for instance, terminal states can occurs and 
         these cases this method should be overriden.
+        
+        Returns
+        -------
+            bool
+
         """
 
         return False
@@ -93,8 +102,10 @@ class Environment(object):
         """Additional optional hook that can be used to show a summary of the performance of the agent on the 
         environment in the current mode (in validation and or generalization for example).
 
-        Parameters:
-            test_data_set [agent.DataSet] - The dataset maintained by the agent in the current mode, which contains 
+        Parameters
+        -----------
+            test_data_set : agent.DataSet 
+                The dataset maintained by the agent in the current mode, which contains 
                 observations, actions taken and rewards obtained, as well as wether each transition was terminal or 
                 not. Refer to the documentation of agent.DataSet for more information.
         """
@@ -104,8 +115,10 @@ class Environment(object):
     def observationType(self, subject):
         """Get the most inner type (np.uint8, np.float32, ...) of [subject].
 
-        Parameters:
-            subject [int] - The subject
+        Parameters
+        -----------
+            subject : int
+                The subject
         """
 
         return np.float32

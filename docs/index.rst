@@ -13,7 +13,7 @@ The framework is made in such a way that it is easy to
 
 * build any environment
 * modify any part of the learning process
-* use your favorite python-based framework to code your own neural network architecture. The provided neural network architectures use Theano (with or without the lasagne library).
+* use your favorite python-based framework to code your own neural network architecture. The provided neural network architectures are based on Theano but you may easily use another one.
 
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
@@ -22,7 +22,7 @@ What is new
 Version 0.2 (soon)
 ******************
 - Standalone python package (you can simply do ``pip install deer``)
-- New environments : :ref:`toy_env_pendulum` and PLE
+- Integration of new examples environments : :ref:`toy_env_pendulum`, :ref:`PLE` and :ref:`gym`
 - First automated tests
 - Double Q-learning and prioritized Experience Replay
 - Augmented documentation
