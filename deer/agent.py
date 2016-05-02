@@ -313,6 +313,7 @@ class DataSet(object):
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
         if (self._use_priority):
             self._prioritiy_tree = tree.SumTree(maxSize) 
+            self._translation_array = np.zeros(maxSize)
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
@@ -457,13 +458,8 @@ class DataSet(object):
     def _random_prioritized_batch(self, size):
         indices = self._prioritiy_tree.get_batch(
             size, self._randomState, self)
-
-        # The SumTree will only return indices in [0, size-1].
-        # Numbers below the lower bound in the circular buffer += size.
-        lb = self._actions.get_lower_bound()
         for i in range(len(indices)):
-            if (indices[i] < lb):
-                indices[i] += self._size
+            indices[i] = self._translation_array[indices[i]]
         
         return indices
 
@@ -489,13 +485,29 @@ class DataSet(object):
         # Store observations
         for i in range(len(self._batchDimensions)):
             self._observations[i].append(obs[i])
-        
-        # Store rest of sample
-        if (self._use_priority):
-            # Current index of the other Circular Buffers
-            index = self._actions.get_index() 
-            self._prioritiy_tree.update(index)
 
+        # Update tree and translation table
+        if (self._use_priority):
+            index = self._actions.get_index()
+            if (index > self._size):
+                ub = self._actions.get_upper_bound()
+                true_size = self._actions.get_true_size()
+                tree_ind = index%self._size
+                if (ub == true_size):
+                    size_extension = true_size - self._size
+                    # New index
+                    index = self._size - 1
+                    tree_ind = -1
+                    # Shift translation array
+                    self._translation_array -= size_extension
+                tree_ind = np.where(self._translation_array==tree_ind)[0][0]
+            else:
+                tree_ind = index
+
+            self._prioritiy_tree.update(tree_ind)
+            self._translation_array[tree_ind] = index
+
+        # Store rest of sample
         self._actions.append(action)
         self._rewards.append(reward)
         self._terminals.append(isTerminal)
@@ -542,11 +554,14 @@ class CircularBuffer(object):
         else:
             return self._data[self._lb+start:self._lb+end]
 
-    def get_lower_bound(self):
-        return self._lb
+    def get_upper_bound(self):
+        return self._ub
 
     def get_index(self):
         return self._cur
+
+    def get_true_size(self):
+        return self._trueSize
 
 
 class SliceError(LookupError):

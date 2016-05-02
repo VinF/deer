@@ -185,10 +185,6 @@ class SumTree:
                 processed += 1
 
             if (processed < history_size - 1):
-                # Update priority to 0 if we know that it can't be used
-                for ind in range (i + 1, index + 1):
-                    self.update(ind, 0)
-
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
                 if (index < lower_bound):
