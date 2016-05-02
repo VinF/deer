@@ -10,7 +10,6 @@ Code for general deep Q-learning that can take as inputs scalars, vectors and ma
 import numpy as np
 import theano
 import theano.tensor as T
-from .updates import deepmind_rmsprop
 
 from .theano_layers import ConvolutionalLayer,HiddenLayer
 
@@ -21,19 +20,11 @@ class NN():
     
     Parameters
     -----------
-    environment : object from class Environment
-    rho : float
-    rms_epsilon : float
-    momentum : float
-    clip_delta : float
-    freeze_interval : int
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    network_type : str
-    update_rule: str
-    batch_accumulator : str
+    inputDimensions :
+    n_Actions :
     randomState : numpy random number generator
-    DoubleQ : bool, optional
     """
     def __init__(self, batchSize, inputDimensions, n_Actions, randomState):
         self._inputDimensions=inputDimensions

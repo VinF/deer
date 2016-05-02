@@ -11,46 +11,25 @@ import lasagne
 import numpy as np
 import theano
 import theano.tensor as T
-from .updates import deepmind_rmsprop
-from lasagne.updates import get_or_compute_grads
 
     
 class NN():
     """
-    Deep Q-learning network using Theano
+    Deep Q-learning network using Lasagne on top of Theano
     
     Parameters
     -----------
-    environment : object from class Environment
-    rho : float
-    rms_epsilon : float
-    momentum : float
-    clip_delta : float
-    freeze_interval : int
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    network_type : str
-    update_rule: str
-    batch_accumulator : str
+    inputDimensions :
+    n_Actions :
     randomState : numpy random number generator
-    DoubleQ : bool, optional
     """
     def __init__(self, batchSize, inputDimensions, n_Actions, randomState):
         self._inputDimensions=inputDimensions
         self._batchSize=batchSize
         self._randomState=randomState
         self._nActions=n_Actions
-        
-#    def _resetQHat(self):
-#        all_params = lasagne.layers.helper.get_all_param_values(self.l_outs)
-#        
-#        all_params_conv=[]
-#        for conv_param in self.l_outs_conv:
-#            all_params_conv.append( lasagne.layers.helper.get_all_param_values(conv_param) )
-#
-#        lasagne.layers.helper.set_all_param_values(self.next_l_outs, all_params)
-#        for i,param_conv in enumerate(all_params_conv):
-#            lasagne.layers.helper.set_all_param_values(self.next_l_outs_conv[i], param_conv)        
         
 
     def _buildG_DQN_0(self, inputs):
