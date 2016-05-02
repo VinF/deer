@@ -11,6 +11,7 @@ import sys
 import joblib
 from .experiment import base_controllers as controllers
 from warnings import warn
+from base_classes.Policy import Policy
 
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
@@ -62,6 +63,7 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
+        self._use_behavior_policy = 0
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -285,11 +287,14 @@ class NeuralAgent(object):
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
                 # e-Greedy policy
-                if self._randomState.rand() < self._epsilon:
-                    action = self._randomState.randint(0, self._environment.nActions())
-                    V = 0
+                if self._use_behavior_policy:
+                    action, V = self._behavior_policy.act(self._state)     #is self._state the only way to store/pass the state?
                 else:
-                    action, V = self.bestAction()
+                    if self._randomState.rand() < self._epsilon:
+                        action = self._randomState.randint(0, self._environment.nActions())
+                        V = 0
+                    else:
+                        action, V = self.bestAction()
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._randomState.randint(0, self._environment.nActions())
@@ -297,6 +302,11 @@ class NeuralAgent(object):
                 
         for c in self._controllers: c.OnActionChosen(self, action)
         return action, V
+
+    def set_behavior_policy(self, policy):  #I feel dirty coding this way, if this works it should go in the __init__ with some default values
+        self._use_behavior_policy = 1
+        assert isinstance(policy, Policy)
+        self._behavior_policy = policy
 
  
 class AgentError(RuntimeError):
