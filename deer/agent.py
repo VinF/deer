@@ -34,7 +34,7 @@ class NeuralAgent(object):
         Seed
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, behavior_policy=None):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, behavior_policy_class=NeuralNetPolicy):
         """ Initialize agent
         """
 
@@ -63,10 +63,8 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-        if behavior_policy is None:
-            self._behavior_policy = NeuralNetPolicy(environment, q_network, 0.1, replay_start_size, randomState)
-        else:
-            self._behavior_policy = behavior_policy
+        self._behavior_policy = behavior_policy_class(environment, q_network, 0.2, replay_start_size, randomState, self._dataSet)
+
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -177,6 +175,7 @@ class NeuralAgent(object):
             states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
             loss = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
+            self._behavior_policy.train()
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 

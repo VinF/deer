@@ -1,7 +1,10 @@
 from ..base_classes import Policy
 
-class NeuralNetPolicy(Policy):
 
+class NeuralNetPolicy(Policy):
+    """The policy that acts greedily w.r.t. a given Q-network with probability 1-\epsilon, and acts randomly otherwise.
+    It is now used as a default policy for the neural agent.
+    """
     def __init__(self, environment_, q_network_, epsilon_, replay_memory_start_size_, random_state_):
         Policy.__init__(self, environment_)
         self.q_network = q_network_
@@ -17,7 +20,6 @@ class NeuralNetPolicy(Policy):
         return action, V
 
     def act(self, state):
-        # e-Greedy policy
         if self.random_state.rand() < self.epsilon:
             action = self.random_state.randint(0, self.environment.nActions())
             V = 0
