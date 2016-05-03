@@ -46,6 +46,7 @@ class SumTree:
         # Initialization of the tree
         self._root.left = self._create_subtree(self._root, 0, size_left) # [a,b[
         self._root.right = self._create_subtree(self._root, size_left, size)
+        self._max_priority = 1
 
     def _create_subtree(self, parent, begin, end):
         """ Build balanced subtrees. 
@@ -77,7 +78,7 @@ class SumTree:
         node.right = self._create_subtree(node, mid, end)
         return node
 
-    def update(self, index, priority=1):
+    def update(self, index, priority=-1):
         """ Update a leaf and the tree priorities. 
         When the replay memory is updated with a new transition, it is 
         also updated in the tree. The priority of the successive parent
@@ -90,6 +91,10 @@ class SumTree:
                     new transition in the replay memory
             priority - the new priority of the leaf
         """
+        if (priority == -1):
+            priority = self._max_priority
+        elif (priority > self._max_priority):
+            self._max_priority = priority
 
         # Search for index
         node = self.find_index(index)
