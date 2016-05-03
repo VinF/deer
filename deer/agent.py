@@ -175,7 +175,6 @@ class NeuralAgent(object):
             states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
             loss = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
-            self._behavior_policy.train()
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 
