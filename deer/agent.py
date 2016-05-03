@@ -11,8 +11,7 @@ import sys
 import joblib
 from .experiment import base_controllers as controllers
 from warnings import warn
-from base_classes.Policy import Policy
-from policies import NeuralNetPolicy
+from deer.policies.NeuralNetPolicy import NeuralNetPolicy
 
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
@@ -290,15 +289,8 @@ class NeuralAgent(object):
             action, V = self.bestAction()
         else:
             if self._dataSet.nElems() > self._replayMemoryStartSize:
-                # e-Greedy policy
-                # if self._use_behavior_policy:
+                #follow the behavior policy
                 action, V = self._behavior_policy.act(self._state)     #is self._state the only way to store/pass the state?
-                # else:
-                #     if self._randomState.rand() < self._epsilon:
-                #         action = self._randomState.randint(0, self._environment.nActions())
-                #         V = 0
-                #     else:
-                #         action, V = self.bestAction()
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._randomState.randint(0, self._environment.nActions())
