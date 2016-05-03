@@ -491,7 +491,8 @@ class DataSet(object):
         indices = self._prioritiy_tree.get_batch(
             size, self._randomState, self)
         for i in range(len(indices)):
-            indices[i] = self._translation_array[indices[i]]
+            indices[i] = self._translation_array[indices[i]] \
+                         - self._actions.get_lower_bound()
         
         return indices
 
@@ -521,7 +522,7 @@ class DataSet(object):
         # Update tree and translation table
         if (self._use_priority):
             index = self._actions.get_index()
-            if (index > self._size):
+            if (index >= self._size):
                 ub = self._actions.get_upper_bound()
                 true_size = self._actions.get_true_size()
                 tree_ind = index%self._size
@@ -531,7 +532,7 @@ class DataSet(object):
                     index = self._size - 1
                     tree_ind = -1
                     # Shift translation array
-                    self._translation_array -= size_extension
+                    self._translation_array -= size_extension + 1
                 tree_ind = np.where(self._translation_array==tree_ind)[0][0]
             else:
                 tree_ind = index
@@ -585,6 +586,9 @@ class CircularBuffer(object):
             return self._data[self._lb+start:self._cur]
         else:
             return self._data[self._lb+start:self._lb+end]
+
+    def get_lower_bound(self):
+        return self._lb
 
     def get_upper_bound(self):
         return self._ub
