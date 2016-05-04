@@ -33,6 +33,8 @@ class NeuralAgent(object):
         Number of tuples taken into account for each iteration of gradient descent
     randomState : numpy random number generator
         Seed
+    exp_priority : float
+        exponent to the loss chosen to assign priority
     """
 
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):
@@ -170,10 +172,10 @@ class NeuralAgent(object):
 
         try:
             states, actions, rewards, next_states, terminals, rndValidIndices = self._dataSet.randomBatch(self._batchSize, self._exp_priority)
-            loss, diff = self._network.train(states, actions, rewards, next_states, terminals)
+            loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
             if (self._exp_priority):
-                self._dataSet.update_priorities(pow(diff,self._exp_priority)+0.0001, rndValidIndices[1])
+                self._dataSet.update_priorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
 
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
