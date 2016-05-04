@@ -34,7 +34,8 @@ class NeuralAgent(object):
     randomState : numpy random number generator
         Seed
     exp_priority : float, optional
-        exponent to the loss chosen to assign priority, default 0 (no priority system)
+        The exponent that determines how much prioritization is used, default is 0 (uniform priority).
+        One may check out Schaul et al. (2016) - Prioritized Experience Replay.
     """
 
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):

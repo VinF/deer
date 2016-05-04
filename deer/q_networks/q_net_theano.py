@@ -33,6 +33,8 @@ class MyQNetwork(QNetwork):
     batch_accumulator : str
     randomState : numpy random number generator
     DoubleQ : bool, optional
+        Activate or not the DoubleQ learning, default : False.
+        More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
     TheQNet : object, optional
         default is deer.qnetworks.NN_theano
     """
