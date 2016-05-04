@@ -255,12 +255,12 @@ class MyQNetwork(QNetwork):
         
         if(self._DoubleQ==True):
             self._next_q_curr_qnet = self.next_q_vals_current_qnet()
-            loss, diff, _ = self._train(self._df, self._lr,self._next_q_curr_qnet)
+            loss, loss_ind, _ = self._train(self._df, self._lr,self._next_q_curr_qnet)
         else:
-            loss, diff, _ = self._train(self._df, self._lr)
+            loss, loss_ind, _ = self._train(self._df, self._lr)
 
         self.update_counter += 1
-        return np.sqrt(loss)
+        return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
         """ Get the q value for one belief state

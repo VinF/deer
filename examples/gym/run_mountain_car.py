@@ -87,7 +87,8 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+        exp_priority=1.)
 
     # --- Bind controllers to the agent ---
     # For comments, please refer to run_toy_env.py

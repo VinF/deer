@@ -2,15 +2,17 @@
 
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
-
-from theano import config
 import os
 import numpy as np
 import copy
 import sys
 import joblib
-from .experiment import base_controllers as controllers
 from warnings import warn
+from theano import config
+
+from .experiment import base_controllers as controllers
+from .helper import tree 
+
 
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
@@ -31,12 +33,11 @@ class NeuralAgent(object):
         Number of tuples taken into account for each iteration of gradient descent
     randomState : numpy random number generator
         Seed
+    exp_priority : float, optional
+        exponent to the loss chosen to assign priority, default 0 (no priority system)
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState):
-        """ Initialize agent
-        """
-
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):
         inputDims = environment.inputDimensions()
 
         if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
@@ -50,7 +51,8 @@ class NeuralAgent(object):
         self._replayMemoryStartSize = replay_start_size
         self._batchSize = batch_size
         self._randomState = randomState
-        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState)
+        self._exp_priority = exp_priority
+        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=self._exp_priority)
         self._tmpDataSet = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
@@ -169,9 +171,12 @@ class NeuralAgent(object):
             return
 
         try:
-            states, actions, rewards, next_states, terminals = self._dataSet.randomBatch(self._batchSize)
-            loss = self._network.train(states, actions, rewards, next_states, terminals)
+            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataSet.randomBatch(self._batchSize, self._exp_priority)
+            loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
+            if (self._exp_priority):
+                self._dataSet.update_priorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
+
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 
@@ -278,9 +283,9 @@ class NeuralAgent(object):
 
     def _addSample(self, ponctualObs, action, reward, isTerminal):
         if self._mode != -1:
-            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal)
+            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
         else:
-            self._dataSet.addSample(ponctualObs, action, reward, isTerminal)
+            self._dataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
 
 
     def _chooseAction(self):
@@ -303,7 +308,6 @@ class NeuralAgent(object):
         for c in self._controllers: c.OnActionChosen(self, action)
         return action, V
 
- 
 class AgentError(RuntimeError):
     """Exception raised for errors when calling the various Agent methods at wrong times.
 
@@ -328,7 +332,7 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, randomState=None, maxSize=1000):
+    def __init__(self, env, randomState=None, maxSize=1000, use_priority=False):
         """Initializer.
 
         Parameters
@@ -345,9 +349,14 @@ class DataSet(object):
         self._batchDimensions = env.inputDimensions()
         self._maxHistorySize = np.max([self._batchDimensions[i][0] for i in range (len(self._batchDimensions))])
         self._size = maxSize
+        self._use_priority = use_priority
         self._actions      = CircularBuffer(maxSize, dtype="int8")
         self._rewards      = CircularBuffer(maxSize)
         self._terminals    = CircularBuffer(maxSize, dtype="bool")
+        if (self._use_priority):
+            self._prioritiy_tree = tree.SumTree(maxSize) 
+            self._translation_array = np.zeros(maxSize)
+
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
@@ -390,9 +399,14 @@ class DataSet(object):
             ret[input] = self._observations[input].getSlice(0)
 
         return ret
-            
 
-    def randomBatch(self, size):
+    def update_priorities(self, priorities, rndValidIndices):
+        """
+        """
+        for i in range( len(rndValidIndices) ):
+            self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
+
+    def randomBatch(self, size, use_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
         each subject s.
@@ -429,15 +443,24 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        rndValidIndices = np.zeros(size, dtype='int32')
+        if (self._maxHistorySize - 1 >= self._nElems):
+            raise SliceError(
+                "Not enough elements in the dataset to create a "
+                "complete state. {} elements in dataset; requires {}"
+                .format(self._nElems, self._maxHistorySize))
 
-        for i in range(size): # TODO: multithread this loop?
-            rndValidIndices[i] = self._randomValidStateIndex()
-            
-        
+        if (self._use_priority):
+            rndValidIndices, rndValidIndices_tree = self._random_prioritized_batch(size)
+            if (rndValidIndices.size == 0):
+                raise SliceError("Could not find a state with full histories")
+        else:
+            rndValidIndices = np.zeros(size, dtype='int32')
+            for i in range(size): # TODO: multithread this loop?
+                rndValidIndices[i] = self._randomValidStateIndex()
         actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
+    
         states = np.zeros(len(self._batchDimensions), dtype='object')
         next_states = np.zeros_like(states)
         
@@ -451,15 +474,14 @@ class DataSet(object):
                 else:
                     next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
 
-        return states, actions, rewards, next_states, terminals
+        if (self._use_priority):
+            return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
+        else:
+            return states, actions, rewards, next_states, terminals, rndValidIndices
 
     def _randomValidStateIndex(self):
         index_lowerBound = self._maxHistorySize - 1
-        try:
-            index = self._randomState.randint(index_lowerBound, self._nElems)
-        except ValueError:
-            raise SliceError("There aren't enough elements in the dataset to create a complete state ({} elements "
-                             "in dataset; requires {}".format(self._nElems, self._maxHistorySize))
+        index = self._randomState.randint(index_lowerBound, self._nElems)
 
         # Check if slice is valid wrt terminals
         firstTry = index
@@ -473,7 +495,7 @@ class DataSet(object):
 
                 i -= 1
                 processed += 1
-            
+
             if (processed < self._maxHistorySize - 1):
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
@@ -485,7 +507,16 @@ class DataSet(object):
             else:
                 # else index was ok according to terminals
                 return index
-       
+    
+    def _random_prioritized_batch(self, size):
+        indices_tree = self._prioritiy_tree.get_batch(
+            size, self._randomState, self)
+        indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
+        for i in range(len(indices_tree)):
+            indices_replay_mem[i]= int(self._translation_array[indices_tree[i]] \
+                         - self._actions.get_lower_bound())
+        
+        return indices_replay_mem, indices_tree
 
     def nElems(self):
         """Get the number of samples in this dataset (i.e. the current memory replay size)."""
@@ -493,25 +524,49 @@ class DataSet(object):
         return self._nElems
 
 
-    def addSample(self, obs, action, reward, isTerminal):
-        """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset.
+    def addSample(self, obs, action, reward, isTerminal, priority):
+        """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
 
-        Arguments:
-            obs : ndarray
-                An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the
-                agent took action [action].
-            action :  int
-                The action taken after having observed [obs].
-            reward : float
-                The reward associated to taking this [action].
-            isTerminal : bool
-                Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
+        Parameters
+        -----------
+        obs : ndarray
+            An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the
+            agent took action [action].
+        action :  int
+            The action taken after having observed [obs].
+        reward : float
+            The reward associated to taking this [action].
+        isTerminal : bool
+            Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
+        priority : float
+            The priority to be associated with the sample
 
         """        
         # Store observations
         for i in range(len(self._batchDimensions)):
             self._observations[i].append(obs[i])
-        
+
+        # Update tree and translation table
+        if (self._use_priority):
+            index = self._actions.get_index()
+            if (index >= self._size):
+                ub = self._actions.get_upper_bound()
+                true_size = self._actions.get_true_size()
+                tree_ind = index%self._size
+                if (ub == true_size):
+                    size_extension = true_size - self._size
+                    # New index
+                    index = self._size - 1
+                    tree_ind = -1
+                    # Shift translation array
+                    self._translation_array -= size_extension + 1
+                tree_ind = np.where(self._translation_array==tree_ind)[0][0]
+            else:
+                tree_ind = index
+
+            self._prioritiy_tree.update(tree_ind)
+            self._translation_array[tree_ind] = index
+
         # Store rest of sample
         self._actions.append(action)
         self._rewards.append(reward)
@@ -536,8 +591,8 @@ class CircularBuffer(object):
             self._lb += 1
             self._ub += 1
 
-        if self._ub >= self._trueSize:
-            self._data[0:self._size-1] = self._data[self._lb+1:]
+        if self._ub > self._trueSize:
+            self._data[0:self._size-1] = self._data[self._lb:]
             self._lb  = 0
             self._ub  = self._size
             self._cur = self._size - 1
@@ -545,7 +600,6 @@ class CircularBuffer(object):
         self._data[self._cur] = obj
 
         self._cur += 1
-
 
     def __getitem__(self, i):
         return self._data[self._lb + i]
@@ -558,6 +612,18 @@ class CircularBuffer(object):
             return self._data[self._lb+start:self._cur]
         else:
             return self._data[self._lb+start:self._lb+end]
+
+    def get_lower_bound(self):
+        return self._lb
+
+    def get_upper_bound(self):
+        return self._ub
+
+    def get_index(self):
+        return self._cur
+
+    def get_true_size(self):
+        return self._trueSize
 
 
 class SliceError(LookupError):
