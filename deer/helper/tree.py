@@ -226,15 +226,15 @@ class SumTree:
     def print_tree(self):
     # Classical printout method. Mostly for debugging purposes.
         if(self._root != None):
-            self._printTree(self._root)
+            self._print_tree(self._root)
 
         print("===============")
 
     def _print_tree(self, node):
         if(node != None):
-            self._printTree(node.left)
+            self._print_tree(node.left)
             print(node.position, node.priority)
-            self._printTree(node.right)
+            self._print_tree(node.right)
         
 
 if __name__ == "__main__":
