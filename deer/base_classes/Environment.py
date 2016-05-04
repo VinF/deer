@@ -30,8 +30,8 @@ class Environment(object):
 
         Parameters
         -----------
-            mode : int
-                The mode to put the environment into. Mode "-1" is reserved and always means "training".
+        mode : int
+            The mode to put the environment into. Mode "-1" is reserved and always means "training".
         """
 
         raise NotImplementedError()
