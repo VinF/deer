@@ -33,8 +33,8 @@ class NeuralAgent(object):
         Number of tuples taken into account for each iteration of gradient descent
     randomState : numpy random number generator
         Seed
-    exp_priority : float
-        exponent to the loss chosen to assign priority
+    exp_priority : float, optional
+        exponent to the loss chosen to assign priority, default 0 (no priority system)
     """
 
     def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):
