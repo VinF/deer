@@ -41,9 +41,9 @@ class Environment(object):
 
         Parameters
         -----------
-            action : int
-                The action selected by the agent to operate on the environment. Should be an identifier 
-                included between 0 included and nActions() excluded.
+        action : int
+            The action selected by the agent to operate on the environment. Should be an identifier 
+            included between 0 included and nActions() excluded.
         """
 
         raise NotImplementedError()
@@ -79,7 +79,7 @@ class Environment(object):
         
         Returns
         -------
-            bool
+        isTerminal : bool
 
         """
 
@@ -104,10 +104,10 @@ class Environment(object):
 
         Parameters
         -----------
-            test_data_set : agent.DataSet 
-                The dataset maintained by the agent in the current mode, which contains 
-                observations, actions taken and rewards obtained, as well as wether each transition was terminal or 
-                not. Refer to the documentation of agent.DataSet for more information.
+        test_data_set : agent.DataSet 
+            The dataset maintained by the agent in the current mode, which contains 
+            observations, actions taken and rewards obtained, as well as wether each transition was terminal or 
+            not. Refer to the documentation of agent.DataSet for more information.
         """
 
         pass
@@ -117,8 +117,8 @@ class Environment(object):
 
         Parameters
         -----------
-            subject : int
-                The subject
+        subject : int
+            The subject
         """
 
         return np.float32
