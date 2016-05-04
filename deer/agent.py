@@ -173,7 +173,7 @@ class NeuralAgent(object):
             loss, diff = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
             if (self._exp_priority):
-                self._dataSet.update_priorities(pow(diff,self._exp_priority)+0.0001, rndValidIndices)
+                self._dataSet.update_priorities(pow(diff,self._exp_priority)+0.0001, rndValidIndices[1])
 
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
@@ -393,11 +393,8 @@ class DataSet(object):
     def update_priorities(self, priorities, rndValidIndices):
         """
         """
-        for i in range(len(rndValidIndices)):
-            ind = rndValidIndices[i] + self._actions.get_lower_bound()
-            ind = np.where(self._translation_array==ind)[0][0]
-
-            self._prioritiy_tree.update(ind, priorities[i])
+        for i in range( len(rndValidIndices) ):
+            self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
     def randomBatch(self, size, use_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
@@ -432,14 +429,13 @@ class DataSet(object):
                 .format(self._nElems, self._maxHistorySize))
 
         if (self._use_priority):
-            rndValidIndices = self._random_prioritized_batch(size)
+            rndValidIndices, rndValidIndices_tree = self._random_prioritized_batch(size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
             rndValidIndices = np.zeros(size, dtype='int32')
             for i in range(size): # TODO: multithread this loop?
                 rndValidIndices[i] = self._randomValidStateIndex()
-                
         actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
@@ -457,7 +453,10 @@ class DataSet(object):
                 else:
                     next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
 
-        return states, actions, rewards, next_states, terminals, rndValidIndices
+        if (self._use_priority):
+            return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
+        else:
+            return states, actions, rewards, next_states, terminals, rndValidIndices
 
     def _randomValidStateIndex(self):
         index_lowerBound = self._maxHistorySize - 1
@@ -489,13 +488,14 @@ class DataSet(object):
                 return index
     
     def _random_prioritized_batch(self, size):
-        indices = self._prioritiy_tree.get_batch(
+        indices_tree = self._prioritiy_tree.get_batch(
             size, self._randomState, self)
-        for i in range(len(indices)):
-            indices[i] = self._translation_array[indices[i]] \
-                         - self._actions.get_lower_bound()
+        indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
+        for i in range(len(indices_tree)):
+            indices_replay_mem[i]= int(self._translation_array[indices_tree[i]] \
+                         - self._actions.get_lower_bound())
         
-        return indices
+        return indices_replay_mem, indices_tree
 
     def nElems(self):
         """Get the number of samples in this dataset (i.e. the current memory replay size)."""
