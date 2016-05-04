@@ -260,13 +260,18 @@ class NeuralAgent(object):
         action it can with probability 1-CurrentEpsilon and a random action otherwise. If there are not enough samples, 
         it will always select a random action.
 
-        Arguments:
-           state - An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
-                   input.historySize x "shape of a given ponctual observation for this input".
+        Parameters
+        -----------
+        state : ndarray
+            An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
+               input.historySize x "shape of a given ponctual observation for this input".
 
-        Returns:
-           action - The id of the action selected by the agent.
-           V - Estimated value function of current state.
+        Returns
+        -------
+        action : int
+            The id of the action selected by the agent.
+        V : float
+            Estimated value function of current state.
         """
 
         action, V = self._chooseAction()        
@@ -328,12 +333,15 @@ class DataSet(object):
     def __init__(self, env, randomState=None, maxSize=1000, use_priority=False):
         """Initializer.
 
-        Parameters:
-            inputDims - For each subject i, inputDims[i] is a tuple where the first value is the memory size for this 
-                subject and the rest describes the shape of each single observation on this subject (number, vector or 
-                matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
-            randomState - Numpy random number generator. If None, a new one is created with default numpy seed.
-            maxSize - The replay memory maximum size.
+        Parameters
+        -----------
+        inputDims : list of tuples
+            For each subject i, inputDims[i] is a tuple where the first value is the memory size for this
+            subject and the rest describes the shape of each single observation on this subject (number, vector or
+            matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
+        randomState : Numpy random number generator
+            If None, a new one is created with default numpy seed.
+        maxSize : The replay memory maximum size.
         """
 
         self._batchDimensions = env.inputDimensions()
@@ -401,24 +409,35 @@ class DataSet(object):
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
         each subject s.
         
-        Arguments:
-            size - Number of transitions to return.
+        Parameters
+        -----------
+        size : int
+            Number of transitions to return.
 
-        Returns:
-            states - An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
-                size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in 
-                the data with the only constraint that they are complete regarding the histories for each observed 
-                subject.
-            actions - An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after 
-                having observed states[:][i].
-            rewards - An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for 
-                taking actions[i-1].
-            next_states - Same structure than states, but next_states[s][i] is guaranteed to be the information 
-                concerning the state following the one described by states[s][i] for each subject s.
-            terminals - An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
-                to terminal states and False otherwise
-        Throws:
-            SliceError - If a batch of this size could not be built based on current data set (not enough data or all 
+        Returns
+        -------
+        states : ndarray
+            An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
+            size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in
+            the data with the only constraint that they are complete regarding the histories for each observed
+            subject.
+        actions : ndarray
+            An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after
+            having observed states[:][i].
+        rewards : ndarray
+            An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for
+            taking actions[i-1].
+        next_states : ndarray
+            Same structure than states, but next_states[s][i] is guaranteed to be the information
+            concerning the state following the one described by states[s][i] for each subject s.
+        terminals : ndarray
+            An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
+            to terminal states and False otherwise
+
+        Throws
+        -------
+            SliceError
+                If a batch of this size could not be built based on current data set (not enough data or all
                 trajectories are too short).
         """
 
@@ -506,14 +525,19 @@ class DataSet(object):
     def addSample(self, obs, action, reward, isTerminal, priority):
         """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
 
-        Arguments:
-            obs - An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the 
-                agent took action [action].
-            action - The action taken after having observed [obs].
-            reward - The reward associated to taking this [action].
-            isTerminal - Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
-            priority : bool
-                The priority to be associated with the sample
+        Parameters
+        -----------
+        obs : ndarray
+            An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the
+            agent took action [action].
+        action :  int
+            The action taken after having observed [obs].
+        reward : float
+            The reward associated to taking this [action].
+        isTerminal : bool
+            Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
+        priority : float
+            The priority to be associated with the sample
 
         """        
         # Store observations

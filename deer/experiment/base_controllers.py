@@ -73,8 +73,8 @@ class Controller(object):
 
         Parameters
         ----------
-            agent : NeuralAgent
-                The agent firing the event
+        agent : NeuralAgent
+            The agent firing the event
         """
 
         pass
@@ -153,19 +153,19 @@ class EpsilonController(Controller):
     
     Parameters
     ----------
-        initialE : float
-            Start epsilon
-        eDecays : int
-            How many updates are necessary for epsilon to reach eMin
-        eMin : float
-            End epsilon
-        evaluateOn : str
-            After what type of event epsilon shoud be updated periodically. Possible values: 'action', 'episode', 'epoch'.
-        periodicity : int
-            How many [evaluateOn] are necessary before an update of epsilon occurs
-        resetEvery : str
-            After what type of event epsilon should be reset to its initial value. Possible values: 
-            'none', 'episode', 'epoch'.
+    initialE : float
+        Start epsilon
+    eDecays : int
+        How many updates are necessary for epsilon to reach eMin
+    eMin : float
+        End epsilon
+    evaluateOn : str
+        After what type of event epsilon shoud be updated periodically. Possible values: 'action', 'episode', 'epoch'.
+    periodicity : int
+        How many [evaluateOn] are necessary before an update of epsilon occurs
+    resetEvery : str
+        After what type of event epsilon should be reset to its initial value. Possible values: 
+        'none', 'episode', 'epoch'.
     """
 
     def __init__(self, initialE=1., eDecays=10000, eMin=0.1, evaluateOn='action', periodicity=1, resetEvery='none'):
@@ -239,14 +239,15 @@ class DiscountFactorController(Controller):
 
     Parameters
     ----------
-        initialDiscountFactor : float
-            Start discount
-        discountFactorGrowth : float
-            The factor by which the previous discount is multiplied every [periodicity]
-            epochs.
-        discountFactorMax : float
-            Maximum reachable discount
-        periodicity [int] - How many epochs are necessary before an update of the discount occurs
+    initialDiscountFactor : float
+        Start discount
+    discountFactorGrowth : float
+        The factor by which the previous discount is multiplied every [periodicity]
+        epochs.
+    discountFactorMax : float
+        Maximum reachable discount
+    periodicity : int
+        How many training epochs are necessary before an update of the discount occurs
     """
     
     def __init__(self, initialDiscountFactor=0.9, discountFactorGrowth=1., discountFactorMax=0.99, periodicity=1):
@@ -288,28 +289,28 @@ class InterleavedTestEpochController(Controller):
     
     Parameters
     ----------
-        id : int
-            The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
-            Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
-            will be given to your environment's reset() method when starting the test epoch).
-        epochLength : float
-            The total number of transitions that will occur during a test epoch. This means that
-            this epoch could feature several episodes if a terminal transition is reached before this budget is 
-            exhausted.
-        controllersToDisable : list of int
-            A list of controllers to disable when this controller wants to start a
-            test epoch. These same controllers will be reactivated after this controller has finished dealing with
-            its test epoch.
-        periodicity : int 
-            How many epochs are necessary before a test epoch is ran (these controller's epochs
-            included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
-        showScore : bool
-            Whether to print an informative message on stdout at the end of each test epoch, about 
-            the total reward obtained in the course of the test epoch.
-        summarizeEvery : int
-            How many of this controller's test epochs are necessary before the attached agent's 
-            summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
-            occur just after the first test epoch.
+    id : int
+        The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
+        Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
+        will be given to your environment's reset() method when starting the test epoch).
+    epochLength : float
+        The total number of transitions that will occur during a test epoch. This means that
+        this epoch could feature several episodes if a terminal transition is reached before this budget is 
+        exhausted.
+    controllersToDisable : list of int
+        A list of controllers to disable when this controller wants to start a
+        test epoch. These same controllers will be reactivated after this controller has finished dealing with
+        its test epoch.
+    periodicity : int 
+        How many epochs are necessary before a test epoch is ran (these controller's epochs
+        included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
+    showScore : bool
+        Whether to print an informative message on stdout at the end of each test epoch, about 
+        the total reward obtained in the course of the test epoch.
+    summarizeEvery : int
+        How many of this controller's test epochs are necessary before the attached agent's 
+        summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
+        occur just after the first test epoch.
     """
 
     def __init__(self, id=0, epochLength=500, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=10):
@@ -361,16 +362,16 @@ class TrainerController(Controller):
 
     Parameters
     ----------
-        evaluateOn : str
-            After what type of event the agent shoud be trained periodically. Possible values: 
-            'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
-        periodicity : int
-            How many [evaluateOn] are necessary before a training occurs
-            _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
-            training if [evaluateOn] is 'episode') about the average bellman residual of this episode
-        showEpisodeAvgVValue : bool
-            Whether to show an informative message after each episode end (and after a 
-            training if [evaluateOn] is 'episode') about the average V value of this episode
+    evaluateOn : str
+        After what type of event the agent shoud be trained periodically. Possible values: 
+        'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
+    periodicity : int
+        How many [evaluateOn] are necessary before a training occurs
+        _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
+        training if [evaluateOn] is 'episode') about the average bellman residual of this episode
+    showEpisodeAvgVValue : bool
+        Whether to show an informative message after each episode end (and after a 
+        training if [evaluateOn] is 'episode') about the average V value of this episode
     """
     def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
         """Initializer.
@@ -432,12 +433,13 @@ class VerboseController(Controller):
     * Agent current discount factor
     * Agent current epsilon
 
-    Parameters:
-        evaluateOn : str
-            After what type of event the printing should occur periodically. Possible values: 
-            'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
-        periodicity : int
-            How many [evaluateOn] are necessary before a printing occurs
+    Parameters
+    ----------
+    evaluateOn : str
+        After what type of event the printing should occur periodically. Possible values: 
+        'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
+    periodicity : int
+        How many [evaluateOn] are necessary before a printing occurs
     """
 
     def __init__(self, evaluateOn='epoch', periodicity=1):

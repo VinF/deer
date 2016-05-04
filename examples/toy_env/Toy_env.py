@@ -25,8 +25,9 @@ class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment.
 
-        Arguments:
-            rng - the numpy random number generator            
+        Parameters
+        -----------
+            rng : the numpy random number generator
         """
         # Defining the type of environment
         self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
@@ -46,11 +47,6 @@ class MyEnv(Environment):
         self._counter = 1
                 
     def reset(self, mode):
-        """ Reset environment for a new episode.
-
-        Arguments:
-            mode - whether we are in test mode or train mode
-        """
         if mode == -1:
             self.prices = self._priceSignalTrain
         else:
@@ -61,16 +57,8 @@ class MyEnv(Environment):
 
         self._counter = 1
         return [[0, 0, 0, 0, 0, 0], 0]
-        
-        
+
     def act(self, action):
-        """
-        Perform one time step on the environment.
-        Arguments:
-            action - chosen action (integer)
-        Returns:
-           reward - obtained reward for this transition
-        """
         reward = 0
         
         if (action == 0 and self._lastPonctualObservation[1] == 1):
@@ -85,12 +73,11 @@ class MyEnv(Environment):
         
         return reward
 
-
-
     def summarizePerformance(self, test_data_set):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
-        Arguments:
+        Parameters
+        -----------
             test_data_set
         """
     
