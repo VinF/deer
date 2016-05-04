@@ -346,6 +346,7 @@ class DataSet(object):
         if (self._use_priority):
             self._prioritiy_tree = tree.SumTree(maxSize) 
             self._translation_array = np.zeros(maxSize)
+
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
@@ -393,10 +394,10 @@ class DataSet(object):
         """
         """
         for i in range(len(rndValidIndices)):
-            if (rndValidIndices[i] >= self._size):
-                rndValidIndices[i] -= self._size
-            
-            self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
+            ind = rndValidIndices[i] + self._actions.get_lower_bound()
+            ind = np.where(self._translation_array==ind)[0][0]
+
+            self._prioritiy_tree.update(ind, priorities[i])
 
     def randomBatch(self, size, use_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
@@ -573,7 +574,6 @@ class CircularBuffer(object):
         self._data[self._cur] = obj
 
         self._cur += 1
-
 
     def __getitem__(self, i):
         return self._data[self._lb + i]
