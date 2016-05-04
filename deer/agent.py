@@ -63,7 +63,7 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-        self._behavior_policy = behavior_policy_class(environment, q_network, 0.2, replay_start_size, randomState, self._dataSet)
+        self._behavior_policy = behavior_policy_class(environment, q_network, 0.1, replay_start_size, randomState, self._dataSet)
 
 
     def setControllersActive(self, toDisable, active):
@@ -210,7 +210,7 @@ class NeuralAgent(object):
                     length = self._runEpisode(length)
                 i += 1
             for c in self._controllers: c.OnEpochEnd(self)
-            
+            self._behavior_policy.update_after_epoch()
         for c in self._controllers: c.OnEnd(self)
 
     def _runEpisode(self, maxSteps):
@@ -295,6 +295,7 @@ class NeuralAgent(object):
                 V = 0
                 
         for c in self._controllers: c.OnActionChosen(self, action)
+        self._behavior_policy.update_after_action()
         return action, V
 
  

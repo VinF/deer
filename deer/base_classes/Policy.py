@@ -15,4 +15,13 @@ class Policy(object):
     def train(self):
         """If a dataset is used by the policy, it can be used for training.
         """
-        raise NotImplementedError()
+        pass
+
+    def update_after_action(self):
+        pass
+
+    def update_after_episode(self):
+        pass
+
+    def update_after_epoch(self):
+        pass
