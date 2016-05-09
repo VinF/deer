@@ -235,7 +235,8 @@ class EpsilonController(Controller):
 
 
 class DiscountFactorController(Controller):
-    """A controller that modifies the qnetwork discount periodically.
+    """A controller that modifies the q-network discount periodically.
+    More informations in : Francois-Lavet Vincent et al. (2015) - How to Discount Deep Reinforcement Learning: Towards New Dynamic Strategies (http://arxiv.org/abs/1512.02011).
 
     Parameters
     ----------
