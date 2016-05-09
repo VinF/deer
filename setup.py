@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import deer
 
 NAME = 'deer'
-VERSION = '0.2'
+VERSION = '0.2.4'
 AUTHOR = "Vincent Francois-Lavet"
 AUTHOR_EMAIL = "v.francois@ulg.ac.be"
 URL = 'https://github.com/VinF/General_Deep_Q_RL'
