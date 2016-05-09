@@ -139,6 +139,8 @@ class MyQNetwork(QNetwork):
         diff = - q_val + target 
 
         if self.clip_delta > 0:
+            # This loss function implementation is taken from
+            # https://github.com/spragunr/deep_q_rl
             # If we simply take the squared clipped diff as our loss,
             # then the gradient will be zero whenever the diff exceeds
             # the clip bounds. To avoid this, we extend the loss
