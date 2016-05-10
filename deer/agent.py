@@ -344,24 +344,24 @@ class DataSet(object):
             matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
         random_state : Numpy random number generator
             If None, a new one is created with default numpy seed.
-        maxSize : The replay memory maximum size.
+        max_size : The replay memory maximum size.
         """
 
         self._batchDimensions = env.inputDimensions()
         self._maxHistorySize = np.max([self._batchDimensions[i][0] for i in range (len(self._batchDimensions))])
-        self._size = maxSize
+        self._size = max_size
         self._use_priority = use_priority
-        self._actions      = CircularBuffer(maxSize, dtype="int8")
-        self._rewards      = CircularBuffer(maxSize)
-        self._terminals    = CircularBuffer(maxSize, dtype="bool")
+        self._actions      = CircularBuffer(max_size, dtype="int8")
+        self._rewards      = CircularBuffer(max_size)
+        self._terminals    = CircularBuffer(max_size, dtype="bool")
         if (self._use_priority):
-            self._prioritiy_tree = tree.SumTree(maxSize) 
-            self._translation_array = np.zeros(maxSize)
+            self._prioritiy_tree = tree.SumTree(max_size) 
+            self._translation_array = np.zeros(max_size)
 
         self._observations = np.zeros(len(self._batchDimensions), dtype='object')
         # Initialize the observations container if necessary
         for i in range(len(self._batchDimensions)):
-            self._observations[i] = CircularBuffer(maxSize, elemShape=self._batchDimensions[i][1:], dtype=env.observationType(i))
+            self._observations[i] = CircularBuffer(max_size, elemShape=self._batchDimensions[i][1:], dtype=env.observationType(i))
 
         if (random_state == None):
             self._random_state = np.random.RandomState()
