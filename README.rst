@@ -22,7 +22,7 @@ DeeR is a python library for Deep Reinforcement. It is build with modularity in 
 Full Documentation
 ==================
 
-See the [documentation here](http://deer.readthedocs.io/en/master/) for more informations (how to install, examples, etc.)
+For more informations (on how to install, examples, etc.), the documentation is available at : http://deer.readthedocs.io/en/master/
 
 Dependencies
 ============
