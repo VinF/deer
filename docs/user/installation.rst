@@ -17,11 +17,17 @@ For running some of the examples, Matplotlib >= 1.1.1 is required. You also some
 User install instructions
 --------------------------
 
-The easiest is to install the framework with pip:
+You can install the framework with pip:
 
 .. code-block:: bash
     
     pip install deer
+
+For the bleeding edge version (recommanded), you can simply use
+
+.. code-block:: bash
+
+    pip install git+git://github.com/VINF/deer.git@master
 
     
 ..
