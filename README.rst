@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |Python27|_ |Python35|_ |PyPi|_
+|Travis|_ |Python27|_ |Python35|_ |PyPi|_ |License|_
 
 .. |Travis| image:: https://travis-ci.org/VinF/deer.svg?branch=master
 .. _Travis: https://travis-ci.org/VinF/deer
@@ -13,6 +13,9 @@
 
 .. |PyPi| image:: https://badge.fury.io/py/deer.svg
 .. _PyPi: https://badge.fury.io/py/deer
+
+.. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
+.. _License: https://github.com/VinF/deer/blob/master/LICENSE
 
 DeeR
 ====
