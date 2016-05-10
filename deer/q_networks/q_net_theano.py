@@ -39,12 +39,12 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
+    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batch_size, network_type, 
                  update_rule, batch_accumulator, randomState, DoubleQ=False, TheQNet=NN):
         """ Initialize environment
         
         """
-        QNetwork.__init__(self,environment, batchSize)
+        QNetwork.__init__(self,environment, batch_size)
 
         
         self.rho = rho
@@ -55,7 +55,7 @@ class MyQNetwork(QNetwork):
         self._DoubleQ = DoubleQ
         self._randomState = randomState
         
-        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+        QNet=TheQNet(self._batch_size, self._input_dimensions, self._n_actions, self._randomState)
 
         self.update_counter = 0
         
@@ -65,7 +65,7 @@ class MyQNetwork(QNetwork):
         self.states_shared=[] # list of shared variable for each of the k element in the belief state
         self.next_states_shared=[] # idem that self.states_shared at t+1
 
-        for i, dim in enumerate(self._inputDimensions):
+        for i, dim in enumerate(self._input_dimensions):
             if len(dim) == 3:
                 states.append(T.tensor4("%s_%s" % ("state", i)))
                 next_states.append(T.tensor4("%s_%s" % ("next_state", i)))
@@ -78,11 +78,11 @@ class MyQNetwork(QNetwork):
                 states.append( T.matrix("%s_%s" % ("state", i)) )
                 next_states.append( T.matrix("%s_%s" % ("next_state", i)) )
                 
-            self.states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
-            self.next_states_shared.append(theano.shared(np.zeros((batchSize,) + dim, dtype=theano.config.floatX) , borrow=False))
+            self.states_shared.append(theano.shared(np.zeros((batch_size,) + dim, dtype=theano.config.floatX) , borrow=False))
+            self.next_states_shared.append(theano.shared(np.zeros((batch_size,) + dim, dtype=theano.config.floatX) , borrow=False))
         
         print("Number of observations per state: {}".format(len(self.states_shared)))
-        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._inputDimensions))
+        print("For each observation, historySize + ponctualObs_i.shape: {}".format(self._input_dimensions))
                 
         rewards = T.col('rewards')
         actions = T.icol('actions')
@@ -90,24 +90,24 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
-        self.q_vals, self.params, shape_after_conv = QNet._buildG_DQN_0(states)
+        QNet=TheQNet(self._batch_size, self._input_dimensions, self._n_actions, self._randomState)
+        self.q_vals, self.params, shape_after_conv = QNet._buildDQN(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildG_DQN_0(next_states)
+        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildDQN(next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(
-            np.zeros((batchSize, 1), dtype=theano.config.floatX),
+            np.zeros((batch_size, 1), dtype=theano.config.floatX),
             broadcastable=(False, True))
 
         self.actions_shared = theano.shared(
-            np.zeros((batchSize, 1), dtype='int32'),
+            np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
 
         self.terminals_shared = theano.shared(
-            np.zeros((batchSize, 1), dtype='int32'),
+            np.zeros((batch_size, 1), dtype='int32'),
             broadcastable=(False, True))
         
         
@@ -123,7 +123,7 @@ class MyQNetwork(QNetwork):
 
             argmax_next_q_vals=T.argmax(next_q_curr_qnet, axis=1, keepdims=True)
 
-            max_next_q_vals=self.next_q_vals[T.arange(batchSize),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
+            max_next_q_vals=self.next_q_vals[T.arange(batch_size),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
 
 
         else:
@@ -134,7 +134,7 @@ class MyQNetwork(QNetwork):
 
         target = rewards + T_ones_like * thediscount * max_next_q_vals
 
-        q_val=self.q_vals[T.arange(batchSize), actions.reshape((-1,))].reshape((-1, 1))
+        q_val=self.q_vals[T.arange(batch_size), actions.reshape((-1,))].reshape((-1, 1))
         # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
         diff = - q_val + target 
 
@@ -302,7 +302,7 @@ class MyQNetwork(QNetwork):
         
     def _build(self, network_type, inputs):
         if network_type == "General_DQN_0":
-            return self._buildG_DQN_0(inputs)
+            return self._buildDQN(inputs)
         else:
             raise ValueError("Unrecognized network: {}".format(network_type))
 

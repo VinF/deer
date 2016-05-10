@@ -29,7 +29,7 @@ class Node:
         self.priority = priority
         self.end = end
 
-    def has_children(self):
+    def hasChildren(self):
         if (self.right == None and self.left == None):
             return False
         return True
@@ -44,11 +44,11 @@ class SumTree:
         self._root = Node()
         size_left = int(size/2)
         # Initialization of the tree
-        self._root.left = self._create_subtree(self._root, 0, size_left) # [a,b[
-        self._root.right = self._create_subtree(self._root, size_left, size)
+        self._root.left = self._createSubtree(self._root, 0, size_left) # [a,b[
+        self._root.right = self._createSubtree(self._root, size_left, size)
         self._max_priority = 1
 
-    def _create_subtree(self, parent, begin, end):
+    def _createSubtree(self, parent, begin, end):
         """ Build balanced subtrees. 
         The leaf nodes have their "priority" initialized to 0 and 
         "position" from 0 to n-1, with n being the size of the replay
@@ -74,8 +74,8 @@ class SumTree:
         mid = int((end + begin)/2)
         node = Node(end=end)
         node.parent = parent
-        node.left = self._create_subtree(node, begin, mid)
-        node.right = self._create_subtree(node, mid, end)
+        node.left = self._createSubtree(node, begin, mid)
+        node.right = self._createSubtree(node, mid, end)
         return node
 
     def update(self, index, priority=-1):
@@ -97,21 +97,21 @@ class SumTree:
             self._max_priority = priority
 
         # Search for index
-        node = self.find_index(index)
+        node = self.findIndex(index)
 
         # Replace with new priority
         diff = priority - node.priority
         node.priority = priority
 
         # Update value
-        self._update_value(node.parent, diff)
+        self._updateValue(node.parent, diff)
 
-    def _update_value(self, node, diff):
+    def _updateValue(self, node, diff):
         node.priority += diff
         if (node.parent != None):
-            self._update_value(node.parent, diff)
+            self._updateValue(node.parent, diff)
 
-    def find_index(self, index):
+    def findIndex(self, index):
         """ Find a leaf based on the index. 
 
         Arguments:
@@ -121,20 +121,20 @@ class SumTree:
             node - leaf with the index
         """
         if(self._root != None):
-            return self._find_index(index, self._root)
+            return self._findIndex(index, self._root)
         else:
             return None
 
-    def _find_index(self, index, node):
+    def _findIndex(self, index, node):
         if (node.position == index):
             return node
 
         if (index < node.left.end):
-            return self._find_index(index, node.left)
+            return self._findIndex(index, node.left)
         else:
-            return self._find_index(index, node.right)
+            return self._findIndex(index, node.right)
 
-    def get_batch(self, n, rng, dataset):
+    def getBatch(self, n, rng, dataset):
         """ Generate the indices of a random batch of size n.
         The samples within the random batch are selected following
         the priorities (probabilities) of each transition in the replay
@@ -152,7 +152,7 @@ class SumTree:
         for i in range(n):
             p = rng.uniform(i*step, (i+1)*step)
             node = self.find(p)
-            index = self._check_terminal(node.position, dataset)
+            index = self._checkTerminal(node.position, dataset)
             if (index >= 0):
                 indices[i] = index
             else:
@@ -160,7 +160,7 @@ class SumTree:
 
         return indices
 
-    def _check_terminal(self, index, dataset):
+    def _checkTerminal(self, index, dataset):
         """ Avoid terminal states in the x samples preceding the chosen 
         index.
         
@@ -170,9 +170,9 @@ class SumTree:
         Return:
             index - checked or corrected value of the input index.
         """
-        history_size = dataset._maxHistorySize
+        history_size = dataset._max_history_size
         terminals = dataset._terminals
-        n_elems = dataset._nElems
+        n_elems = dataset._n_elems
 
         lower_bound = history_size - 1
 
@@ -215,7 +215,7 @@ class SumTree:
             return None
 
     def _find(self, priority, node):
-        if (not node.has_children()):
+        if (not node.hasChildren()):
             return node
 
         if(priority <= node.left.priority):
@@ -223,18 +223,18 @@ class SumTree:
         else:
             return self._find(priority - node.left.priority, node.right)
 
-    def print_tree(self):
+    def printTree(self):
     # Classical printout method. Mostly for debugging purposes.
         if(self._root != None):
-            self._print_tree(self._root)
+            self._printTree(self._root)
 
         print("===============")
 
-    def _print_tree(self, node):
+    def _printTree(self, node):
         if(node != None):
-            self._print_tree(node.left)
+            self._printTree(node.left)
             print(node.position, node.priority)
-            self._print_tree(node.right)
+            self._printTree(node.right)
         
 
 if __name__ == "__main__":
@@ -244,10 +244,10 @@ if __name__ == "__main__":
     t.update(3, 3.3)
     t.update(4, 2.5)
     t.update(6, 2)
-    t.print_tree()
+    t.printTree()
 
     rng = np.random.RandomState()
     for _ in range(10):
-        print(t.get_batch(10, rng))
+        print(t.getBatch(10, rng))
 
 

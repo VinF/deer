@@ -3,7 +3,7 @@ the training and the various parameters of your agents.
 
 Controllers can be attached to an agent using the agent's ``attach(Controller)`` method. The order in which controllers 
 are attached matters. Indeed, if controllers C1, C2 and C3 were attached in this order and C1 and C3 both listen to the
-OnEpisodeEnd signal, the OnEpisodeEnd() method of C1 will be called *before* the OnEpisodeEnd() method of C3, whenever 
+onEpisodeEnd signal, the onEpisodeEnd() method of C1 will be called *before* the onEpisodeEnd() method of C3, whenever 
 an episode ends.
 
 .. Authors: Vincent Francois-Lavet, David Taralla
@@ -36,7 +36,7 @@ class Controller(object):
 
         self._active = active
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         """Called when the agent is going to start working (before anything else).
         
         This corresponds to the moment where the agent's run() method is called.
@@ -49,8 +49,8 @@ class Controller(object):
 
         pass
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
-        """Called whenever the agent ends an episode, just after this episode ended and before any OnEpochEnd() signal
+    def onEpisodeEnd(self, agent, terminal_reached, reward):
+        """Called whenever the agent ends an episode, just after this episode ended and before any onEpochEnd() signal
         could be sent.
 
         Parameters
@@ -67,9 +67,9 @@ class Controller(object):
 
         pass
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         """Called whenever the agent ends an epoch, just after the last episode of this epoch was ended and after any 
-        OnEpisodeEnd() signal was processed.
+        onEpisodeEnd() signal was processed.
 
         Parameters
         ----------
@@ -79,7 +79,7 @@ class Controller(object):
 
         pass
 
-    def OnActionChosen(self, agent, action):
+    def onActionChosen(self, agent, action):
         """Called whenever the agent has chosen an action.
 
         This occurs after the agent state was updated with the new observation it made, but before it applied this 
@@ -88,7 +88,7 @@ class Controller(object):
 
         pass
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         """Called whenever the agent has taken an action on its environment.
 
         This occurs after the agent applied this action on the environment and before terminality is evaluated. This 
@@ -98,7 +98,7 @@ class Controller(object):
 
         pass
 
-    def OnEnd(self, agent):
+    def onEnd(self, agent):
         """Called when the agent has finished processing all its epochs, just before returning from its run() method.
         """
 
@@ -110,42 +110,42 @@ class LearningRateController(Controller):
     
     Parameters
     ----------
-    initialLearningRate : float
+    initial_learning_rate : float
         The learning rate upon agent start
-    learningRateDecay : float
+    learning_rate_decay : float
         The factor by which the previous learning rate is multiplied every [periodicity] epochs.
     periodicity : int
         How many epochs are necessary before an update of the learning rate occurs
     """
 
-    def __init__(self, initialLearningRate=0.0002, learningRateDecay=1., periodicity=1):
+    def __init__(self, initial_learning_rate=0.0002, learning_rate_decay=1., periodicity=1):
         """Initializer.
 
         """
 
         super(self.__class__, self).__init__()
-        self._epochCount = 0
-        self._initLr = initialLearningRate
-        self._lr = initialLearningRate
-        self._lrDecay = learningRateDecay
+        self._epoch_count = 0
+        self._init_lr = initial_learning_rate
+        self._lr = initial_learning_rate
+        self._lr_decay = learning_rate_decay
         self._periodicity = periodicity
     
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
-        self._epochCount = 0
-        agent.setLearningRate(self._initLr)
-        self._lr = self._initLr * self._lrDecay
+        self._epoch_count = 0
+        agent.setLearningRate(self._init_lr)
+        self._lr = self._init_lr * self._lr_decay
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        self._epochCount += 1
-        if self._periodicity <= 1 or self._epochCount % self._periodicity == 0:
+        self._epoch_count += 1
+        if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
             agent.setLearningRate(self._lr)
-            self._lr *= self._lrDecay
+            self._lr *= self._lr_decay
 
 
 class EpsilonController(Controller):
@@ -153,84 +153,84 @@ class EpsilonController(Controller):
     
     Parameters
     ----------
-    initialE : float
+    initial_e : float
         Start epsilon
-    eDecays : int
+    e_decays : int
         How many updates are necessary for epsilon to reach eMin
-    eMin : float
+    e_min : float
         End epsilon
-    evaluateOn : str
+    evaluate_on : str
         After what type of event epsilon shoud be updated periodically. Possible values: 'action', 'episode', 'epoch'.
     periodicity : int
         How many [evaluateOn] are necessary before an update of epsilon occurs
-    resetEvery : str
+    reset_every : str
         After what type of event epsilon should be reset to its initial value. Possible values: 
         'none', 'episode', 'epoch'.
     """
 
-    def __init__(self, initialE=1., eDecays=10000, eMin=0.1, evaluateOn='action', periodicity=1, resetEvery='none'):
+    def __init__(self, initial_e=1., e_decays=10000, e_min=0.1, evaluate_on='action', periodicity=1, reset_every='none'):
         """Initializer.
         """
 
         super(self.__class__, self).__init__()
         self._count = 0
-        self._initE = initialE
-        self._e = initialE
-        self._eMin = eMin
-        self._eDecay = (initialE - eMin) / eDecays
+        self._init_e = initial_e
+        self._e = initial_e
+        self._e_min = e_min
+        self._e_decay = (initial_e - e_min) / e_decays
         self._periodicity = periodicity
 
-        self._onAction = 'action' == evaluateOn
-        self._onEpisode = 'episode' == evaluateOn
-        self._onEpoch = 'epoch' == evaluateOn
-        if not self._onAction and not self._onEpisode and not self._onEpoch:
-            self._onAction = True
+        self._on_action = 'action' == evaluate_on
+        self._on_episode = 'episode' == evaluate_on
+        self._on_epoch = 'epoch' == evaluate_on
+        if not self._on_action and not self._on_episode and not self._on_epoch:
+            self._on_action = True
 
-        self._resetOnEpisode = 'episode' == resetEvery
-        self._resetOnEpoch = 'epoch' == resetEvery
+        self._reset_on_episode = 'episode' == reset_every
+        self._reset_on_epoch = 'epoch' == reset_every
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
         self._reset(agent)
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminal_reached, reward):
         if (self._active == False):
             return
 
-        if self._resetOnEpisode:
+        if self._reset_on_episode:
            self. _reset(agent)
-        elif self._onEpisode:
+        elif self._on_episode:
             self._update(agent)
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        if self._resetOnEpoch:
+        if self._reset_on_epoch:
             self._reset(agent)
-        elif self._onEpoch:
+        elif self._on_epoch:
             self._update(agent)
 
-    def OnActionChosen(self, agent, action):
+    def onActionChosen(self, agent, action):
         if (self._active == False):
             return
 
-        if self._onAction:
+        if self._on_action:
             self._update(agent)
 
 
     def _reset(self, agent):
         self._count = 0
-        agent.setEpsilon(self._initE)
-        self._e = self._initE
+        agent.setEpsilon(self._init_e)
+        self._e = self._init_e
 
     def _update(self, agent):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             agent.setEpsilon(self._e)
-            self._e = max(self._e - self._eDecay, self._eMin)
+            self._e = max(self._e - self._e_decay, self._e_min)
 
 
 
@@ -240,49 +240,49 @@ class DiscountFactorController(Controller):
 
     Parameters
     ----------
-    initialDiscountFactor : float
+    initial_discount_factor : float
         Start discount
-    discountFactorGrowth : float
+    discount_factor_growth : float
         The factor by which the previous discount is multiplied every [periodicity]
         epochs.
-    discountFactorMax : float
+    discount_factor_max : float
         Maximum reachable discount
     periodicity : int
         How many training epochs are necessary before an update of the discount occurs
     """
     
-    def __init__(self, initialDiscountFactor=0.9, discountFactorGrowth=1., discountFactorMax=0.99, periodicity=1):
+    def __init__(self, initial_discount_factor=0.9, discount_factor_growth=1., discount_factor_max=0.99, periodicity=1):
         """Initializer.
         """
 
         super(self.__class__, self).__init__()
-        self._epochCount = 0
-        self._initDF = initialDiscountFactor
-        self._df = initialDiscountFactor
-        self._dfGrowth = discountFactorGrowth
-        self._dfMax = discountFactorMax
+        self._epoch_count = 0
+        self._init_df = initial_discount_factor
+        self._df = initial_discount_factor
+        self._df_growth = discount_factor_growth
+        self._df_max = discount_factor_max
         self._periodicity = periodicity
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
-        self._epochCount = 0
-        agent.setDiscountFactor(self._initDF)
-        if (self._initDF < self._dfMax):
-            self._df = 1 - (1 - self._initDF) * self._dfGrowth
+        self._epoch_count = 0
+        agent.setDiscountFactor(self._init_df)
+        if (self._init_df < self._df_max):
+            self._df = 1 - (1 - self._init_df) * self._df_growth
         else:
-            self._df = self._initDF
+            self._df = self._init_df
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        self._epochCount += 1
-        if self._periodicity <= 1 or self._epochCount % self._periodicity == 0:
-            if (self._df < self._dfMax):
+        self._epoch_count += 1
+        if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
+            if (self._df < self._df_max):
                 agent.setDiscountFactor(self._df)
-                self._df = 1 - (1 - self._df) * self._dfGrowth
+                self._df = 1 - (1 - self._df) * self._df_growth
 
 
 class InterleavedTestEpochController(Controller):
@@ -294,68 +294,68 @@ class InterleavedTestEpochController(Controller):
         The identifier (>= 0) of the mode each test epoch triggered by this controller will belong to. 
         Can be used to discriminate between datasets in your Environment subclass (this is the argument that 
         will be given to your environment's reset() method when starting the test epoch).
-    epochLength : float
+    epoch_length : float
         The total number of transitions that will occur during a test epoch. This means that
         this epoch could feature several episodes if a terminal transition is reached before this budget is 
         exhausted.
-    controllersToDisable : list of int
+    controllers_to_disable : list of int
         A list of controllers to disable when this controller wants to start a
         test epoch. These same controllers will be reactivated after this controller has finished dealing with
         its test epoch.
     periodicity : int 
         How many epochs are necessary before a test epoch is ran (these controller's epochs
         included: "1 test epoch on [periodicity] epochs"). Minimum value: 2.
-    showScore : bool
+    show_score : bool
         Whether to print an informative message on stdout at the end of each test epoch, about 
         the total reward obtained in the course of the test epoch.
-    summarizeEvery : int
+    summarize_every : int
         How many of this controller's test epochs are necessary before the attached agent's 
         summarizeTestPerformance() method is called. Give a value <= 0 for "never". If > 0, the first call will
         occur just after the first test epoch.
     """
 
-    def __init__(self, id=0, epochLength=500, controllersToDisable=[], periodicity=2, showScore=True, summarizeEvery=10):
+    def __init__(self, id=0, epoch_length=500, controllers_to_disable=[], periodicity=2, show_score=True, summarize_every=10):
         """Initializer.
         """
 
         super(self.__class__, self).__init__()
-        self._epochCount = 0
+        self._epoch_count = 0
         self._id = id
-        self._epochLength = epochLength
-        self._toDisable = controllersToDisable
-        self._showScore = showScore
+        self._epoch_length = epoch_length
+        self._to_disable = controllers_to_disable
+        self._show_score = show_score
         if periodicity <= 2:
             self._periodicity = 2
         else:
             self._periodicity = periodicity
 
-        self._summaryCounter = 0
-        self._summaryPeriodicity = summarizeEvery
+        self._summary_counter = 0
+        self._summary_periodicity = summarize_every
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
-        self._epochCount = 0
-        self._summaryCounter = 0
+        self._epoch_count = 0
+        self._summary_counter = 0
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        mod = self._epochCount % self._periodicity
-        self._epochCount += 1
+        mod = self._epoch_count % self._periodicity
+        self._epoch_count += 1
         if mod == 0:
-            agent.startMode(self._id, self._epochLength)
-            agent.setControllersActive(self._toDisable, False)
+            agent.startMode(self._id, self._epoch_length)
+            agent.setControllersActive(self._to_disable, False)
         elif mod == 1:
-            self._summaryCounter += 1
-            if self._showScore:
+            self._summary_counter += 1
+            if self._show_score:
                 print("Testing score per episode (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
-            if self._summaryPeriodicity > 0 and self._summaryCounter % self._summaryPeriodicity == 0:
+            if self._summary_periodicity > 0 and self._summary_counter % self._summary_periodicity == 0:
                 agent.summarizeTestPerformance()
             agent.resumeTrainingMode()
-            agent.setControllersActive(self._toDisable, True)
+            agent.setControllersActive(self._to_disable, True)
 
 
 class TrainerController(Controller):
@@ -363,61 +363,61 @@ class TrainerController(Controller):
 
     Parameters
     ----------
-    evaluateOn : str
+    evaluate_on : str
         After what type of event the agent shoud be trained periodically. Possible values: 
         'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
     periodicity : int
         How many [evaluateOn] are necessary before a training occurs
-        _showAvgBellmanResidual [bool] - Whether to show an informative message after each episode end (and after a 
+        _show_avg_Bellman_residual [bool] - Whether to show an informative message after each episode end (and after a 
         training if [evaluateOn] is 'episode') about the average bellman residual of this episode
-    showEpisodeAvgVValue : bool
+    show_episode_avg_V_value : bool
         Whether to show an informative message after each episode end (and after a 
         training if [evaluateOn] is 'episode') about the average V value of this episode
     """
-    def __init__(self, evaluateOn='action', periodicity=1, showEpisodeAvgVValue=True, showAvgBellmanResidual=True):
+    def __init__(self, evaluate_on='action', periodicity=1, show_episode_avg_V_value=True, show_avg_Bellman_residual=True):
         """Initializer.
         """
 
         super(self.__class__, self).__init__()
         self._count = 0
         self._periodicity = periodicity
-        self._showAvgBellmanResidual = showAvgBellmanResidual
-        self._showEpisodeAvgVValue = showEpisodeAvgVValue
+        self._show_avg_Bellman_residual = show_avg_Bellman_residual
+        self._show_episode_avg_V_value = show_episode_avg_V_value
 
-        self._onAction = 'action' == evaluateOn
-        self._onEpisode = 'episode' == evaluateOn
-        self._onEpoch = 'epoch' == evaluateOn
-        if not self._onAction and not self._onEpisode and not self._onEpoch:
-            self._onAction = True
+        self._on_action = 'action' == evaluate_on
+        self._on_episode = 'episode' == evaluate_on
+        self._on_epoch = 'epoch' == evaluate_on
+        if not self._on_action and not self._on_episode and not self._on_epoch:
+            self._on_action = True
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
         
         self._count = 0
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
         
-        if self._onEpisode:
+        if self._on_episode:
             self._update(agent)
 
-        if self._showAvgBellmanResidual: print("Episode average bellman residual: {}".format(agent.avgBellmanResidual()))
-        if self._showEpisodeAvgVValue: print("Episode average V value: {}".format(agent.avgEpisodeVValue()))
+        if self._show_avg_Bellman_residual: print("Episode average bellman residual: {}".format(agent.avgBellmanResidual()))
+        if self._show_episode_avg_V_value: print("Episode average V value: {}".format(agent.avgEpisodeVValue()))
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        if self._onEpoch:
+        if self._on_epoch:
             self._update(agent)
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         if (self._active == False):
             return
 
-        if self._onAction:
+        if self._on_action:
             self._update(agent)
 
     def _update(self, agent):
@@ -436,53 +436,55 @@ class VerboseController(Controller):
 
     Parameters
     ----------
-    evaluateOn : str
+    evaluate_on : str
         After what type of event the printing should occur periodically. Possible values: 
         'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
     periodicity : int
         How many [evaluateOn] are necessary before a printing occurs
     """
 
-    def __init__(self, evaluateOn='epoch', periodicity=1):
+    def __init__(self, evaluateOn=False, evaluate_on='epoch', periodicity=1):
         """Initializer.
         """
+        if evaluateOn is not False:
+            raise Exception('For uniformity the attributes to be provided to the controllers respect PEP8 from deer0.3dev1 onwards. For instance, instead of "evaluateOn", you should now have "evaluate_on"')
 
         super(self.__class__, self).__init__()
         self._count = 0
         self._periodicity = periodicity
-        self._string = evaluateOn
+        self._string = evaluate_on
 
-        self._onAction = 'action' == evaluateOn
-        self._onEpisode = 'episode' == evaluateOn
-        self._onEpoch = 'epoch' == evaluateOn
-        if not self._onAction and not self._onEpisode and not self._onEpoch:
-            self._onEpoch = True
+        self._on_action = 'action' == evaluate_on
+        self._on_episode = 'episode' == evaluate_on
+        self._on_epoch = 'epoch' == evaluate_on
+        if not self._on_action and not self._on_episode and not self._on_epoch:
+            self._on_epoch = True
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
         
         self._count = 0
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
         
-        if self._onEpisode:
+        if self._on_episode:
             self._print(agent)
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
-        if self._onEpoch:
+        if self._on_epoch:
             self._print(agent)
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         if (self._active == False):
             return
 
-        if self._onAction:
+        if self._on_action:
             self._print(agent)
 
     def _print(self, agent):
@@ -508,7 +510,7 @@ class FindBestController(Controller):
     If the mode matches [testID], it saves the test (= generalization) score in another vector. Note that if [testID] 
     is None, no test mode score are ever recorded.
 
-    At the end of the experiment (OnEnd), if active, this controller will print information about the epoch at which 
+    At the end of the experiment (onEnd), if active, this controller will print information about the epoch at which 
     the best neural net was found together with its generalization score, this last information shown only if [testID] 
     is different from None. Finally it will dump a dictionnary containing the data of the plots ({n: number of 
     epochs elapsed, ts: test scores, vs: validation scores}). Note that if [testID] is None, the value dumped for the
@@ -536,7 +538,7 @@ class FindBestController(Controller):
         self._filename = unique_fname
         self._bestValidationScoreSoFar = -9999999
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -553,7 +555,7 @@ class FindBestController(Controller):
         else:
             self._trainingEpochCount += 1
         
-    def OnEnd(self, agent):
+    def onEnd(self, agent):
         if (self._active == False):
             return
 

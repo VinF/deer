@@ -31,14 +31,14 @@ class NeuralAgent(object):
         Number of observations (=number of time steps taken) in the replay memory before starting learning
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    randomState : numpy random number generator
+    random_state : numpy random number generator
         Seed
     exp_priority : float, optional
         The exponent that determines how much prioritization is used, default is 0 (uniform priority).
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, randomState, exp_priority=0):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, random_state, exp_priority=0):
         inputDims = environment.inputDimensions()
 
         if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
@@ -48,13 +48,13 @@ class NeuralAgent(object):
         self._environment = environment
         self._network = q_network
         self._epsilon = 1
-        self._replayMemorySize = replay_memory_size
-        self._replayMemoryStartSize = replay_start_size
-        self._batchSize = batch_size
-        self._randomState = randomState
+        self._replay_memory_size = replay_memory_size
+        self._replay_start_size = replay_start_size
+        self._batch_size = batch_size
+        self._random_state = random_state
         self._exp_priority = exp_priority
-        self._dataSet = DataSet(environment, maxSize=replay_memory_size, randomState=randomState, use_priority=self._exp_priority)
-        self._tmpDataSet = None # Will be created by startTesting() when necessary
+        self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority)
+        self._tmp_dataset = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._modeEpochsLength = 0
         self._totalModeReward = 0
@@ -155,8 +155,8 @@ class NeuralAgent(object):
             self._mode = mode
             self._modeEpochsLength = epochLength
             self._totalModeReward = 0
-            del self._tmpDataSet
-            self._tmpDataSet = DataSet(self._environment, self._randomState, maxSize=self._replayMemorySize)
+            del self._tmp_dataset
+            self._tmp_dataset = DataSet(self._environment, self._random_state, max_size=self._replay_memory_size)
 
     def resumeTrainingMode(self):
         self._mode = -1
@@ -165,18 +165,18 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmpDataSet)
+        self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
-        if self._dataSet.nElems() < self._replayMemoryStartSize:
+        if self._dataset.n_elems() < self._replay_start_size:
             return
 
         try:
-            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataSet.randomBatch(self._batchSize, self._exp_priority)
+            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
             loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
             self._trainingLossAverages.append(loss)
             if (self._exp_priority):
-                self._dataSet.update_priorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
+                self._dataset.updatePriorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
 
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
@@ -197,7 +197,7 @@ class NeuralAgent(object):
                 
 
     def run(self, nEpochs, epochLength):
-        for c in self._controllers: c.OnStart(self)
+        for c in self._controllers: c.onStart(self)
         i = 0
         while i < nEpochs or self._modeEpochsLength > 0:
             self._trainingLossAverages = []
@@ -212,9 +212,9 @@ class NeuralAgent(object):
                 while length > 0:
                     length = self._runEpisode(length)
                 i += 1
-            for c in self._controllers: c.OnEpochEnd(self)
+            for c in self._controllers: c.onEpochEnd(self)
             
-        for c in self._controllers: c.OnEnd(self)
+        for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):
         self._inEpisode = True
@@ -245,13 +245,13 @@ class NeuralAgent(object):
                     self._totalModeReward += reward
                 
             self._addSample(obs, action, reward, isTerminal)
-            for c in self._controllers: c.OnActionTaken(self)
+            for c in self._controllers: c.onActionTaken(self)
             
             if isTerminal:
                 break
             
         self._inEpisode = False
-        for c in self._controllers: c.OnEpisodeEnd(self, isTerminal, reward)
+        for c in self._controllers: c.onEpisodeEnd(self, isTerminal, reward)
         return maxSteps
 
         
@@ -284,9 +284,9 @@ class NeuralAgent(object):
 
     def _addSample(self, ponctualObs, action, reward, isTerminal):
         if self._mode != -1:
-            self._tmpDataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
+            self._tmp_dataset.addSample(ponctualObs, action, reward, isTerminal, priority=1)
         else:
-            self._dataSet.addSample(ponctualObs, action, reward, isTerminal, priority=1)
+            self._dataset.addSample(ponctualObs, action, reward, isTerminal, priority=1)
 
 
     def _chooseAction(self):
@@ -294,19 +294,19 @@ class NeuralAgent(object):
         if self._mode != -1:
             action, V = self.bestAction()
         else:
-            if self._dataSet.nElems() > self._replayMemoryStartSize:
+            if self._dataset.n_elems() > self._replay_start_size:
                 # e-Greedy policy
-                if self._randomState.rand() < self._epsilon:
-                    action = self._randomState.randint(0, self._environment.nActions())
+                if self._random_state.rand() < self._epsilon:
+                    action = self._random_state.randint(0, self._environment.nActions())
                     V = 0
                 else:
                     action, V = self.bestAction()
             else:
                 # Still gathering initial data: choose dummy action
-                action = self._randomState.randint(0, self._environment.nActions())
+                action = self._random_state.randint(0, self._environment.nActions())
                 V = 0
                 
-        for c in self._controllers: c.OnActionChosen(self, action)
+        for c in self._controllers: c.onActionChosen(self, action)
         return action, V
 
 class AgentError(RuntimeError):
@@ -333,7 +333,7 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, randomState=None, maxSize=1000, use_priority=False):
+    def __init__(self, env, random_state=None, max_size=1000, use_priority=False):
         """Initializer.
 
         Parameters
@@ -342,33 +342,33 @@ class DataSet(object):
             For each subject i, inputDims[i] is a tuple where the first value is the memory size for this
             subject and the rest describes the shape of each single observation on this subject (number, vector or
             matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
-        randomState : Numpy random number generator
+        random_state : Numpy random number generator
             If None, a new one is created with default numpy seed.
-        maxSize : The replay memory maximum size.
+        max_size : The replay memory maximum size.
         """
 
-        self._batchDimensions = env.inputDimensions()
-        self._maxHistorySize = np.max([self._batchDimensions[i][0] for i in range (len(self._batchDimensions))])
-        self._size = maxSize
+        self._batch_dimensions = env.inputDimensions()
+        self._max_history_size = np.max([self._batch_dimensions[i][0] for i in range (len(self._batch_dimensions))])
+        self._size = max_size
         self._use_priority = use_priority
-        self._actions      = CircularBuffer(maxSize, dtype="int8")
-        self._rewards      = CircularBuffer(maxSize)
-        self._terminals    = CircularBuffer(maxSize, dtype="bool")
+        self._actions      = CircularBuffer(max_size, dtype="int8")
+        self._rewards      = CircularBuffer(max_size)
+        self._terminals    = CircularBuffer(max_size, dtype="bool")
         if (self._use_priority):
-            self._prioritiy_tree = tree.SumTree(maxSize) 
-            self._translation_array = np.zeros(maxSize)
+            self._prioritiy_tree = tree.SumTree(max_size) 
+            self._translation_array = np.zeros(max_size)
 
-        self._observations = np.zeros(len(self._batchDimensions), dtype='object')
+        self._observations = np.zeros(len(self._batch_dimensions), dtype='object')
         # Initialize the observations container if necessary
-        for i in range(len(self._batchDimensions)):
-            self._observations[i] = CircularBuffer(maxSize, elemShape=self._batchDimensions[i][1:], dtype=env.observationType(i))
+        for i in range(len(self._batch_dimensions)):
+            self._observations[i] = CircularBuffer(max_size, elemShape=self._batch_dimensions[i][1:], dtype=env.observationType(i))
 
-        if (randomState == None):
-            self._randomState = np.random.RandomState()
+        if (random_state == None):
+            self._random_state = np.random.RandomState()
         else:
-            self._randomState = randomState
+            self._random_state = random_state
 
-        self._nElems  = 0
+        self._n_elems  = 0
 
     def actions(self):
         """Get all actions currently in the replay memory, ordered by time where they were taken."""
@@ -401,7 +401,7 @@ class DataSet(object):
 
         return ret
 
-    def update_priorities(self, priorities, rndValidIndices):
+    def updatePriorities(self, priorities, rndValidIndices):
         """
         """
         for i in range( len(rndValidIndices) ):
@@ -444,14 +444,14 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        if (self._maxHistorySize - 1 >= self._nElems):
+        if (self._max_history_size - 1 >= self._n_elems):
             raise SliceError(
                 "Not enough elements in the dataset to create a "
                 "complete state. {} elements in dataset; requires {}"
-                .format(self._nElems, self._maxHistorySize))
+                .format(self._n_elems, self._max_history_size))
 
         if (self._use_priority):
-            rndValidIndices, rndValidIndices_tree = self._random_prioritized_batch(size)
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
@@ -462,18 +462,18 @@ class DataSet(object):
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     
-        states = np.zeros(len(self._batchDimensions), dtype='object')
+        states = np.zeros(len(self._batch_dimensions), dtype='object')
         next_states = np.zeros_like(states)
         
-        for input in range(len(self._batchDimensions)):
-            states[input] = np.zeros((size,) + self._batchDimensions[input], dtype=self._observations[input].dtype)
+        for input in range(len(self._batch_dimensions)):
+            states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(size):
-                states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batchDimensions[input][0], rndValidIndices[i]+1)
-                if rndValidIndices[i] >= self._nElems - 1 or terminals[i]:
+                states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batch_dimensions[input][0], rndValidIndices[i]+1)
+                if rndValidIndices[i] >= self._n_elems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batchDimensions[input][0], rndValidIndices[i]+2)
+                    next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batch_dimensions[input][0], rndValidIndices[i]+2)
 
         if (self._use_priority):
             return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
@@ -481,8 +481,8 @@ class DataSet(object):
             return states, actions, rewards, next_states, terminals, rndValidIndices
 
     def _randomValidStateIndex(self):
-        index_lowerBound = self._maxHistorySize - 1
-        index = self._randomState.randint(index_lowerBound, self._nElems)
+        index_lowerBound = self._max_history_size - 1
+        index = self._random_state.randint(index_lowerBound, self._n_elems)
 
         # Check if slice is valid wrt terminals
         firstTry = index
@@ -490,39 +490,39 @@ class DataSet(object):
         while True:
             i = index-1
             processed = 0
-            for _ in range(self._maxHistorySize-1):
+            for _ in range(self._max_history_size-1):
                 if (i < 0 or self._terminals[i]):
                     break;
 
                 i -= 1
                 processed += 1
 
-            if (processed < self._maxHistorySize - 1):
+            if (processed < self._max_history_size - 1):
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
                 if (index < index_lowerBound):
                     startWrapped = True
-                    index = self._nElems - 1
+                    index = self._n_elems - 1
                 if (startWrapped and index <= firstTry):
                     raise SliceError("Could not find a state with full histories")
             else:
                 # else index was ok according to terminals
                 return index
     
-    def _random_prioritized_batch(self, size):
-        indices_tree = self._prioritiy_tree.get_batch(
-            size, self._randomState, self)
+    def _randomPrioritizedBatch(self, size):
+        indices_tree = self._prioritiy_tree.getBatch(
+            size, self._random_state, self)
         indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
         for i in range(len(indices_tree)):
             indices_replay_mem[i]= int(self._translation_array[indices_tree[i]] \
-                         - self._actions.get_lower_bound())
+                         - self._actions.getLowerBound())
         
         return indices_replay_mem, indices_tree
 
-    def nElems(self):
+    def n_elems(self):
         """Get the number of samples in this dataset (i.e. the current memory replay size)."""
 
-        return self._nElems
+        return self._n_elems
 
 
     def addSample(self, obs, action, reward, isTerminal, priority):
@@ -544,15 +544,15 @@ class DataSet(object):
 
         """        
         # Store observations
-        for i in range(len(self._batchDimensions)):
+        for i in range(len(self._batch_dimensions)):
             self._observations[i].append(obs[i])
 
         # Update tree and translation table
         if (self._use_priority):
-            index = self._actions.get_index()
+            index = self._actions.getIndex()
             if (index >= self._size):
-                ub = self._actions.get_upper_bound()
-                true_size = self._actions.get_true_size()
+                ub = self._actions.getUpperBound()
+                true_size = self._actions.getTrueSize()
                 tree_ind = index%self._size
                 if (ub == true_size):
                     size_extension = true_size - self._size
@@ -573,8 +573,8 @@ class DataSet(object):
         self._rewards.append(reward)
         self._terminals.append(isTerminal)
 
-        if (self._nElems < self._size):
-            self._nElems += 1
+        if (self._n_elems < self._size):
+            self._n_elems += 1
 
         
 class CircularBuffer(object):
@@ -614,16 +614,16 @@ class CircularBuffer(object):
         else:
             return self._data[self._lb+start:self._lb+end]
 
-    def get_lower_bound(self):
+    def getLowerBound(self):
         return self._lb
 
-    def get_upper_bound(self):
+    def getUpperBound(self):
         return self._ub
 
-    def get_index(self):
+    def getIndex(self):
         return self._cur
 
-    def get_true_size(self):
+    def getTrueSize(self):
         return self._trueSize
 
 
