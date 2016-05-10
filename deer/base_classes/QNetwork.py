@@ -19,7 +19,7 @@ class QNetwork(object):
         self._environment = environment
         self._df = 0
         self._lr = 0
-        self._input_dimensions = self._environment.input_dimensions()
+        self._input_dimensions = self._environment.inputDimensions()
         self._n_actions = self._environment.nActions()
         self._batch_size = batch_size
 
