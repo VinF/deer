@@ -3,7 +3,7 @@ the training and the various parameters of your agents.
 
 Controllers can be attached to an agent using the agent's ``attach(Controller)`` method. The order in which controllers 
 are attached matters. Indeed, if controllers C1, C2 and C3 were attached in this order and C1 and C3 both listen to the
-OnEpisodeEnd signal, the OnEpisodeEnd() method of C1 will be called *before* the OnEpisodeEnd() method of C3, whenever 
+onEpisodeEnd signal, the onEpisodeEnd() method of C1 will be called *before* the onEpisodeEnd() method of C3, whenever 
 an episode ends.
 
 .. Authors: Vincent Francois-Lavet, David Taralla
@@ -36,7 +36,7 @@ class Controller(object):
 
         self._active = active
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         """Called when the agent is going to start working (before anything else).
         
         This corresponds to the moment where the agent's run() method is called.
@@ -49,8 +49,8 @@ class Controller(object):
 
         pass
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
-        """Called whenever the agent ends an episode, just after this episode ended and before any OnEpochEnd() signal
+    def onEpisodeEnd(self, agent, terminalReached, reward):
+        """Called whenever the agent ends an episode, just after this episode ended and before any onEpochEnd() signal
         could be sent.
 
         Parameters
@@ -67,9 +67,9 @@ class Controller(object):
 
         pass
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         """Called whenever the agent ends an epoch, just after the last episode of this epoch was ended and after any 
-        OnEpisodeEnd() signal was processed.
+        onEpisodeEnd() signal was processed.
 
         Parameters
         ----------
@@ -79,7 +79,7 @@ class Controller(object):
 
         pass
 
-    def OnActionChosen(self, agent, action):
+    def onActionChosen(self, agent, action):
         """Called whenever the agent has chosen an action.
 
         This occurs after the agent state was updated with the new observation it made, but before it applied this 
@@ -88,7 +88,7 @@ class Controller(object):
 
         pass
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         """Called whenever the agent has taken an action on its environment.
 
         This occurs after the agent applied this action on the environment and before terminality is evaluated. This 
@@ -98,7 +98,7 @@ class Controller(object):
 
         pass
 
-    def OnEnd(self, agent):
+    def onEnd(self, agent):
         """Called when the agent has finished processing all its epochs, just before returning from its run() method.
         """
 
@@ -130,7 +130,7 @@ class LearningRateController(Controller):
         self._lrDecay = learningRateDecay
         self._periodicity = periodicity
     
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
@@ -138,7 +138,7 @@ class LearningRateController(Controller):
         agent.setLearningRate(self._initLr)
         self._lr = self._initLr * self._lrDecay
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -189,13 +189,13 @@ class EpsilonController(Controller):
         self._resetOnEpisode = 'episode' == resetEvery
         self._resetOnEpoch = 'epoch' == resetEvery
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
         self._reset(agent)
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
 
@@ -204,7 +204,7 @@ class EpsilonController(Controller):
         elif self._onEpisode:
             self._update(agent)
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -213,7 +213,7 @@ class EpsilonController(Controller):
         elif self._onEpoch:
             self._update(agent)
 
-    def OnActionChosen(self, agent, action):
+    def onActionChosen(self, agent, action):
         if (self._active == False):
             return
 
@@ -263,7 +263,7 @@ class DiscountFactorController(Controller):
         self._dfMax = discountFactorMax
         self._periodicity = periodicity
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
@@ -274,7 +274,7 @@ class DiscountFactorController(Controller):
         else:
             self._df = self._initDF
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -332,14 +332,14 @@ class InterleavedTestEpochController(Controller):
         self._summaryCounter = 0
         self._summaryPeriodicity = summarizeEvery
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
 
         self._epochCount = 0
         self._summaryCounter = 0
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -390,13 +390,13 @@ class TrainerController(Controller):
         if not self._onAction and not self._onEpisode and not self._onEpoch:
             self._onAction = True
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
         
         self._count = 0
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
         
@@ -406,14 +406,14 @@ class TrainerController(Controller):
         if self._showAvgBellmanResidual: print("Episode average bellman residual: {}".format(agent.avgBellmanResidual()))
         if self._showEpisodeAvgVValue: print("Episode average V value: {}".format(agent.avgEpisodeVValue()))
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
         if self._onEpoch:
             self._update(agent)
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         if (self._active == False):
             return
 
@@ -458,27 +458,27 @@ class VerboseController(Controller):
         if not self._onAction and not self._onEpisode and not self._onEpoch:
             self._onEpoch = True
 
-    def OnStart(self, agent):
+    def onStart(self, agent):
         if (self._active == False):
             return
         
         self._count = 0
 
-    def OnEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminalReached, reward):
         if (self._active == False):
             return
         
         if self._onEpisode:
             self._print(agent)
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
         if self._onEpoch:
             self._print(agent)
 
-    def OnActionTaken(self, agent):
+    def onActionTaken(self, agent):
         if (self._active == False):
             return
 
@@ -508,7 +508,7 @@ class FindBestController(Controller):
     If the mode matches [testID], it saves the test (= generalization) score in another vector. Note that if [testID] 
     is None, no test mode score are ever recorded.
 
-    At the end of the experiment (OnEnd), if active, this controller will print information about the epoch at which 
+    At the end of the experiment (onEnd), if active, this controller will print information about the epoch at which 
     the best neural net was found together with its generalization score, this last information shown only if [testID] 
     is different from None. Finally it will dump a dictionnary containing the data of the plots ({n: number of 
     epochs elapsed, ts: test scores, vs: validation scores}). Note that if [testID] is None, the value dumped for the
@@ -536,7 +536,7 @@ class FindBestController(Controller):
         self._filename = unique_fname
         self._bestValidationScoreSoFar = -9999999
 
-    def OnEpochEnd(self, agent):
+    def onEpochEnd(self, agent):
         if (self._active == False):
             return
 
@@ -553,7 +553,7 @@ class FindBestController(Controller):
         else:
             self._trainingEpochCount += 1
         
-    def OnEnd(self, agent):
+    def onEnd(self, agent):
         if (self._active == False):
             return
 
