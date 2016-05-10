@@ -8,7 +8,7 @@ AUTHOR = "Vincent Francois-Lavet"
 AUTHOR_EMAIL = "v.francois@ulg.ac.be"
 URL = 'https://github.com/VinF/General_Deep_Q_RL'
 DESCRIPTION = 'Framework for deep reinforcement learning'
-with open('README.md') as f:
+with open('README.rst') as f:
     LONG_DESCRIPTION = f.read()
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',

@@ -1,4 +1,4 @@
-include *.md LICENSE
+include *.md LICENSE *.rst
 recursive-include docs *.rst
 recursive-include docs *.py
 prune docs/_build

@@ -15,7 +15,7 @@
 .. _PyPi: https://badge.fury.io/py/deer
 
 DeeR
-============
+====
 
 DeeR is a python library for Deep Reinforcement. It is build with modularity in mind so that it can easily be adapted to any need. It provides many possibilities out of the box (prioritized experience replay, double Q-learning, etc). Many different environment examples are also provided (some of them using OpenAI gym). 
 
