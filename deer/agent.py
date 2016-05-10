@@ -510,7 +510,7 @@ class DataSet(object):
                 return index
     
     def _randomPrioritizedBatch(self, size):
-        indices_tree = self._prioritiy_tree.get_batch(
+        indices_tree = self._prioritiy_tree.getBatch(
             size, self._random_state, self)
         indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
         for i in range(len(indices_tree)):
