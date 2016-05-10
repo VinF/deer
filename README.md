@@ -1,8 +1,31 @@
-## Full Documentation
+.. -*- mode: rst -*-
 
-See the [documentation here](http://deer.readthedocs.io/en/master/) for informations on how to install, examples, etc.
+|Travis|_ |Python27|_ |Python35|_ |PyPi|_
 
-## Dependencies
+.. |Travis| image:: https://travis-ci.org/VinF/deer.svg?branch=master
+.. _Travis: https://travis-ci.org/VinF/deer
+
+.. |Python27| image:: https://img.shields.io/badge/python-2.7-blue.svg
+.. _Python27: https://badge.fury.io/py/deer
+
+.. |Python35| image:: https://img.shields.io/badge/python-3.5-blue.svg
+.. _Python35: https://badge.fury.io/py/deer
+
+.. |PyPi| image:: https://badge.fury.io/py/deer.svg
+.. _PyPi: https://badge.fury.io/py/deer
+
+DeeR
+============
+
+DeeR is a python library for Deep Reinforcement. It is build with modularity in mind so that it can easily be adapted to any need. It provides many possibilities out of the box (prioritized experience replay, double Q-learning, etc). Many different environment examples are also provided (some of them using OpenAI gym). 
+
+Full Documentation
+==================
+
+See the [documentation here](http://deer.readthedocs.io/en/master/) for more informations (how to install, examples, etc.)
+
+Dependencies
+============
 
 This framework is tested to work under Python 2.7, and Python 3.5. It should also work with Python 3.3 and 3.4.
 
