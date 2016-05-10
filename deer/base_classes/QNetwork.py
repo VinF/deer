@@ -15,13 +15,13 @@ class QNetwork(object):
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
     """
-    def __init__(self, environment, batch_size):
+    def __init__(self, environment, batchSize):
         self._environment = environment
         self._df = 0
         self._lr = 0
         self._input_dimensions = self._environment.inputDimensions()
         self._n_actions = self._environment.nActions()
-        self._batch_size = batch_size
+        self._batch_size = batchSize
 
     def train(self, states, actions, rewards, nextStates, terminals):
         """ This method performs the Bellman iteration for one batch of tuples.
