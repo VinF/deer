@@ -170,9 +170,9 @@ class SumTree:
         Return:
             index - checked or corrected value of the input index.
         """
-        history_size = dataset._maxHistorySize
+        history_size = dataset._max_history_size
         terminals = dataset._terminals
-        n_elems = dataset._nElems
+        n_elems = dataset._n_elems
 
         lower_bound = history_size - 1
 
