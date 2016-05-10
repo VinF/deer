@@ -88,8 +88,7 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng,
-        exp_priority=1)
+        rng)
 
     # --- Bind controllers to the agent ---
     # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
