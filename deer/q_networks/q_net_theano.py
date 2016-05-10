@@ -39,12 +39,12 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batchSize, network_type, 
+    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batch_size, network_type, 
                  update_rule, batch_accumulator, randomState, DoubleQ=False, TheQNet=NN):
         """ Initialize environment
         
         """
-        QNetwork.__init__(self,environment, batchSize)
+        QNetwork.__init__(self,environment, batch_size)
 
         
         self.rho = rho
@@ -55,7 +55,7 @@ class MyQNetwork(QNetwork):
         self._DoubleQ = DoubleQ
         self._randomState = randomState
         
-        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+        QNet=TheQNet(self._batch_size, self._inputDimensions, self._n_actions, self._randomState)
 
         self.update_counter = 0
         
@@ -90,7 +90,7 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        QNet=TheQNet(self._batchSize, self._inputDimensions, self._nActions, self._randomState)
+        QNet=TheQNet(self._batch_size, self._inputDimensions, self._n_actions, self._randomState)
         self.q_vals, self.params, shape_after_conv = QNet._buildG_DQN_0(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))

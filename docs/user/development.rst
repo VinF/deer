@@ -15,4 +15,14 @@ For more information, you can check out this link : |how_to_contrib|.
 You should also make sure that you install the repository approriately for development (see :ref:`dev-install`).
 
 
+Naming convention for this project
+----------------------------------
+
+* All classes and methods have word boundaries using medial capitalization, called "CamelCase ». Example: "two words" is rendered as "twoWords"
+* All attributes and variables have word separated_by_underscores. Example: "two words" is rendered as "two_words"
+* If a variable is intended to be 'private', it is prefixed by an underscore
+
+
+
+
 
