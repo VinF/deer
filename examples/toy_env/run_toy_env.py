@@ -88,7 +88,8 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+        exp_priority=1)
 
     # --- Bind controllers to the agent ---
     # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman
     # residual and the average of the V values obtained during the last episode, hence the two last arguments.
     agent.attach(bc.TrainerController(
-        evaluateOn='action', 
+        evaluate_on='action', 
         periodicity=parameters.update_frequency, 
         show_episode_avg_V_value=True, 
         show_avg_Bellman_residual=True))
