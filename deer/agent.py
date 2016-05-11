@@ -168,7 +168,7 @@ class NeuralAgent(object):
         self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
-        if self._dataset._n_elems < self._replay_start_size:
+        if self._dataset.n_elems < self._replay_start_size:
             return
 
         try:
@@ -294,7 +294,7 @@ class NeuralAgent(object):
         if self._mode != -1:
             action, V = self.bestAction()
         else:
-            if self._dataset._n_elems > self._replay_start_size:
+            if self._dataset.n_elems > self._replay_start_size:
                 # e-Greedy policy
                 if self._random_state.rand() < self._epsilon:
                     action = self._random_state.randint(0, self._environment.nActions())
@@ -368,7 +368,7 @@ class DataSet(object):
         else:
             self._random_state = random_state
 
-        self._n_elems  = 0
+        self.n_elems  = 0
 
     def actions(self):
         """Get all actions currently in the replay memory, ordered by time where they were taken."""
@@ -444,11 +444,11 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        if (self._max_history_size - 1 >= self._n_elems):
+        if (self._max_history_size - 1 >= self.n_elems):
             raise SliceError(
                 "Not enough elements in the dataset to create a "
                 "complete state. {} elements in dataset; requires {}"
-                .format(self._n_elems, self._max_history_size))
+                .format(self.n_elems, self._max_history_size))
 
         if (self._use_priority):
             rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
@@ -470,7 +470,7 @@ class DataSet(object):
             next_states[input] = np.zeros_like(states[input])
             for i in range(size):
                 states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batch_dimensions[input][0], rndValidIndices[i]+1)
-                if rndValidIndices[i] >= self._n_elems - 1 or terminals[i]:
+                if rndValidIndices[i] >= self.n_elems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
                     next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batch_dimensions[input][0], rndValidIndices[i]+2)
@@ -482,7 +482,7 @@ class DataSet(object):
 
     def _randomValidStateIndex(self):
         index_lowerBound = self._max_history_size - 1
-        index = self._random_state.randint(index_lowerBound, self._n_elems)
+        index = self._random_state.randint(index_lowerBound, self.n_elems)
 
         # Check if slice is valid wrt terminals
         firstTry = index
@@ -502,7 +502,7 @@ class DataSet(object):
                 index = i
                 if (index < index_lowerBound):
                     startWrapped = True
-                    index = self._n_elems - 1
+                    index = self.n_elems - 1
                 if (startWrapped and index <= firstTry):
                     raise SliceError("Could not find a state with full histories")
             else:
@@ -567,8 +567,8 @@ class DataSet(object):
         self._rewards.append(reward)
         self._terminals.append(is_terminal)
 
-        if (self._n_elems < self._size):
-            self._n_elems += 1
+        if (self.n_elems < self._size):
+            self.n_elems += 1
 
         
 class CircularBuffer(object):

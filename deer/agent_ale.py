@@ -16,7 +16,7 @@ class ALEAgent(NeuralAgent):
             else:
                 action, V = self.bestAction()
         else:
-            if self._dataset.n_elems() > self._replay_start_size:
+            if self._dataset.n_elems > self._replay_start_size:
                 # e-Greedy policy
                 if self._random_state.rand() < self._epsilon:
                     action = self._random_state.randint(0, self._environment.nActions())
