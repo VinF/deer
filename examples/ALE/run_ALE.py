@@ -105,30 +105,30 @@ if __name__ == "__main__":
     # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
     # learning rate as well as the training epoch number.
     agent.attach(bc.VerboseController(
-        evaluateOn='epoch', 
+        evaluate_on='epoch', 
         periodicity=1))
     
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman
     # residual and the average of the V values obtained during the last episode, hence the two last arguments.
     agent.attach(bc.TrainerController(
-        evaluateOn='action', 
+        evaluate_on='action', 
         periodicity=parameters.update_frequency, 
-        showEpisodeAvgVValue=True, 
-        showAvgBellmanResidual=True))
+        show_episode_avg_V_value=True, 
+        show_avg_Bellman_residual=True))
     
     # Every epoch end, one has the possibility to modify the learning rate using a LearningRateController. Here we 
     # wish to update the learning rate after every training epoch (periodicity=1), according to the parameters given.
     agent.attach(bc.LearningRateController(
-        initialLearningRate=parameters.learning_rate, 
-        learningRateDecay=parameters.learning_rate_decay,
+        initial_learning_rate=parameters.learning_rate, 
+        learning_rate_decay=parameters.learning_rate_decay,
         periodicity=1))
     
     # Same for the discount factor.
     agent.attach(bc.DiscountFactorController(
-        initialDiscountFactor=parameters.discount, 
-        discountFactorGrowth=parameters.discount_inc, 
-        discountFactorMax=parameters.discount_max,
+        initial_discount_factor=parameters.discount, 
+        discount_factor_growth=parameters.discount_inc, 
+        discount_factor_max=parameters.discount_max,
         periodicity=1))
     
     # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
@@ -136,12 +136,12 @@ if __name__ == "__main__":
     # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
     # episode or epoch (or never, hence the resetEvery='none').
     agent.attach(bc.EpsilonController(
-        initialE=parameters.epsilon_start, 
-        eDecays=parameters.epsilon_decay, 
-        eMin=parameters.epsilon_min,
-        evaluateOn='action',
+        initial_e=parameters.epsilon_start, 
+        e_decays=parameters.epsilon_decay, 
+        e_min=parameters.epsilon_min,
+        evaluate_on='action',
         periodicity=1,
-        resetEvery='none'))
+        reset_every='none'))
     
     # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
     # seems to generalize the better, thus which one has the highest validation score. Here, we do not care about the
@@ -167,11 +167,11 @@ if __name__ == "__main__":
     # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE, 
-        epochLength=parameters.steps_per_test,
-        controllersToDisable=[0, 1, 2, 3, 4],
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4],
         periodicity=2,
-        showScore=True,
-        summarizeEvery=1))
+        show_score=True,
+        summarize_every=1))
     
     # --- Run the experiment ---
     try:

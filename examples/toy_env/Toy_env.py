@@ -25,72 +25,59 @@ class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment.
 
-        Arguments:
-            rng - the numpy random number generator            
+        Parameters
+        -----------
+            rng : the numpy random number generator
         """
         # Defining the type of environment
-        self._lastPonctualObservation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
+        self._last_ponctual_observation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
         
-        self._randomState = rng
+        self._random_state = rng
                 
         # Building a price signal with some patterns
-        self._priceSignal=[]
+        self._price_signal=[]
         for i in range (1000):
             price = np.array([0.,0.,0.,-1.,0.,1.,0., 0., 0.])
-            price += self._randomState.uniform(0, 3)
-            self._priceSignal.extend(price.tolist())
+            price += self._random_state.uniform(0, 3)
+            self._price_signal.extend(price.tolist())
        
-        self._priceSignalTrain = self._priceSignal[:len(self._priceSignal)//2]
-        self._priceSignalValid = self._priceSignal[len(self._priceSignal)//2:]
+        self._price_signal_train = self._price_signal[:len(self._price_signal)//2]
+        self._price_signal_valid = self._price_signal[len(self._price_signal)//2:]
         self._prices = None
         self._counter = 1
                 
     def reset(self, mode):
-        """ Reset environment for a new episode.
-
-        Arguments:
-            mode - whether we are in test mode or train mode
-        """
         if mode == -1:
-            self.prices = self._priceSignalTrain
+            self.prices = self._price_signal_train
         else:
-            self.prices = self._priceSignalValid
+            self.prices = self._price_signal_valid
             
         
-        self._lastPonctualObservation = [self.prices[0], 0]
+        self._last_ponctual_observation = [self.prices[0], 0]
 
         self._counter = 1
         return [[0, 0, 0, 0, 0, 0], 0]
-        
-        
+
     def act(self, action):
-        """
-        Perform one time step on the environment.
-        Arguments:
-            action - chosen action (integer)
-        Returns:
-           reward - obtained reward for this transition
-        """
         reward = 0
         
-        if (action == 0 and self._lastPonctualObservation[1] == 1):
+        if (action == 0 and self._last_ponctual_observation[1] == 1):
             reward = self.prices[self._counter-1] - 0.5
-        if (action == 1 and self._lastPonctualObservation[1] == 0):
+        if (action == 1 and self._last_ponctual_observation[1] == 0):
             reward = -self.prices[self._counter-1] - 0.5
 
-        self._lastPonctualObservation[0] = self.prices[self._counter]
-        self._lastPonctualObservation[1] = action
+        self._last_ponctual_observation[0] = self.prices[self._counter]
+        self._last_ponctual_observation[1] = action
 
         self._counter += 1
         
         return reward
 
-
-
     def summarizePerformance(self, test_data_set):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
-        Arguments:
+        Parameters
+        -----------
             test_data_set
         """
     
@@ -138,7 +125,7 @@ class MyEnv(Environment):
         return False
 
     def observe(self):
-        return np.array(self._lastPonctualObservation)
+        return np.array(self._last_ponctual_observation)
 
                 
 

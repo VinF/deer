@@ -1,7 +1,7 @@
 .. _toy_env_pendulum:
 
 :mod:`The pendulum on a cart`
-================================================
+=============================
 
 
 Description

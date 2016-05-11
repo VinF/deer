@@ -20,13 +20,14 @@ The launcher file performs different actions:
 * It binds controllers to the agent
 * it finally runs the experiment
 
-All the Environment that the user wants to use should inherit the :ref:`env_interface` that is provided in base_classes.py.
+Examples are better than precepts and the best is to get started with the following examples (with the simplest examples listed first)
 
 .. toctree::
   :maxdepth: 2
   
   environments/toy_env_time_series.rst
   environments/toy_env_pendulum.rst
+  environments/gym.rst
   environments/two_storages.rst  
   environments/ALE.rst
   environments/PLE.rst

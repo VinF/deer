@@ -87,46 +87,47 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+        exp_priority=1.)
 
     # --- Bind controllers to the agent ---
     # For comments, please refer to run_toy_env.py
     agent.attach(bc.VerboseController(
-        evaluateOn='epoch', 
+        evaluate_on='epoch', 
         periodicity=1))
 
     agent.attach(bc.TrainerController(
-        evaluateOn='action', 
+        evaluate_on='action', 
         periodicity=parameters.update_frequency, 
-        showEpisodeAvgVValue=True, 
-        showAvgBellmanResidual=True))
+        show_episode_avg_V_value=True, 
+        show_avg_Bellman_residual=True))
 
     agent.attach(bc.LearningRateController(
-        initialLearningRate=parameters.learning_rate,
-        learningRateDecay=parameters.learning_rate_decay,
+        initial_learning_rate=parameters.learning_rate,
+        learning_rate_decay=parameters.learning_rate_decay,
         periodicity=1))
 
     agent.attach(bc.DiscountFactorController(
-        initialDiscountFactor=parameters.discount,
-        discountFactorGrowth=parameters.discount_inc,
-        discountFactorMax=parameters.discount_max,
+        initial_discount_factor=parameters.discount,
+        discount_factor_growth=parameters.discount_inc,
+        discount_factor_max=parameters.discount_max,
         periodicity=1))
 
     agent.attach(bc.EpsilonController(
-        initialE=parameters.epsilon_start, 
-        eDecays=parameters.epsilon_decay, 
-        eMin=parameters.epsilon_min,
-        evaluateOn='action', 
+        initial_e=parameters.epsilon_start, 
+        e_decays=parameters.epsilon_decay, 
+        e_min=parameters.epsilon_min,
+        evaluate_on='action', 
         periodicity=1, 
-        resetEvery='none'))
+        reset_every='none'))
 
     agent.attach(bc.InterleavedTestEpochController(
         id=0, 
-        epochLength=parameters.steps_per_test, 
-        controllersToDisable=[0, 1, 2, 3, 4], 
+        epoch_length=parameters.steps_per_test, 
+        controllers_to_disable=[0, 1, 2, 3, 4], 
         periodicity=2, 
-        showScore=True,
-        summarizeEvery=parameters.period_btw_summary_perfs))
+        show_score=True,
+        summarize_every=parameters.period_btw_summary_perfs))
     
     # --- Run the experiment ---
     agent.run(parameters.epochs, parameters.steps_per_epoch)

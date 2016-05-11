@@ -29,8 +29,8 @@ class MyEnv(Environment):
             if(self.isTerminal==True):
                 break
         
-        if (self.mode==0): # Show the policy only at test time
-            self.env.render()
+            if (self.mode==0): # Show the policy only at test time
+                self.env.render()
         
         s=copy.deepcopy(self._last_observation)
         

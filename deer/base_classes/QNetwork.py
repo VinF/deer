@@ -19,9 +19,9 @@ class QNetwork(object):
         self._environment = environment
         self._df = 0
         self._lr = 0
-        self._inputDimensions = self._environment.inputDimensions()
-        self._nActions = self._environment.nActions()
-        self._batchSize = batchSize
+        self._input_dimensions = self._environment.inputDimensions()
+        self._n_actions = self._environment.nActions()
+        self._batch_size = batchSize
 
     def train(self, states, actions, rewards, nextStates, terminals):
         """ This method performs the Bellman iteration for one batch of tuples.

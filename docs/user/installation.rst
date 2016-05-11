@@ -11,22 +11,27 @@ This framework is tested to work under Python 2.7, and Python 3.5. It should als
 
 The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need theano >= 0.7 (lasagne is optional) or you can write your own neural network using your favorite framework.
 
-For running some of the examples, Matplotlib >= 1.1.1 is required. 
-For running the atari games environment, you need to install ALE >= 0.4.
+For running some of the examples, Matplotlib >= 1.1.1 is required. You also sometimes need to install specific dependencies (e.g. for the atari games, you need to install ALE >= 0.4).
 
 
 User install instructions
 --------------------------
 
-The easiest is to install the framework with pip:
+You can install the framework with pip:
 
 .. code-block:: bash
     
     pip install deer
 
+For the bleeding edge version (recommanded), you can simply use
+
+.. code-block:: bash
+
+    pip install git+git://github.com/VINF/deer.git@master
+
     
 ..
-    If you want update it to the bleeding edge version you can use pip for this with the command line below:
+    If you want to update it to the bleeding edge version you can use pip for this with the command line below:
  
     .. code-block:: bash
     
