@@ -168,7 +168,7 @@ class NeuralAgent(object):
         self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
-        if self._dataset.n_elems() < self._replay_start_size:
+        if self._dataset._n_elems < self._replay_start_size:
             return
 
         try:
@@ -294,7 +294,7 @@ class NeuralAgent(object):
         if self._mode != -1:
             action, V = self.bestAction()
         else:
-            if self._dataset.n_elems() > self._replay_start_size:
+            if self._dataset._n_elems > self._replay_start_size:
                 # e-Greedy policy
                 if self._random_state.rand() < self._epsilon:
                     action = self._random_state.randint(0, self._environment.nActions())
@@ -518,12 +518,6 @@ class DataSet(object):
                          - self._actions.getLowerBound())
         
         return indices_replay_mem, indices_tree
-
-    def n_elems(self):
-        """Get the number of samples in this dataset (i.e. the current memory replay size)."""
-
-        return self._n_elems
-
 
     def addSample(self, obs, action, reward, isTerminal, priority):
         """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
