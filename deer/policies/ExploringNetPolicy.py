@@ -39,13 +39,6 @@ class ExploringNetPolicy(Policy):
         self.random_state = random_state_
         self.training_loss_averages = []
 
-    def best_action(self, state):
-        """ Returns the best Action
-        """
-        action = self.behavior_q_network.chooseBestAction(state)
-        V = max(self.behavior_q_network.qValues(state))
-        return action, V
-
     def act(self, state):
         if self.random_state.rand() < self.epsilon:
             action = self.random_state.randint(0, self.environment.nActions())
