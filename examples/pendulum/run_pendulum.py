@@ -95,7 +95,7 @@ if __name__ == "__main__":
         periodicity=1))
 
     agent.attach(bc.TrainerController(
-        evaluateOn='action', 
+        evaluate_on='action', 
         periodicity=parameters.update_frequency, 
         show_episode_avg_V_value=True, 
         show_avg_Bellman_residual=True))
