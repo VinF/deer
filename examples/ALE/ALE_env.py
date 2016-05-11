@@ -19,11 +19,11 @@ class MyEnv(Environment):
                               {"key": "color_averaging", "value": True},
                               {"key": "repeat_action_probability", "value": 0.}]):
         self._mode = -1
-        self._modeScore = 0.0
-        self._modeEpisodeCount = 0
+        self._mode_score = 0.0
+        self._mode_episode_count = 0
 
-        self._frameSkip = frame_skip if frame_skip >= 1 else 1
-        self._randomState = rng
+        self._frame_skip = frame_skip if frame_skip >= 1 else 1
+        self._random_state = rng
 
         self._ale = ALEInterface()
         for option in ale_options:
@@ -48,15 +48,15 @@ class MyEnv(Environment):
         if mode == MyEnv.VALIDATION_MODE:
             if self._mode != MyEnv.VALIDATION_MODE:
                 self._mode = MyEnv.VALIDATION_MODE
-                self._modeScore = 0.0
-                self._modeEpisodeCount = 0
+                self._mode_score = 0.0
+                self._mode_episode_count = 0
             else:
-                self._modeEpisodeCount += 1
+                self._mode_episode_count += 1
         elif self._mode != -1: # and thus mode == -1
             self._mode = -1
 
         self._ale.reset_game()
-        for _ in range(self._randomState.randint(15)):
+        for _ in range(self._random_state.randint(15)):
             self._ale.act(0)
         self._ale.getScreenGrayscale(self._screen)
         cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
@@ -68,7 +68,7 @@ class MyEnv(Environment):
         action = self._actions[action]
         
         reward = 0
-        for _ in range(self._frameSkip):
+        for _ in range(self._frame_skip):
             reward += self._ale.act(action)
             if self.inTerminalState():
                 break
@@ -76,13 +76,13 @@ class MyEnv(Environment):
         self._ale.getScreenGrayscale(self._screen)
         cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
   
-        self._modeScore += reward
+        self._mode_score += reward
         return np.sign(reward)
 
     def summarizePerformance(self, test_data_set):
         if self.inTerminalState() == False:
-            self._modeEpisodeCount += 1
-        print("== Mean score per episode is {} over {} episodes ==".format(self._modeScore / self._modeEpisodeCount, self._modeEpisodeCount))
+            self._mode_episode_count += 1
+        print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))
 
 
     def inputDimensions(self):
