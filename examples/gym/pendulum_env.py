@@ -14,7 +14,7 @@ class MyEnv(Environment):
         # Defining the type of environment
         self.env = gym.make('CartPole-v0')
         self._last_observation = self.env.reset()
-        self.isTerminal=False
+        self.is_terminal=False
         self._input_dim = [(1,), (1,), (1,), (1,)]  # self.env.observation_space.shape is equal to 4 
                                                     # and we use only the current value in the belief state
 
@@ -22,7 +22,7 @@ class MyEnv(Environment):
         """ Simulate one time step in the environment.
         """
         
-        self._last_observation, reward, self.isTerminal, info = self.env.step(action)
+        self._last_observation, reward, self.is_terminal, info = self.env.step(action)
         if (self.mode==0): # Show the policy only at test time
             self.env.render()
             
@@ -37,7 +37,7 @@ class MyEnv(Environment):
         """
         # Reset initial observation to a random x and theta
         self._last_observation = self.env.reset()
-        self.isTerminal=False
+        self.is_terminal=False
         self.mode=mode
 
         return self._last_observation
@@ -46,7 +46,7 @@ class MyEnv(Environment):
         """Tell whether the environment reached a terminal state after the last transition (i.e. the last transition 
         that occured was terminal).
         """
-        return self.isTerminal
+        return self.is_terminal
 
     def inputDimensions(self):
         return self._input_dim  

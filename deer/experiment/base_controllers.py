@@ -57,7 +57,7 @@ class Controller(object):
         ----------
         agent : NeuralAgent
             The agent firing the event
-        terminalReached : bool
+        terminal_reached : bool
             Whether the episode ended because a terminal transition occured. This could be False 
             if the episode was stopped because its step budget was exhausted.
         reward : float
@@ -396,7 +396,7 @@ class TrainerController(Controller):
         
         self._count = 0
 
-    def onEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminal_reached, reward):
         if (self._active == False):
             return
         
@@ -447,7 +447,7 @@ class VerboseController(Controller):
         """Initializer.
         """
         if evaluateOn is not False:
-            raise Exception('For uniformity the attributes to be provided to the controllers respect PEP8 from deer0.3dev1 onwards. For instance, instead of "evaluateOn", you should now have "evaluate_on"')
+            raise Exception('For uniformity the attributes to be provided to the controllers respect PEP8 from deer0.3dev1 onwards. For instance, instead of "evaluateOn", you should now have "evaluate_on". Please have a look at https://github.com/VinF/deer/issues/28.')
 
         super(self.__class__, self).__init__()
         self._count = 0
@@ -466,7 +466,7 @@ class VerboseController(Controller):
         
         self._count = 0
 
-    def onEpisodeEnd(self, agent, terminalReached, reward):
+    def onEpisodeEnd(self, agent, terminal_reached, reward):
         if (self._active == False):
             return
         
