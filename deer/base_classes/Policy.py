@@ -2,9 +2,19 @@ class Policy(object):
     """Abstract class for all policies, i.e. objects that can take any space as input, and output an action.
     """
 
-    def __init__(self, environment_, dataset_=None):
-        self.environment = environment_
-        self.dataset = dataset_
+    def __init__(self, q_network, n_actions,random_state):
+        self.q_network = q_network
+        self.n_actions = n_actions
+        self.random_state = random_state
+
+        pass
+
+    def bestAction(self, state):
+        """ Returns the best Action
+        """
+        action = self.q_network.chooseBestAction(state)
+        V = max(self.q_network.qValues(state))
+        return action, V
 
     def act(self, state):
         """Main method of the Policy class. It can be called by agent.py, given a state,
@@ -12,16 +22,11 @@ class Policy(object):
         """
         raise NotImplementedError()
 
-    def train(self):
-        """If a dataset is used by the policy, it can be used for training.
-        """
+    def updateAfterAction(self):
         pass
 
-    def update_after_action(self):
+    def updateAfterEpisode(self):
         pass
 
-    def update_after_episode(self):
-        pass
-
-    def update_after_epoch(self):
+    def updateAfterEpoch(self):
         pass
