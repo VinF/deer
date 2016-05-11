@@ -67,7 +67,7 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-        self._behavior_policy = behavior_policy_class(environment, q_network, 0.1, replay_start_size, randomState, self._dataSet)
+        self._behavior_policy = behavior_policy_class(environment, q_network, 0.1, replay_start_size, random_state, self._dataset)
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -297,7 +297,7 @@ class NeuralAgent(object):
         if self._mode != -1:
             action, V = self.bestAction()
         else:
-            if self._dataSet.nElems() > self._replay_start_size:
+            if self._dataset.nElems() > self._replay_start_size:
                 #follow the behavior policy
                 action, V = self._behavior_policy.act(self._state)     #is self._state the only way to store/pass the state?
             else:
