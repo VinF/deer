@@ -75,15 +75,15 @@ class NeuralAgent(object):
         for i in toDisable:
             self._controllers[i].setActive(active)
 
-    def setEpsilon(self, e):
-        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
-        """
-        self._epsilon = e
-
-    def epsilon(self):
-        """ Get the epsilon for :math:`\epsilon`-greedy exploration
-        """
-        return self._epsilon
+#    def setEpsilon(self, e):
+#        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
+#        """
+#        self._epsilon = e
+#
+#    def epsilon(self):
+#        """ Get the epsilon for :math:`\epsilon`-greedy exploration
+#        """
+#        return self._epsilon
 
     def setLearningRate(self, lr):
         """ Set the learning rate for the gradient descent
@@ -216,7 +216,6 @@ class NeuralAgent(object):
                     length = self._runEpisode(length)
                 i += 1
             for c in self._controllers: c.onEpochEnd(self)
-            self._behavior_policy.updateAfterEpoch()
         for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):
@@ -306,7 +305,6 @@ class NeuralAgent(object):
                 V = 0
                 
         for c in self._controllers: c.onActionChosen(self, action)
-        self._behavior_policy.updateAfterAction()
         return action, V
 
 class AgentError(RuntimeError):

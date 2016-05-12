@@ -7,7 +7,6 @@ class NeuralNetPolicy(Policy):
     """
     def __init__(self, q_network, n_actions, epsilon, random_state):
         Policy.__init__(self, q_network, n_actions, random_state)
-        self.epsilon = epsilon
 
     def act(self, state):
         if self.random_state.rand() < self.epsilon:
@@ -17,3 +16,13 @@ class NeuralNetPolicy(Policy):
             action, V = self.bestAction(state)
 
         return action, V
+
+    def setEpsilon(self, e):
+        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
+        """
+        self._epsilon = e
+
+    def epsilon(self):
+        """ Get the epsilon for :math:`\epsilon`-greedy exploration
+        """
+        return self._epsilon

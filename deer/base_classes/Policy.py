@@ -21,12 +21,3 @@ class Policy(object):
         and should return a valid action w.r.t. the environment given to the constructor.
         """
         raise NotImplementedError()
-
-    def updateAfterAction(self):
-        pass
-
-    def updateAfterEpisode(self):
-        pass
-
-    def updateAfterEpoch(self):
-        pass
