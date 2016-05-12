@@ -20,11 +20,11 @@ class MyEnv(Environment):
             ple_options={"display_screen": True, "force_fps":True, "fps":30}):
 
         self._mode = -1
-        self._modeScore = 0.0
-        self._modeEpisodeCount = 0
+        self._mode_score = 0.0
+        self._mode_episode_count = 0
 
         self._frameSkip = frame_skip if frame_skip >= 1 else 1
-        self._randomState = rng
+        self._random_state = rng
        
         if game is None:
             raise ValueError("Game must be provided")
@@ -42,15 +42,15 @@ class MyEnv(Environment):
         if mode == MyEnv.VALIDATION_MODE:
             if self._mode != MyEnv.VALIDATION_MODE:
                 self._mode = MyEnv.VALIDATION_MODE
-                self._modeScore = 0.0
-                self._modeEpisodeCount = 0
+                self._mode_score = 0.0
+                self._mode_episode_count = 0
             else:
-                self._modeEpisodeCount += 1
+                self._mode_episode_count += 1
         elif self._mode != -1: # and thus mode == -1
             self._mode = -1
 
         self._ple.reset_game()
-        for _ in range(self._randomState.randint(15)):
+        for _ in range(self._random_state.randint(15)):
             self._ple.act(self._ple.NOOP)
         self._screen = self._ple.getScreenGrayscale()
         cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
@@ -70,13 +70,13 @@ class MyEnv(Environment):
         self._screen = self._ple.getScreenGrayscale()
         cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
   
-        self._modeScore += reward
+        self._mode_score += reward
         return np.sign(reward)
 
     def summarizePerformance(self, test_data_set):
         if self.inTerminalState() == False:
-            self._modeEpisodeCount += 1
-        print("== Mean score per episode is {} over {} episodes ==".format(self._modeScore / self._modeEpisodeCount, self._modeEpisodeCount))
+            self._mode_episode_count += 1
+        print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))
 
 
     def inputDimensions(self):

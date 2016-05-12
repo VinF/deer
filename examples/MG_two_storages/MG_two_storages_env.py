@@ -38,14 +38,14 @@ class MyEnv(Environment):
         inc_sizing=1.
         
         if (self._dist_equinox==1 and self._pred==1):
-            self._lastPonctualObservation = [0. ,[0.,0.],0., [0.,0.]]
-            self._inputDimensions = [(1,), (12,2), (1,),(1,2)]
+            self._last_ponctual_observation = [0. ,[0.,0.],0., [0.,0.]]
+            self._input_dimensions = [(1,), (12,2), (1,),(1,2)]
         elif (self._dist_equinox==1 and self._pred==0):
-            self._lastPonctualObservation = [0. ,[0.,0.],0.]
-            self._inputDimensions = [(1,), (12,2), (1,)]
+            self._last_ponctual_observation = [0. ,[0.,0.],0.]
+            self._input_dimensions = [(1,), (12,2), (1,)]
         elif (self._dist_equinox==0 and self._pred==0):
-            self._lastPonctualObservation = [0. ,[0.,0.]]
-            self._inputDimensions = [(1,), (12,2)]
+            self._last_ponctual_observation = [0. ,[0.,0.]]
+            self._input_dimensions = [(1,), (12,2)]
 
         self._rng = rng
 
@@ -98,11 +98,11 @@ class MyEnv(Environment):
         """
         ### Test 6
         if (self._dist_equinox==1 and self._pred==1):
-            self._lastPonctualObservation = [1. ,[0.,0.],0., [0.,0.]]
+            self._last_ponctual_observation = [1. ,[0.,0.],0., [0.,0.]]
         elif (self._dist_equinox==1 and self._pred==0):
-            self._lastPonctualObservation = [1. ,[0.,0.],0.]
+            self._last_ponctual_observation = [1. ,[0.,0.],0.]
         elif (self._dist_equinox==0 and self._pred==0):
-            self._lastPonctualObservation = [1. ,[0.,0.]]
+            self._last_ponctual_observation = [1. ,[0.,0.]]
 
         self.counter = 1        
         self.hydrogen_storage=0.
@@ -173,50 +173,50 @@ class MyEnv(Environment):
         
         if (Energy_needed_from_battery>0):
         # Lack of energy
-            if (self._lastPonctualObservation[0]*self.battery_size>Energy_needed_from_battery):
+            if (self._last_ponctual_observation[0]*self.battery_size>Energy_needed_from_battery):
             # If enough energy in the battery, use it
-                self._lastPonctualObservation[0]=self._lastPonctualObservation[0]-Energy_needed_from_battery/self.battery_size/self.battery_eta
+                self._last_ponctual_observation[0]=self._last_ponctual_observation[0]-Energy_needed_from_battery/self.battery_size/self.battery_eta
             else:
             # Otherwise: use what is left and then penalty                
-                reward-=(Energy_needed_from_battery-self._lastPonctualObservation[0]*self.battery_size)*2 #2euro/kWh
-                self._lastPonctualObservation[0]=0
+                reward-=(Energy_needed_from_battery-self._last_ponctual_observation[0]*self.battery_size)*2 #2euro/kWh
+                self._last_ponctual_observation[0]=0
         elif (Energy_needed_from_battery<0):
         # Surplus of energy --> load the battery
-            self._lastPonctualObservation[0]=min(1.,self._lastPonctualObservation[0]-Energy_needed_from_battery/self.battery_size*self.battery_eta)
+            self._last_ponctual_observation[0]=min(1.,self._last_ponctual_observation[0]-Energy_needed_from_battery/self.battery_size*self.battery_eta)
                     
-        #print "new self._lastPonctualObservation[0]"
-        #print self._lastPonctualObservation[0]
+        #print "new self._last_ponctual_observation[0]"
+        #print self._last_ponctual_observation[0]
         
         ### Test
-        # self._lastPonctualObservation[0] : State of the battery (0=empty, 1=full)
-        # self._lastPonctualObservation[1] : Normalized consumption at current time step (-> not available at decision time)
-        # self._lastPonctualObservation[1][1] : Normalized production at current time step (-> not available at decision time)
-        # self._lastPonctualObservation[2][0] : Prevision (accurate) for the current time step and the next 24hours
-        # self._lastPonctualObservation[2][1] : Prevision (accurate) for the current time step and the next 48hours
+        # self._last_ponctual_observation[0] : State of the battery (0=empty, 1=full)
+        # self._last_ponctual_observation[1] : Normalized consumption at current time step (-> not available at decision time)
+        # self._last_ponctual_observation[1][1] : Normalized production at current time step (-> not available at decision time)
+        # self._last_ponctual_observation[2][0] : Prevision (accurate) for the current time step and the next 24hours
+        # self._last_ponctual_observation[2][1] : Prevision (accurate) for the current time step and the next 48hours
         ###
-        self._lastPonctualObservation[1][0]=self.consumption_norm[self.counter]
-        self._lastPonctualObservation[1][1]=self.production_norm[self.counter]
+        self._last_ponctual_observation[1][0]=self.consumption_norm[self.counter]
+        self._last_ponctual_observation[1][1]=self.production_norm[self.counter]
         i=1
         if(self._dist_equinox==1):
             i=i+1
-            self._lastPonctualObservation[i]=abs(self.counter/24-(365./2))/(365./2) #171 days between 1jan and 21 Jun
+            self._last_ponctual_observation[i]=abs(self.counter/24-(365./2))/(365./2) #171 days between 1jan and 21 Jun
         if (self._pred==1):
             i=i+1
-            self._lastPonctualObservation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
-            self._lastPonctualObservation[i][1]=sum(self.production_norm[self.counter:self.counter+48])/48.#*self.rng.uniform(0.75,1.25)
+            self._last_ponctual_observation[i][0]=sum(self.production_norm[self.counter:self.counter+24])/24.#*self.rng.uniform(0.75,1.25)
+            self._last_ponctual_observation[i][1]=sum(self.production_norm[self.counter:self.counter+48])/48.#*self.rng.uniform(0.75,1.25)
                                 
         self.counter+=1
                 
         return copy.copy(reward)
 
     def inputDimensions(self):
-        return self._inputDimensions
+        return self._input_dimensions
 
     def nActions(self):
         return 3
 
     def observe(self):
-        return copy.deepcopy(self._lastPonctualObservation)     
+        return copy.deepcopy(self._last_ponctual_observation)
 
     def summarizePerformance(self, test_data_set):
         print("summary perf")
