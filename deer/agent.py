@@ -68,11 +68,11 @@ class NeuralAgent(object):
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
         if (train_policy==None):
-            self._train_policy = NeuralNetPolicy(q_network, environment.nActions(), 0.1, random_state)
+            self._train_policy = NeuralNetPolicy(q_network, environment.nActions(), random_state, 0.1)
         else:
             self._train_policy = train_policy
         if (test_policy==None):
-            self._test_policy = NeuralNetPolicy(q_network, environment.nActions(), 0., random_state)
+            self._test_policy = NeuralNetPolicy(q_network, environment.nActions(), random_state, 0.)
         else:
             self._test_policy = test_policy
 
