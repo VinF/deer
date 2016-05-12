@@ -47,7 +47,6 @@ class NeuralAgent(object):
         self._controllers = []
         self._environment = environment
         self._network = q_network
-        self._epsilon = 1
         self._replay_memory_size = replay_memory_size
         self._replay_start_size = replay_start_size
         self._batch_size = batch_size
@@ -81,26 +80,6 @@ class NeuralAgent(object):
         """ Get the epsilon for :math:`\epsilon`-greedy exploration
         """
         return self._epsilon
-
-    def setLearningRate(self, lr):
-        """ Set the learning rate for the gradient descent
-        """
-        self._network.setLearningRate(lr)
-
-    def learningRate(self):
-        """ Get the learning rate
-        """
-        return self._network.learningRate()
-
-    def setDiscountFactor(self, df):
-        """ Set the discount factor
-        """
-        self._network.setDiscountFactor(df)
-
-    def discountFactor(self):
-        """ Get the discount factor
-        """
-        return self._network.discountFactor()
 
     def overrideNextAction(self, action):
         """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
