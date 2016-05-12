@@ -1,7 +1,7 @@
 from ..base_classes import Policy
 
 
-class NeuralNetPolicy(Policy):
+class EpsilonGreedyPolicy(Policy):
     """The policy that acts greedily w.r.t. a given Q-network with probability 1-\epsilon, and acts randomly otherwise.
     It is now used as a default policy for the neural agent.
     """
