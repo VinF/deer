@@ -40,7 +40,7 @@ class MyEnv(Environment):
 
         w, h = self._ale.getScreenDims()
         self._screen = np.empty((h, w), dtype=np.uint8)
-        self._reducedScreen = np.empty((84, 84), dtype=np.uint8)
+        self._reduced_screen = np.empty((84, 84), dtype=np.uint8)
         self._actions = self._ale.getMinimalActionSet()
 
                 
@@ -59,7 +59,7 @@ class MyEnv(Environment):
         for _ in range(self._random_state.randint(15)):
             self._ale.act(0)
         self._ale.getScreenGrayscale(self._screen)
-        cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (84, 84), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
         
         return [4 * [84 * [84 * [0]]]]
         
@@ -74,7 +74,7 @@ class MyEnv(Environment):
                 break
             
         self._ale.getScreenGrayscale(self._screen)
-        cv2.resize(self._screen, (84, 84), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (84, 84), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
   
         self._mode_score += reward
         return np.sign(reward)
@@ -95,7 +95,7 @@ class MyEnv(Environment):
         return len(self._actions)
 
     def observe(self):
-        return [np.array(self._reducedScreen)]
+        return [np.array(self._reduced_screen)]
 
     def inTerminalState(self):
         return self._ale.game_over()

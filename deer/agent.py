@@ -58,12 +58,12 @@ class NeuralAgent(object):
         self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority)
         self._tmp_dataset = None # Will be created by startTesting() when necessary
         self._mode = -1
-        self._modeEpochsLength = 0
-        self._totalModeReward = 0
-        self._trainingLossAverages = []
-        self._VsOnLastEpisode = []
-        self._inEpisode = False
-        self._selectedAction = -1
+        self._mode_epochs_length = 0
+        self._total_mode_reward = 0
+        self._training_loss_averages = []
+        self._Vs_on_last_episode = []
+        self._in_episode = False
+        self._selected_action = -1
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
@@ -108,26 +108,26 @@ class NeuralAgent(object):
     def overrideNextAction(self, action):
         """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
         """
-        self._selectedAction = action
+        self._selected_action = action
 
     def avgBellmanResidual(self):
         """ Returns the average training loss on the epoch
         """
-        if (len(self._trainingLossAverages) == 0):
+        if (len(self._training_loss_averages) == 0):
             return -1
-        return np.average(self._trainingLossAverages)
+        return np.average(self._training_loss_averages)
 
     def avgEpisodeVValue(self):
         """ Returns the average V value on the episode
         """
-        if (len(self._VsOnLastEpisode) == 0):
+        if (len(self._Vs_on_last_episode) == 0):
             return -1
-        return np.average(self._VsOnLastEpisode)
+        return np.average(self._Vs_on_last_episode)
 
     def totalRewardOverLastTest(self):
         """ Returns the average sum of reward per episode
         """
-        return self._totalModeReward/self._totalModeNbrEpisode
+        return self._total_mode_reward/self._totalModeNbrEpisode
 
     def bestAction(self):
         """ Returns the best Action
@@ -149,15 +149,15 @@ class NeuralAgent(object):
         return self._mode
 
     def startMode(self, mode, epochLength):
-        if self._inEpisode:
+        if self._in_episode:
             raise AgentError("Trying to start mode while current episode is not yet finished. This method can be "
                              "called only *between* episodes for testing and validation.")
         elif mode == -1:
             raise AgentError("Mode -1 is reserved and means 'training mode'; use resumeTrainingMode() instead.")
         else:
             self._mode = mode
-            self._modeEpochsLength = epochLength
-            self._totalModeReward = 0
+            self._mode_epochs_length = epochLength
+            self._total_mode_reward = 0
             del self._tmp_dataset
             self._tmp_dataset = DataSet(self._environment, self._random_state, max_size=self._replay_memory_size)
 
@@ -177,7 +177,7 @@ class NeuralAgent(object):
         try:
             states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
             loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
-            self._trainingLossAverages.append(loss)
+            self._training_loss_averages.append(loss)
             if (self._exp_priority):
                 self._dataset.updatePriorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
 
@@ -202,14 +202,14 @@ class NeuralAgent(object):
     def run(self, nEpochs, epochLength):
         for c in self._controllers: c.onStart(self)
         i = 0
-        while i < nEpochs or self._modeEpochsLength > 0:
-            self._trainingLossAverages = []
+        while i < nEpochs or self._mode_epochs_length > 0:
+            self._training_loss_averages = []
 
             if self._mode != -1:
                 self._totalModeNbrEpisode=0
-                while self._modeEpochsLength > 0:
+                while self._mode_epochs_length > 0:
                     self._totalModeNbrEpisode += 1
-                    self._modeEpochsLength = self._runEpisode(self._modeEpochsLength)
+                    self._mode_epochs_length = self._runEpisode(self._mode_epochs_length)
             else:
                 length = epochLength
                 while length > 0:
@@ -220,21 +220,21 @@ class NeuralAgent(object):
         for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):
-        self._inEpisode = True
+        self._in_episode = True
         initState = self._environment.reset(self._mode)
         inputDims = self._environment.inputDimensions()
         for i in range(len(inputDims)):
             if inputDims[i][0] > 1:
                 self._state[i][1:] = initState[i][1:]
         
-        self._VsOnLastEpisode = []
+        self._Vs_on_last_episode = []
         while maxSteps > 0:
             maxSteps -= 1
 
             obs = self._environment.observe()
-            isTerminal = self._environment.inTerminalState()
+            is_terminal = self._environment.inTerminalState()
 
-            if (isTerminal==True):
+            if (is_terminal==True):
                 action=0
                 reward=0
             else:
@@ -243,18 +243,18 @@ class NeuralAgent(object):
                     self._state[i][-1] = obs[i]
 
                 V, action, reward = self._step()
-                self._VsOnLastEpisode.append(V)
+                self._Vs_on_last_episode.append(V)
                 if self._mode != -1:
-                    self._totalModeReward += reward
+                    self._total_mode_reward += reward
                 
-            self._addSample(obs, action, reward, isTerminal)
+            self._addSample(obs, action, reward, is_terminal)
             for c in self._controllers: c.onActionTaken(self)
             
-            if isTerminal:
+            if is_terminal:
                 break
             
-        self._inEpisode = False
-        for c in self._controllers: c.onEpisodeEnd(self, isTerminal, reward)
+        self._in_episode = False
+        for c in self._controllers: c.onEpisodeEnd(self, is_terminal, reward)
         return maxSteps
 
         
@@ -285,11 +285,11 @@ class NeuralAgent(object):
 
         return V, action, reward
 
-    def _addSample(self, ponctualObs, action, reward, isTerminal):
+    def _addSample(self, ponctualObs, action, reward, is_terminal):
         if self._mode != -1:
-            self._tmp_dataset.addSample(ponctualObs, action, reward, isTerminal, priority=1)
+            self._tmp_dataset.addSample(ponctualObs, action, reward, is_terminal, priority=1)
         else:
-            self._dataset.addSample(ponctualObs, action, reward, isTerminal, priority=1)
+            self._dataset.addSample(ponctualObs, action, reward, is_terminal, priority=1)
 
 
     def _chooseAction(self):
@@ -519,8 +519,8 @@ class DataSet(object):
         
         return indices_replay_mem, indices_tree
 
-    def addSample(self, obs, action, reward, isTerminal, priority):
-        """Store a (observation[for all subjects], action, reward, isTerminal) in the dataset. 
+    def addSample(self, obs, action, reward, is_terminal, priority):
+        """Store a (observation[for all subjects], action, reward, is_terminal) in the dataset. 
 
         Parameters
         -----------
@@ -531,7 +531,7 @@ class DataSet(object):
             The action taken after having observed [obs].
         reward : float
             The reward associated to taking this [action].
-        isTerminal : bool
+        is_terminal : bool
             Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
         priority : float
             The priority to be associated with the sample
@@ -565,7 +565,7 @@ class DataSet(object):
         # Store rest of sample
         self._actions.append(action)
         self._rewards.append(reward)
-        self._terminals.append(isTerminal)
+        self._terminals.append(is_terminal)
 
         if (self.n_elems < self._size):
             self.n_elems += 1

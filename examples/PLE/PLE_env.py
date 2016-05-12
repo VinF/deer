@@ -23,7 +23,7 @@ class MyEnv(Environment):
         self._mode_score = 0.0
         self._mode_episode_count = 0
 
-        self._frameSkip = frame_skip if frame_skip >= 1 else 1
+        self._frame_skip = frame_skip if frame_skip >= 1 else 1
         self._random_state = rng
        
         if game is None:
@@ -34,7 +34,7 @@ class MyEnv(Environment):
 
         w, h = self._ple.getScreenDims()
         self._screen = np.empty((h, w), dtype=np.uint8)
-        self._reducedScreen = np.empty((48, 48), dtype=np.uint8)
+        self._reduced_screen = np.empty((48, 48), dtype=np.uint8)
         self._actions = self._ple.getActionSet()
 
                 
@@ -53,7 +53,7 @@ class MyEnv(Environment):
         for _ in range(self._random_state.randint(15)):
             self._ple.act(self._ple.NOOP)
         self._screen = self._ple.getScreenGrayscale()
-        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
         
         return [4 * [48 * [48 * [0]]]]
         
@@ -62,13 +62,13 @@ class MyEnv(Environment):
         action = self._actions[action]
         
         reward = 0
-        for _ in range(self._frameSkip):
+        for _ in range(self._frame_skip):
             reward += self._ple.act(action)
             if self.inTerminalState():
                 break
             
         self._screen = self._ple.getScreenGrayscale()
-        cv2.resize(self._screen, (48, 48), self._reducedScreen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
   
         self._mode_score += reward
         return np.sign(reward)
@@ -89,7 +89,7 @@ class MyEnv(Environment):
         return len(self._actions)
 
     def observe(self):
-        return [np.array(self._reducedScreen)]
+        return [np.array(self._reduced_screen)]
 
     def inTerminalState(self):
         return self._ple.game_over()
