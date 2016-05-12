@@ -172,7 +172,7 @@ class SumTree:
         """
         history_size = dataset._max_history_size
         terminals = dataset._terminals
-        n_elems = dataset._n_elems
+        n_elems = dataset.n_elems
 
         lower_bound = history_size - 1
 
