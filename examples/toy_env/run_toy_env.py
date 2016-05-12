@@ -15,6 +15,8 @@ from deer.q_networks.q_net_theano import MyQNetwork
 from deer.policies.ExploringNetPolicy import ExploringNetPolicy
 from Toy_env import MyEnv as Toy_env
 import deer.experiment.base_controllers as bc
+from deer.policies.NeuralNetPolicy import NeuralNetPolicy
+
 
 class Defaults:
     # ----------------------
@@ -82,6 +84,9 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
+    train_policy = NeuralNetPolicy(qnetwork, env.nActions(), rng, 0.1)
+    test_policy = NeuralNetPolicy(qnetwork, env.nActions(), rng, 0.)
+
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
@@ -89,7 +94,9 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng, 
+        train_policy=train_policy,
+        test_policy=test_policy)
 
     # --- Bind controllers to the agent ---
     # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 

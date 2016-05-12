@@ -10,10 +10,10 @@ import copy
 import sys
 import joblib
 from warnings import warn
-from deer.policies.NeuralNetPolicy import NeuralNetPolicy
 
 from .experiment import base_controllers as controllers
 from .helper import tree 
+from deer.policies.NeuralNetPolicy import NeuralNetPolicy
 
 
 class NeuralAgent(object):
@@ -40,7 +40,7 @@ class NeuralAgent(object):
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, random_state, exp_priority=0, behavior_policy_class=NeuralNetPolicy):
+    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, random_state, exp_priority=0, train_policy=None, test_policy=None):
         inputDims = environment.inputDimensions()
 
         if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
@@ -67,7 +67,14 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-        self._behavior_policy = behavior_policy_class(q_network, environment.nActions(), 0.1, random_state)
+        if (train_policy==None):
+            self._train_policy = NeuralNetPolicy(q_network, environment.nActions(), 0.1, random_state)
+        else:
+            self._train_policy = train_policy
+        if (test_policy==None):
+            self._test_policy = NeuralNetPolicy(q_network, environment.nActions(), 0., random_state)
+        else:
+            self._test_policy = test_policy
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -294,11 +301,12 @@ class NeuralAgent(object):
     def _chooseAction(self):
         
         if self._mode != -1:
-            action, V = self.bestAction()
+            # Act according to the test policy if not in training mode
+            action, V = self._test_policy.act(self._state)
         else:
             if self._dataset.n_elems > self._replay_start_size:
-                #follow the behavior policy
-                action, V = self._behavior_policy.act(self._state)     #is self._state the only way to store/pass the state?
+                # follow the train policy
+                action, V = self._train_policy.act(self._state)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._random_state.randint(0, self._environment.nActions())

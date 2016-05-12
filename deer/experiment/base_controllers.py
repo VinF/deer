@@ -220,16 +220,15 @@ class EpsilonController(Controller):
         if self._on_action:
             self._update(agent)
 
-
     def _reset(self, agent):
         self._count = 0
-        agent._behavior_policy.setEpsilon(self._init_e)
+        agent._train_policy.setEpsilon(self._init_e)
         self._e = self._init_e
 
     def _update(self, agent):
         self._count += 1
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
-            agent._behavior_policy.setEpsilon(self._e)
+            agent._train_policy.setEpsilon(self._e)
             self._e = max(self._e - self._e_decay, self._e_min)
 
 
@@ -492,8 +491,7 @@ class VerboseController(Controller):
             print("{} {}:".format(self._string, self._count + 1))
             print("Learning rate: {}".format(agent.learningRate()))
             print("Discount factor: {}".format(agent.discountFactor()))
-            print agent._behavior_policy.epsilon()
-            print("Epsilon: {}".format(agent._behavior_policy.epsilon()))
+            print("Epsilon: {}".format(agent._train_policy.epsilon()))
         self._count += 1
 
 class FindBestController(Controller):
