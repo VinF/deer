@@ -15,7 +15,7 @@ from deer.q_networks.q_net_theano import MyQNetwork
 from deer.policies.ExploringNetPolicy import ExploringNetPolicy
 from Toy_env import MyEnv as Toy_env
 import deer.experiment.base_controllers as bc
-from deer.policies.NeuralNetPolicy import NeuralNetPolicy
+from deer.policies import EpsilonGreedyPolicy
 
 
 class Defaults:
@@ -84,8 +84,8 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
-    train_policy = NeuralNetPolicy(qnetwork, env.nActions(), rng, 0.1)
-    test_policy = NeuralNetPolicy(qnetwork, env.nActions(), rng, 0.)
+    train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.1)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(

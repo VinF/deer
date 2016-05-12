@@ -13,7 +13,7 @@ from warnings import warn
 
 from .experiment import base_controllers as controllers
 from .helper import tree 
-from deer.policies.NeuralNetPolicy import NeuralNetPolicy
+from deer.policies import EpsilonGreedyPolicy
 
 
 class NeuralAgent(object):
@@ -68,11 +68,11 @@ class NeuralAgent(object):
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
         if (train_policy==None):
-            self._train_policy = NeuralNetPolicy(q_network, environment.nActions(), random_state, 0.1)
+            self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
         else:
             self._train_policy = train_policy
         if (test_policy==None):
-            self._test_policy = NeuralNetPolicy(q_network, environment.nActions(), random_state, 0.)
+            self._test_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.)
         else:
             self._test_policy = test_policy
 
@@ -81,16 +81,6 @@ class NeuralAgent(object):
         """
         for i in toDisable:
             self._controllers[i].setActive(active)
-
-#    def setEpsilon(self, e):
-#        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
-#        """
-#        self._epsilon = e
-#
-#    def epsilon(self):
-#        """ Get the epsilon for :math:`\epsilon`-greedy exploration
-#        """
-#        return self._epsilon
 
     def setLearningRate(self, lr):
         """ Set the learning rate for the gradient descent
