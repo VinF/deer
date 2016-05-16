@@ -1,10 +1,7 @@
 """
-Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
+Neural network using Lasagne (called by q_net_theano)
 
 .. Authors: Vincent Francois-Lavet, David Taralla
-
-.. Inspired from "Human-level control through deep reinforcement learning",
-.. Nature, 518(7540):529-533, February 2015
 """
 
 import lasagne

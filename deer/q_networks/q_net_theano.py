@@ -54,9 +54,6 @@ class MyQNetwork(QNetwork):
         self.freeze_interval = freeze_interval
         self._DoubleQ = DoubleQ
         self._randomState = randomState
-        
-        QNet=TheQNet(self._batch_size, self._input_dimensions, self._n_actions, self._randomState)
-
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -125,14 +122,13 @@ class MyQNetwork(QNetwork):
 
             max_next_q_vals=self.next_q_vals[T.arange(batch_size),argmax_next_q_vals.reshape((-1,))].reshape((-1, 1))
 
-
         else:
             max_next_q_vals=T.max(self.next_q_vals, axis=1, keepdims=True)
 
 
-        T_ones_like=T.ones_like(T.ones_like(terminals) - terminals)
+        not_terminals=T.ones_like(terminals) - terminals
 
-        target = rewards + T_ones_like * thediscount * max_next_q_vals
+        target = rewards + not_terminals * thediscount * max_next_q_vals
 
         q_val=self.q_vals[T.arange(batch_size), actions.reshape((-1,))].reshape((-1, 1))
         # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
@@ -307,7 +303,6 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized network: {}".format(network_type))
 
     def _resetQHat(self):
-        
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             next_param.set_value(param.get_value())        
 
