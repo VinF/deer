@@ -40,7 +40,7 @@ class Defaults:
     DISCOUNT_INC = 1.
     DISCOUNT_MAX = 0.99
     RMS_DECAY = 0.9
-    RMS_EPSILON = 0.0001#.01
+    RMS_EPSILON = 0.0001
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
