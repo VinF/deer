@@ -22,15 +22,23 @@ class MyQNetwork(QNetwork):
     -----------
     environment : object from class Environment
     rho : float
+        Parameter for rmsprop. Default : 0.9
     rms_epsilon : float
+        Parameter for rmsprop. Default : 0.0001
     momentum : float
+        Not implemented. Default : None
     clip_delta : float
+        If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
     freeze_interval : int
+        Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
-        Number of tuples taken into account for each iteration of gradient descent
+        Number of tuples taken into account for each iteration of gradient descent. Default : 32
     network_type : str
+        Not used. Default : None
     update_rule: str
+        {sgd,rmsprop}. Default : rmsprop
     batch_accumulator : str
+        {sum,mean}. Default : sum
     randomState : numpy random number generator
     DoubleQ : bool, optional
         Activate or not the DoubleQ learning, default : False.
@@ -39,13 +47,11 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho, rms_epsilon, momentum, clip_delta, freeze_interval, batch_size, network_type, 
-                 update_rule, batch_accumulator, randomState, DoubleQ=False, TheQNet=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", randomState=np.random.RandomState(), DoubleQ=False, TheQNet=NN):
         """ Initialize environment
         
         """
         QNetwork.__init__(self,environment, batch_size)
-
         
         self.rho = rho
         self.rms_epsilon = rms_epsilon
@@ -263,7 +269,7 @@ class MyQNetwork(QNetwork):
         return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
-        """ Get the q value for one belief state
+        """ Get the q values for one belief state
 
         Arguments
         ---------
@@ -295,12 +301,6 @@ class MyQNetwork(QNetwork):
         q_vals = self.qValues(state)
 
         return np.argmax(q_vals)
-        
-    def _build(self, network_type, inputs):
-        if network_type == "General_DQN_0":
-            return self._buildDQN(inputs)
-        else:
-            raise ValueError("Unrecognized network: {}".format(network_type))
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
