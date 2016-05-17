@@ -1,12 +1,12 @@
 """
-Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
+Code for general deep Q-learning using keras that can take as inputs scalars, vectors and matrices
 
 .. Author: Vincent Francois-Lavet
 """
 
 import numpy as np
 from ..base_classes import QNetwork
-from .NN_theano import NN # Default Neural network used
+from .NN_keras import NN # Default Neural network used
 from warnings import warn
 from keras.optimizers import SGD,RMSprop
 
@@ -50,11 +50,11 @@ class MyQNetwork(QNetwork):
         QNetwork.__init__(self,environment, batch_size)
 
         
-        self.rho = rho
-        self.rms_epsilon = rms_epsilon
-        self.momentum = momentum
+        self._rho = rho
+        self._rms_epsilon = rms_epsilon
+        self._momentum = momentum
         #self.clip_delta = clip_delta
-        self.freeze_interval = freeze_interval
+        self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
         self.update_counter = 0
@@ -70,12 +70,13 @@ class MyQNetwork(QNetwork):
             warn("The update_rule used is rmsprop")
             update_rule='rmsprop'            
         
-        if (update_rule==sgd):
+        if (update_rule=="sgd"):
             optimizer = SGD(lr=self._lr, momentum=momentum, nesterov=False)
-        elif (update_rule==rmsprop):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self.rms_epsilon)
+        elif (update_rule=="rmsprop"):
+            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
         else:
-            
+            raise Exception('The update_rule '+update_rule+ 'is not'
+                            'implemented.')
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
        
@@ -84,8 +85,6 @@ class MyQNetwork(QNetwork):
         self.next_q_vals, self.next_params = Q_net._buildDQN()
         self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
 
-        print "here"
-        # FIXME
         self._resetQHat()
 
 
@@ -116,7 +115,7 @@ class MyQNetwork(QNetwork):
         average loss of the batch training
         """
         
-        if self.update_counter % self.freeze_interval == 0:
+        if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
         next_q_vals = self.next_q_vals.predict(next_states_val.tolist())
