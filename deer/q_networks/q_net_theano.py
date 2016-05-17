@@ -40,14 +40,15 @@ class MyQNetwork(QNetwork):
     batch_accumulator : str
         {sum,mean}. Default : sum
     randomState : numpy random number generator
-    DoubleQ : bool, optional
-        Activate or not the DoubleQ learning, default : False.
+        Default : random seed.
+    double_Q : bool
+        Activate or not the DoubleQ learning : not implemented yet. Default : False
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
-    TheQNet : object, optional
+    neural_network  : object
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", randomState=np.random.RandomState(), DoubleQ=False, TheQNet=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -58,8 +59,11 @@ class MyQNetwork(QNetwork):
         self.momentum = momentum
         self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
-        self._DoubleQ = DoubleQ
-        self._randomState = randomState
+        self._double_Q = double_Q
+        self._random_state = random_state
+        
+        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
+
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -93,7 +97,7 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        QNet=TheQNet(self._batch_size, self._input_dimensions, self._n_actions, self._randomState)
+        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
         self.q_vals, self.params, shape_after_conv = QNet._buildDQN(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
@@ -114,7 +118,7 @@ class MyQNetwork(QNetwork):
             broadcastable=(False, True))
         
         
-        if(self._DoubleQ==True):
+        if(self._double_Q==True):
             givens_next={}
             for i, x in enumerate(self.next_states_shared):
                 givens_next[ states[i] ] = x
@@ -203,7 +207,7 @@ class MyQNetwork(QNetwork):
             raise ValueError("Unrecognized update: {}".format(update_rule))
     
         
-        if(self._DoubleQ==True):
+        if(self._double_Q==True):
             self._train = theano.function([thediscount, thelr, next_q_curr_qnet], [loss, loss_ind, self.q_vals], updates=updates,
                                       givens=givens,
                                       on_unused_input='warn')
@@ -259,7 +263,7 @@ class MyQNetwork(QNetwork):
         if self.update_counter % self.freeze_interval == 0:
             self._resetQHat()
         
-        if(self._DoubleQ==True):
+        if(self._double_Q==True):
             self._next_q_curr_qnet = self.next_q_vals_current_qnet()
             loss, loss_ind, _ = self._train(self._df, self._lr,self._next_q_curr_qnet)
         else:

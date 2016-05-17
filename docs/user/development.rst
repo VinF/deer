@@ -14,6 +14,15 @@ For more information, you can check out this link : |how_to_contrib|.
 
 You should also make sure that you install the repository approriately for development (see :ref:`dev-install`).
 
+Guidelines for this project
+---------------------------
+
+Here are a few guidelines for this project.
+
+* Simplicity: Be easy to use but also easy to understand when one digs into the code. Any additional code should be justified by the usefulness of the feature.
+* Modularity: The user should be able to easily use its own code with any part of the deer framework (probably at the exception of the core of agent.py that is coded in a very general way).
+
+These guidelines come of course in addition to all good practices for open source development.
 
 .. _naming_conv:
 
