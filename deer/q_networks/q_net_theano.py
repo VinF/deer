@@ -26,7 +26,7 @@ class MyQNetwork(QNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Not implemented. Default : None
+        Not implemented. Default : 0
     clip_delta : float
         If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
     freeze_interval : int
@@ -39,7 +39,7 @@ class MyQNetwork(QNetwork):
         {sgd,rmsprop}. Default : rmsprop
     batch_accumulator : str
         {sum,mean}. Default : sum
-    randomState : numpy random number generator
+    random_state : numpy random number generator
         Default : random seed.
     double_Q : bool
         Activate or not the DoubleQ learning : not implemented yet. Default : False
@@ -48,7 +48,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -62,8 +62,6 @@ class MyQNetwork(QNetwork):
         self._double_Q = double_Q
         self._random_state = random_state
         
-        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
-
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -97,12 +95,12 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
-        self.q_vals, self.params, shape_after_conv = QNet._buildDQN(states)
+        Q_net=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
+        self.q_vals, self.params, shape_after_conv = Q_net._buildDQN(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildDQN(next_states)
+        self.next_q_vals, self.next_params, shape_after_conv = Q_net._buildDQN(next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(

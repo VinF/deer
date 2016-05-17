@@ -6,9 +6,10 @@ Code for general deep Q-learning that can take as inputs scalars, vectors and ma
 
 import numpy as np
 from ..base_classes import QNetwork
-from .NN_keras import NN # Default Neural network used
+from .NN_theano import NN # Default Neural network used
 from warnings import warn
-    
+from keras.optimizers import SGD,RMSprop
+
 class MyQNetwork(QNetwork):
     """
     Deep Q-learning network using Theano
@@ -21,9 +22,9 @@ class MyQNetwork(QNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Not implemented. Default : None
+        Default : 0
     clip_delta : float
-        If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
+        Not implemented.
     freeze_interval : int
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
@@ -34,55 +35,58 @@ class MyQNetwork(QNetwork):
         {sgd,rmsprop}. Default : rmsprop
     batch_accumulator : str
         {sum,mean}. Default : sum
-    randomState : numpy random number generator
+    random_state : numpy random number generator
     DoubleQ : bool, optional
-        Activate or not the DoubleQ learning : not implemented yet.
+        Activate or not the DoubleQ learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
-    TheQNet : object, optional
-        default is deer.qnetworks.NN_theano
+    neural_network : object, optional
+        default is deer.qnetworks.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", randomState=np.random.RandomState(), DoubleQ=False, TheQNet=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
         QNetwork.__init__(self,environment, batch_size)
 
         
-        #self.rho = rho
-        #self.rms_epsilon = rms_epsilon
-        #self.momentum = momentum
+        self.rho = rho
+        self.rms_epsilon = rms_epsilon
+        self.momentum = momentum
         #self.clip_delta = clip_delta
         self.freeze_interval = freeze_interval
-        self._DoubleQ = DoubleQ
-        self._randomState = randomState
+        self._double_Q = double_Q
+        self._random_state = random_state
         self.update_counter = 0
                 
         states=[]   # list of symbolic variables for each of the k element in the belief state
                     # --> [ T.tensor4 if observation of element=matrix, T.tensor3 if vector, T.tensor 2 if scalar ]
         next_states=[] # idem than states at t+1 
 
-        QNet = TheQNet(self._batch_size, self._input_dimensions, self._n_actions, self._randomState)
-        self.q_vals, self.params = QNet._buildDQN()
+        Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
+        self.q_vals, self.params = Q_net._buildDQN()
         
         if update_rule == 'deepmind_rmsprop':
             warn("The update_rule used is rmsprop")
             update_rule='rmsprop'            
+        
+        if (update_rule==sgd):
+            optimizer = SGD(lr=self._lr, momentum=momentum, nesterov=False)
+        elif (update_rule==rmsprop):
+            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self.rms_epsilon)
+        else:
             
-        self.q_vals.compile(optimizer=update_rule,
-                            loss='mse')
+        
+        self.q_vals.compile(optimizer=optimizer, loss='mse')
        
         #print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_q_vals, self.next_params = QNet._buildDQN()
+        self.next_q_vals, self.next_params = Q_net._buildDQN()
         self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
 
         print "here"
         # FIXME
         self._resetQHat()
-
-        # TODO : DoubleQ
-        #max_next_q_vals=T.max(self.next_q_vals, axis=1, keepdims=True)
 
 
     def toDump(self):
@@ -116,8 +120,13 @@ class MyQNetwork(QNetwork):
             self._resetQHat()
         
         next_q_vals = self.next_q_vals.predict(next_states_val.tolist())
-                        
-        max_next_q_vals=np.max(next_q_vals, axis=1, keepdims=True)
+        
+        if(self._double_Q==True):
+            next_q_vals_current_qnet=self.q_vals.predict(next_states_val.tolist())
+            argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
+            max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
+        else:
+            max_next_q_vals=np.max(next_q_vals, axis=1, keepdims=True)
 
         not_terminals=np.ones_like(terminals_val) - terminals_val
         
