@@ -36,8 +36,8 @@ class MyQNetwork(QNetwork):
     batch_accumulator : str
         {sum,mean}. Default : sum
     random_state : numpy random number generator
-    DoubleQ : bool, optional
-        Activate or not the DoubleQ learning.
+    double_Q : bool, optional
+        Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
     neural_network : object, optional
         default is deer.qnetworks.NN_keras
@@ -133,18 +133,20 @@ class MyQNetwork(QNetwork):
         
         q_vals=self.q_vals.predict(states_val.tolist())
 
+        # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
+        q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
+        diff = - q_val + target 
+        loss_ind=0.5*pow(diff,2)
+        
+        print loss_ind
+        
         q_vals[  np.arange(self._batch_size), actions_val.reshape((-1,))  ] = target
                 
         # Is it possible to use something more flexible than this? Only some elements of next_q_vals are actual value that I target. My loss should only take these into account?
         # Workaround here is that many values are already "exact" in this update
         loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
                 
-        self.update_counter += 1
-        
-        # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
-        q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
-        diff = - q_val + target 
-        loss_ind=0.5*pow(diff,2)
+        self.update_counter += 1        
 
         return np.sqrt(loss),loss_ind
 

@@ -17,15 +17,15 @@ class NN():
     -----------
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    inputDimensions :
-    n_Actions :
-    randomState : numpy random number generator
+    input_dimensions :
+    n_actions :
+    random_state : numpy random number generator
     """
-    def __init__(self, batchSize, inputDimensions, n_Actions, randomState):
-        self._inputDimensions=inputDimensions
-        self._batchSize=batchSize
-        self._randomState=randomState
-        self._nActions=n_Actions
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state):
+        self._input_dimensions=input_dimensions
+        self._batch_size=batch_size
+        self._random_state=random_state
+        self._n_actions=n_actions
 
     def _buildDQN(self):
         """
@@ -34,20 +34,18 @@ class NN():
         layers=[]
         outs_conv=[]
         inputs=[]
-        #print "inputs"
-        #print inputs
 
-        for i, dim in enumerate(self._inputDimensions):
+        for i, dim in enumerate(self._input_dimensions):
             nfilter=[]
             print i
-            # - observation[i] is a FRAME - FIXME
-            if len(dim) == 3: 
+            # - observation[i] is a FRAME
+            if len(dim) == 3: #FIXME
                 model = Sequential()
                 layers.append(model.layers[-1])
                 model.add(Flatten())
                 
-            # - observation[i] is a VECTOR - FIXME
-            elif len(dim) == 2 and dim[0] > 3:                                
+            # - observation[i] is a VECTOR
+            elif len(dim) == 2 and dim[0] > 3: #FIXME
                 model = Sequential()
                 layers.append(model.layers[-1])
                 model.add(Flatten())
@@ -81,24 +79,18 @@ class NN():
                         inputs.append(input)
                         out=input
                     
-#                    layers.append(model.layers[-1])
-#                    model.add(Flatten())
-                #models_conv.append(model)
-
-#            models_conv.append(model)
             outs_conv.append(out)
         print "inputs"
         print inputs
         print "outs_conv"
         print outs_conv
-        ## Merge of layers
 
         x = merge(outs_conv, mode='concat')        
         
         # we stack a deep fully-connected network on top
         x = Dense(50, activation='relu')(x)
         x = Dense(20, activation='relu')(x)
-        out = Dense(self._nActions)(x)
+        out = Dense(self._n_actions)(x)
 
         model = Model(input=inputs, output=out)
         layers=model.layers
@@ -109,12 +101,8 @@ class NN():
         params = [ param
                     for layer in layers 
                     for param in layer.trainable_weights ]
-        print params
-#        params.append([ param
-#                    for layer in layers 
-#                    for param in layer.non_trainable_weights])
 
-        return model, params#.layers[-1].output #, params, None
+        return model, params
 
 if __name__ == '__main__':
     pass
