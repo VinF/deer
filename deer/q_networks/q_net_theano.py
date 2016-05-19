@@ -1,5 +1,5 @@
 """
-Code for general deep Q-learning that can take as inputs scalars, vectors and matrices
+Code for general deep Q-learning using Theano that can take as inputs scalars, vectors and matrices
 
 .. Authors: Vincent Francois-Lavet, David Taralla
 
@@ -26,7 +26,7 @@ class MyQNetwork(QNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Not implemented. Default : None
+        Not implemented. Default : 0
     clip_delta : float
         If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
     freeze_interval : int
@@ -39,7 +39,7 @@ class MyQNetwork(QNetwork):
         {sgd,rmsprop}. Default : rmsprop
     batch_accumulator : str
         {sum,mean}. Default : sum
-    randomState : numpy random number generator
+    random_state : numpy random number generator
         Default : random seed.
     double_Q : bool
         Activate or not the DoubleQ learning : not implemented yet. Default : False
@@ -48,23 +48,20 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=None, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
         QNetwork.__init__(self,environment, batch_size)
-
         
-        self.rho = rho
-        self.rms_epsilon = rms_epsilon
-        self.momentum = momentum
-        self.clip_delta = clip_delta
-        self.freeze_interval = freeze_interval
+        self._rho = rho
+        self._rms_epsilon = rms_epsilon
+        self._momentum = momentum
+        self._clip_delta = clip_delta
+        self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
         
-        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
-
         self.update_counter = 0
         
         states=[]   # list of symbolic variables for each of the k element in the belief state
@@ -98,12 +95,12 @@ class MyQNetwork(QNetwork):
         thediscount = T.scalar(name='thediscount', dtype=theano.config.floatX)
         thelr = T.scalar(name='thelr', dtype=theano.config.floatX)
         
-        QNet=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
-        self.q_vals, self.params, shape_after_conv = QNet._buildDQN(states)
+        Q_net=neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
+        self.q_vals, self.params, shape_after_conv = Q_net._buildDQN(states)
         
         print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
 
-        self.next_q_vals, self.next_params, shape_after_conv = QNet._buildDQN(next_states)
+        self.next_q_vals, self.next_params, shape_after_conv = Q_net._buildDQN(next_states)
         self._resetQHat()
 
         self.rewards_shared = theano.shared(
@@ -145,7 +142,7 @@ class MyQNetwork(QNetwork):
         # Note : Strangely (target - q_val) lead to problems with python 3.5, theano 0.8.0rc and floatX=float32...
         diff = - q_val + target 
 
-        if self.clip_delta > 0:
+        if self._clip_delta > 0:
             # This loss function implementation is taken from
             # https://github.com/spragunr/deep_q_rl
             # If we simply take the squared clipped diff as our loss,
@@ -157,9 +154,9 @@ class MyQNetwork(QNetwork):
             # This is equivalent to declaring d loss/d q_vals to be
             # equal to the clipped diff, then backpropagating from
             # there, which is what the DeepMind implementation does.
-            quadratic_part = T.minimum(abs(diff), self.clip_delta)
+            quadratic_part = T.minimum(abs(diff), self._clip_delta)
             linear_part = abs(diff) - quadratic_part
-            loss_ind = 0.5 * quadratic_part ** 2 + self.clip_delta * linear_part
+            loss_ind = 0.5 * quadratic_part ** 2 + self._clip_delta * linear_part
         else:
             loss_ind = 0.5 * diff ** 2
 
@@ -190,13 +187,13 @@ class MyQNetwork(QNetwork):
         updates = []
         
         if update_rule == 'deepmind_rmsprop':
-            updates = deepmind_rmsprop(loss, self.params, gparams, thelr, self.rho,
-                                       self.rms_epsilon)
+            updates = deepmind_rmsprop(loss, self.params, gparams, thelr, self._rho,
+                                       self._rms_epsilon)
         elif update_rule == 'rmsprop':
             for i,(p, g) in enumerate(zip(self.params, gparams)):                
                 acc = theano.shared(p.get_value() * 0.)
-                acc_new = rho * acc + (1 - self.rho) * g ** 2
-                gradient_scaling = T.sqrt(acc_new + self.rms_epsilon)
+                acc_new = rho * acc + (1 - self._rho) * g ** 2
+                gradient_scaling = T.sqrt(acc_new + self._rms_epsilon)
                 g = g / gradient_scaling
                 updates.append((acc, acc_new))
                 updates.append((p, p - thelr * g))
@@ -261,7 +258,7 @@ class MyQNetwork(QNetwork):
         self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
         self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
-        if self.update_counter % self.freeze_interval == 0:
+        if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
         if(self._double_Q==True):
@@ -274,7 +271,7 @@ class MyQNetwork(QNetwork):
         return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
-        """ Get the q value for one belief state
+        """ Get the q values for one belief state
 
         Arguments
         ---------
@@ -306,12 +303,6 @@ class MyQNetwork(QNetwork):
         q_vals = self.qValues(state)
 
         return np.argmax(q_vals)
-        
-    def _build(self, network_type, inputs):
-        if network_type == "General_DQN_0":
-            return self._buildDQN(inputs)
-        else:
-            raise ValueError("Unrecognized network: {}".format(network_type))
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):

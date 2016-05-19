@@ -33,7 +33,7 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'deepmind_rmsprop'
+    UPDATE_RULE = 'rmsprop'
     BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.99
