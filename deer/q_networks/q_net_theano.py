@@ -1,5 +1,5 @@
 """
-Code for general deep Q-learning using theano that can take as inputs scalars, vectors and matrices
+Code for general deep Q-learning using Theano that can take as inputs scalars, vectors and matrices
 
 .. Authors: Vincent Francois-Lavet, David Taralla
 

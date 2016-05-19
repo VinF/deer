@@ -1,5 +1,5 @@
 """
-Code for general deep Q-learning using keras that can take as inputs scalars, vectors and matrices
+Code for general deep Q-learning using Keras that can take as inputs scalars, vectors and matrices
 
 .. Author: Vincent Francois-Lavet
 """
@@ -12,7 +12,7 @@ from keras.optimizers import SGD,RMSprop
 
 class MyQNetwork(QNetwork):
     """
-    Deep Q-learning network using Theano
+    Deep Q-learning network using Keras
     
     Parameters
     -----------
