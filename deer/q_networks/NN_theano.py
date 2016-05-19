@@ -19,15 +19,15 @@ class NN():
     -----------
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    inputDimensions :
+    input_dimensions :
     n_Actions :
-    randomState : numpy random number generator
+    random_state : numpy random number generator
     """
-    def __init__(self, batchSize, inputDimensions, n_Actions, randomState):
-        self._inputDimensions=inputDimensions
-        self._batchSize=batchSize
-        self._randomState=randomState
-        self._nActions=n_Actions
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state):
+        self._input_dimensions=input_dimensions
+        self._batch_size=batch_size
+        self._random_state=random_state
+        self._n_actions=n_actions
         
     def _buildDQN(self, inputs):
         """
@@ -37,7 +37,7 @@ class NN():
         outs_conv=[]
         outs_conv_shapes=[]
         
-        for i, dim in enumerate(self._inputDimensions):
+        for i, dim in enumerate(self._input_dimensions):
             nfilter=[]
             
             # - observation[i] is a FRAME -
@@ -53,10 +53,10 @@ class NN():
                 nfilter.append(32)
                 stride_size=4
                 l_conv1 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=inputs[i].reshape((self._batchSize,dim[0],newR,newC)),
+                    rng=self._random_state,
+                    input=inputs[i].reshape((self._batch_size,dim[0],newR,newC)),
                     filter_shape=(nfilter[0],dim[0],fR,fC),
-                    image_shape=(self._batchSize,dim[0],newR,newC),
+                    image_shape=(self._batch_size,dim[0],newR,newC),
                     poolsize=(pR,pC),
                     stride=(stride_size,stride_size)
                 )
@@ -73,10 +73,10 @@ class NN():
                 nfilter.append(64)
                 stride_size=2
                 l_conv2 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                    rng=self._random_state,
+                    input=l_conv1.output.reshape((self._batch_size,nfilter[0],newR,newC)),
                     filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                    image_shape=(self._batchSize,nfilter[0],newR,newC),
+                    image_shape=(self._batch_size,nfilter[0],newR,newC),
                     poolsize=(pR,pC),
                     stride=(stride_size,stride_size)
                 )
@@ -93,10 +93,10 @@ class NN():
                 nfilter.append(64)
                 stride_size=1
                 l_conv3 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv2.output.reshape((self._batchSize,nfilter[1],newR,newC)),
+                    rng=self._random_state,
+                    input=l_conv2.output.reshape((self._batch_size,nfilter[1],newR,newC)),
                     filter_shape=(nfilter[2],nfilter[1],fR,fC),
-                    image_shape=(self._batchSize,nfilter[1],newR,newC),
+                    image_shape=(self._batch_size,nfilter[1],newR,newC),
                     poolsize=(pR,pC),
                     stride=(stride_size,stride_size)
                 )
@@ -123,10 +123,10 @@ class NN():
                 stride_size=1
 
                 l_conv1 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=inputs[i].reshape((self._batchSize,1,newR,newC)),
+                    rng=self._random_state,
+                    input=inputs[i].reshape((self._batch_size,1,newR,newC)),
                     filter_shape=(nfilter[0],1,fR,fC),
-                    image_shape=(self._batchSize,1,newR,newC),
+                    image_shape=(self._batch_size,1,newR,newC),
                     poolsize=(pR,pC),
                     stride=(stride_size,stride_size)
                 )                
@@ -143,10 +143,10 @@ class NN():
                 stride_size=1
 
                 l_conv2 = ConvolutionalLayer(
-                    rng=self._randomState,
-                    input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                    rng=self._random_state,
+                    input=l_conv1.output.reshape((self._batch_size,nfilter[0],newR,newC)),
                     filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                    image_shape=(self._batchSize,nfilter[0],newR,newC),
+                    image_shape=(self._batch_size,nfilter[0],newR,newC),
                     poolsize=(pR,pC),
                     stride=(stride_size,stride_size)
                 )                
@@ -173,10 +173,10 @@ class NN():
                     stride_size=1
 
                     l_conv1 = ConvolutionalLayer(
-                        rng=self._randomState,
-                        input=inputs[i].reshape((self._batchSize,1,newR,newC)),
+                        rng=self._random_state,
+                        input=inputs[i].reshape((self._batch_size,1,newR,newC)),
                         filter_shape=(nfilter[0],1,fR,fC),
-                        image_shape=(self._batchSize,1,newR,newC),
+                        image_shape=(self._batch_size,1,newR,newC),
                         poolsize=(pR,pC),
                         stride=(stride_size,stride_size)
                     )                
@@ -192,10 +192,10 @@ class NN():
                     stride_size=1
                     
                     l_conv2 = ConvolutionalLayer(
-                        rng=self._randomState,
-                        input=l_conv1.output.reshape((self._batchSize,nfilter[0],newR,newC)),
+                        rng=self._random_state,
+                        input=l_conv1.output.reshape((self._batch_size,nfilter[0],newR,newC)),
                         filter_shape=(nfilter[1],nfilter[0],fR,fC),
-                        image_shape=(self._batchSize,nfilter[0],newR,newC),
+                        image_shape=(self._batch_size,nfilter[0],newR,newC),
                         poolsize=(pR,pC),
                         stride=(stride_size,stride_size)
                     )                
@@ -215,28 +215,28 @@ class NN():
         
         
         ## Custom merge of layers
-        output_conv = outs_conv[0].flatten().reshape((self._batchSize, np.prod(outs_conv_shapes[0])))
+        output_conv = outs_conv[0].flatten().reshape((self._batch_size, np.prod(outs_conv_shapes[0])))
         shapes=np.prod(outs_conv_shapes[0])
 
         if (len(outs_conv)>1):
             for out_conv,out_conv_shape in zip(outs_conv[1:],outs_conv_shapes[1:]):
-                output_conv=T.concatenate((output_conv, out_conv.flatten().reshape((self._batchSize, np.prod(out_conv_shape)))) , axis=1)
+                output_conv=T.concatenate((output_conv, out_conv.flatten().reshape((self._batch_size, np.prod(out_conv_shape)))) , axis=1)
                 shapes+=np.prod(out_conv_shape)
                 shapes
 
                 
-        self.hiddenLayer1 = HiddenLayer(rng=self._randomState, input=output_conv,
+        self.hiddenLayer1 = HiddenLayer(rng=self._random_state, input=output_conv,
                                        n_in=shapes, n_out=50,
                                        activation=T.tanh)                                       
         layers.append(self.hiddenLayer1)
 
-        self.hiddenLayer2 = HiddenLayer(rng=self._randomState, input=self.hiddenLayer1.output,
+        self.hiddenLayer2 = HiddenLayer(rng=self._random_state, input=self.hiddenLayer1.output,
                                        n_in=50, n_out=20,
                                        activation=T.tanh)
         layers.append(self.hiddenLayer2)
 
-        self.outLayer = HiddenLayer(rng=self._randomState, input=self.hiddenLayer2.output,
-                                       n_in=20, n_out=self._nActions,
+        self.outLayer = HiddenLayer(rng=self._random_state, input=self.hiddenLayer2.output,
+                                       n_in=20, n_out=self._n_actions,
                                        activation=None)
         layers.append(self.outLayer)
 
