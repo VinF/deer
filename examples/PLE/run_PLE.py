@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent_ale import ALEAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.q_networks.q_net_keras import MyQNetwork
 from PLE_env import MyEnv as PLE_env
 import deer.experiment.base_controllers as bc
 
@@ -34,7 +34,7 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'deepmind_rmsprop'
+    UPDATE_RULE = 'rmsprop'
     BATCH_ACCUMULATOR = 'sum'
     LEARNING_RATE = 0.0005
     LEARNING_RATE_DECAY = 0.99

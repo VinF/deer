@@ -128,7 +128,7 @@ class NN():
                     filter_shape=(nfilter[0],1,fR,fC),
                     image_shape=(self._batchSize,1,newR,newC),
                     poolsize=(pR,pC),
-                    stride=(stride_size,stride_size)                    
+                    stride=(stride_size,stride_size)
                 )                
                 layers.append(l_conv1)
                 

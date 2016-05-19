@@ -37,23 +37,32 @@ class NN():
 
         for i, dim in enumerate(self._input_dimensions):
             nfilter=[]
-            print i
             # - observation[i] is a FRAME
             if len(dim) == 3: #FIXME
-                model = Sequential()
-                layers.append(model.layers[-1])
-                model.add(Flatten())
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
+                #reshaped=Reshape((dim[0],dim[1],dim[2]), input_shape=(dim[0],dim[1]))(input)
+                x = Convolution2D(32, 8, 8, border_mode='valid')(input)
+                x = MaxPooling2D(pool_size=(4, 4), strides=None, border_mode='valid')(x)
+                x = Convolution2D(64, 4, 4, border_mode='valid')(x)
+                x = MaxPooling2D(pool_size=(2, 2), strides=None, border_mode='valid')(x)
+                x = Convolution2D(64, 3, 3)(x)
+                
+                out = Flatten()(x)
                 
             # - observation[i] is a VECTOR
             elif len(dim) == 2 and dim[0] > 3: #FIXME
-                model = Sequential()
-                layers.append(model.layers[-1])
-                model.add(Flatten())
+                input = Input(shape=(dim[0],dim[1]))
+                inputs.append(input)
+                reshaped=Reshape((1,dim[0],dim[1]), input_shape=(dim[0],dim[1]))(input)
+                x = Convolution2D(16, 2, 1, border_mode='valid')(reshaped)
+                x = Convolution2D(16, 2, 2)(x)
+                
+                out = Flatten()(x)
+
             # - observation[i] is a SCALAR -
             else:
                 if dim[0] > 3:
-                    print "here"
-                    print dim[0]
                     # this returns a tensor
                     input = Input(shape=(dim[0],))
                     inputs.append(input)
@@ -64,13 +73,10 @@ class NN():
                     out = Flatten()(x)
                                         
                 else:
-                    print "here2"
-                    print (dim[0])
-                    
                     if(len(dim) == 2):
                     # this returns a tensor
 
-                        input = Input(shape=(dim[0],dim[1],))
+                        input = Input(shape=(dim[1],dim[0]))
                         inputs.append(input)
                         out = Flatten()(input)
 
@@ -80,12 +86,11 @@ class NN():
                         out=input
                     
             outs_conv.append(out)
-        print "inputs"
-        print inputs
-        print "outs_conv"
-        print outs_conv
 
-        x = merge(outs_conv, mode='concat')        
+        if len(outs_conv)>1:
+            x = merge(outs_conv, mode='concat')
+        else:
+            x= outs_conv [0]
         
         # we stack a deep fully-connected network on top
         x = Dense(50, activation='relu')(x)
@@ -94,8 +99,6 @@ class NN():
 
         model = Model(input=inputs, output=out)
         layers=model.layers
-        print layers
-        
         
         # Grab all the parameters together.
         params = [ param

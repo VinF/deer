@@ -59,10 +59,6 @@ class MyQNetwork(QNetwork):
         self._random_state = random_state
         self.update_counter = 0
                 
-        states=[]   # list of symbolic variables for each of the k element in the belief state
-                    # --> [ T.tensor4 if observation of element=matrix, T.tensor3 if vector, T.tensor 2 if scalar ]
-        next_states=[] # idem than states at t+1 
-
         Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
         self.q_vals, self.params = Q_net._buildDQN()
         
@@ -80,8 +76,6 @@ class MyQNetwork(QNetwork):
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
        
-        #print("Number of neurons after spatial and temporal convolution layers: {}".format(shape_after_conv))
-
         self.next_q_vals, self.next_params = Q_net._buildDQN()
         self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
 
@@ -137,12 +131,12 @@ class MyQNetwork(QNetwork):
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
         diff = - q_val + target 
         loss_ind=0.5*pow(diff,2)
-        
-        print loss_ind
-        
+                
         q_vals[  np.arange(self._batch_size), actions_val.reshape((-1,))  ] = target
                 
-        # Is it possible to use something more flexible than this? Only some elements of next_q_vals are actual value that I target. My loss should only take these into account?
+        # Is it possible to use something more flexible than this? 
+        # Only some elements of next_q_vals are actual value that I target. 
+        # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
         loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
                 
