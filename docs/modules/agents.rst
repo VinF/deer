@@ -1,6 +1,6 @@
 .. _`agents`:
 
-:mod:`Agents`
+:mod:`Agent`
 =============
 
 .. automodule:: deer.agent

@@ -92,9 +92,6 @@ class MyQNetwork(QNetwork):
         """
         Train one batch.
 
-        1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
-        2. perform batch training
-
         Parameters
         -----------
         states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
@@ -106,7 +103,8 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        average loss of the batch training
+        Average loss of the batch training
+        Individual losses for each tuple
         """
         
         if self.update_counter % self._freeze_interval == 0:

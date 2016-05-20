@@ -1,6 +1,6 @@
 .. _`controllers`:
 
-:mod:`Controllers`
+:mod:`Controller`
 ===================
 
 .. automodule:: deer.experiment.base_controllers

@@ -1,4 +1,4 @@
-:mod:`Q-networks`
+:mod:`Q-network`
 ===================
 
 .. automodule:: deer.base_classes.QNetwork
