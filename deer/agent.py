@@ -196,6 +196,7 @@ class NeuralAgent(object):
                 i += 1
             for c in self._controllers: c.onEpochEnd(self)
             
+        self._environment.end()
         for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):

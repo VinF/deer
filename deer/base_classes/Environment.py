@@ -99,8 +99,8 @@ class Environment(object):
         raise NotImplementedError()
 
     def summarizePerformance(self, test_data_set):
-        """Additional optional hook that can be used to show a summary of the performance of the agent on the 
-        environment in the current mode (in validation and or generalization for example).
+        """Optional hook that can be used to show a summary of the performance of the agent on the
+        environment in the current mode.
 
         Parameters
         -----------
@@ -122,3 +122,9 @@ class Environment(object):
         """
 
         return np.float32
+
+    def end(self):
+        """Optional hook called at the end of all epochs
+        """
+
+        pass
