@@ -106,7 +106,8 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        average loss of the batch training
+        Average loss of the batch training
+        Individual losses for each tuple
         """
         
         if self.update_counter % self._freeze_interval == 0:

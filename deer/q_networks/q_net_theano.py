@@ -246,6 +246,7 @@ class MyQNetwork(QNetwork):
         Returns
         -------
         average loss of the batch training
+        individual losses for each tuple
         """
         
         for i in range(len(self.states_shared)):
