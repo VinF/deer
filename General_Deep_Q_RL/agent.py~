@@ -460,22 +460,16 @@ class CircularBuffer(object):
         self.dtype = dtype
     
     def append(self, obj):
-        """
-        update the queue indices
-        """
         if self._cur >= self._size:
             self._lb += 1
             self._ub += 1
 
-        """
-        shift the memory
-        """
-        if self._ub > self._trueSize:
-            self._data[0:self._size] = self._data[self._lb-1:]
+        if self._ub >= self._trueSize:
+            self._data[0:self._size-1] = self._data[self._lb+1:]
             self._lb  = 0
             self._ub  = self._size
             self._cur = self._size - 1
-
+            
         self._data[self._cur] = obj
 
         self._cur += 1
