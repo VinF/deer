@@ -3,24 +3,10 @@
 :mod:`Toy environment with time series`
 =======================================
 
-Description
-########### 
+Description of the environement
+###############################
 
-The environment simulates the possibility of buying or selling a good. The agent can either have one unit or zero unit of that good. At each transaction with the market, the agent obtains a reward equivalent to the price of the good when selling it and the opposite when buying. In addition, a penalty of 0.5 (negative reward) is added for each transaction. 
-
-This example is defined in ``examples/toy_env``.
-The state of the agent is made up of a past history of two punctual observations:
-
-* The price signal
-* Either the agent possesses the good or not (1 or 0)
-
-It is important to note that the agent has no direct information about the future price signal.
-
-Two actions are possible for the agent:
-
-* Action 0 corresponds to selling if the agent possesses one unit or idle if the agent possesses zero unit.
-* Action 1 corresponds to buying if the agent possesses zero unit or idle if the agent already possesses one unit.
-
+This environment simulates the possibility of buying or selling a good. The agent can either have one unit or zero unit of that good. At each transaction with the market, the agent obtains a reward equivalent to the price of the good when selling it and the opposite when buying. In addition, a penalty of 0.5 (negative reward) is added for each transaction.
 
 The price pattern is made by repeating the following signal plus a random constant between 0 and 3:
 
@@ -29,19 +15,62 @@ The price pattern is made by repeating the following signal plus a random consta
    :alt: Toy example price pattern
    :align: center
 
+Let's now see how this environement is built by looking into the file ``Toy_env.py`` in |toy_env_folder|. It is important to note that any environment derives from the base class :ref:`env_interface` and you can refer to it in order to understand the required methods and their usage.
 
-The price signal is built following the same rules for the training and the validation environments which allows the agent to learn a strategy that exploits this successfully.
+.. |toy_env_folder| raw:: html
+
+   <a href="https://github.com/VinF/deer/tree/master/examples/toy_env" target="_blank">examples/toy_env/</a>
+
+..
+    The price signal is built following the same rules for the training and the validation environments which allows the agent to learn a strategy that exploits this successfully.
+    
+    
+    .. literalinclude:: ../../../examples/toy_env/Toy_env.py
+       :language: python
+       :lines: 21-75
+    
+    .. literalinclude:: ../../../examples/toy_env/Toy_env.py
+       :language: python
+       :lines: 116-130
+
+
+How to run
+##########
+
+A minimalist way of running this example can be found in the file ``run_toy_env_simple.py`` in |toy_env_folder|.
+
+* First, we need to import the agent, the Q-network, the environement and some controllers
+
+.. literalinclude:: ../../../examples/toy_env/run_toy_env_simple.py
+   :language: python
+   :lines: 6-11
+   :linenos:
+
+
+* Then we instantiate the different elements as follows:
+
+.. literalinclude:: ../../../examples/toy_env/run_toy_env_simple.py
+   :language: python
+   :lines: 13-51
+   :linenos:
+
 
 Results
 ########
 
-Navigate to the folder ``examples/toy_env`` in a terminal window. The example can then be run by using
+Navigate to the folder ``examples/toy_env/`` in a terminal window. The example can then be run by using
+
+.. code-block:: bash
+
+    python run_toy_env_simple.py
+
+You can also choose the full version of the launcher that allows to specify the hyperparameters instead of choosing the default ones.
 
 .. code-block:: bash
 
     python run_toy_env.py
 
-After 10 epochs, the following graph is obtained:
+After 10 epochs, this kind of graph is obtained:
 
 .. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/plot_toy_example.png
    :width: 250 px

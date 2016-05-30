@@ -6,7 +6,7 @@ NAME = 'deer'
 VERSION = '0.3.dev1'
 AUTHOR = "Vincent Francois-Lavet"
 AUTHOR_EMAIL = "v.francois@ulg.ac.be"
-URL = 'https://github.com/VinF/General_Deep_Q_RL'
+URL = 'https://github.com/VinF/deer'
 DESCRIPTION = 'Framework for deep reinforcement learning'
 with open('README.rst') as f:
     LONG_DESCRIPTION = f.read()

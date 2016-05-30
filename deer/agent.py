@@ -28,28 +28,29 @@ class NeuralAgent(object):
     q_network : object from class QNetwork
         The q_network associated to the agent
     replay_memory_size : int
-        Size of the replay memory
+        Size of the replay memory. Default : 1000000
     replay_start_size : int
-        Number of observations (=number of time steps taken) in the replay memory before starting learning
+        Number of observations (=number of time steps taken) in the replay memory before starting learning. Default: minimum possible according to environment.inputDimensions().
     batch_size : int
-        Number of tuples taken into account for each iteration of gradient descent
+        Number of tuples taken into account for each iteration of gradient descent. Default : 32
     random_state : numpy random number generator
-        Seed
-    exp_priority : float, optional
+        Default : random seed.
+    exp_priority : float
         The exponent that determines how much prioritization is used, default is 0 (uniform priority).
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
     """
 
-    def __init__(self, environment, q_network, replay_memory_size, replay_start_size, batch_size, random_state, exp_priority=0, train_policy=None, test_policy=None):
+    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None):
         inputDims = environment.inputDimensions()
-
-        if replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))):
+        
+        if replay_start_size == None:
+            replay_start_size = max(inputDims[i][0] for i in range(len(inputDims)))
+        elif replay_start_size < max(inputDims[i][0] for i in range(len(inputDims))) :
             raise AgentError("Replay_start_size should be greater than the biggest history of a state.")
         
         self._controllers = []
         self._environment = environment
         self._network = q_network
-        self._epsilon = 1
         self._replay_memory_size = replay_memory_size
         self._replay_start_size = replay_start_size
         self._batch_size = batch_size
@@ -196,10 +197,10 @@ class NeuralAgent(object):
         joblib.dump([all_params, all_params_conv], basename + ".epoch={}".format(nEpoch))
                 
 
-    def run(self, nEpochs, epochLength):
+    def run(self, n_epochs, epoch_length):
         for c in self._controllers: c.onStart(self)
         i = 0
-        while i < nEpochs or self._mode_epochs_length > 0:
+        while i < n_epochs or self._mode_epochs_length > 0:
             self._training_loss_averages = []
 
             if self._mode != -1:
@@ -208,11 +209,13 @@ class NeuralAgent(object):
                     self._totalModeNbrEpisode += 1
                     self._mode_epochs_length = self._runEpisode(self._mode_epochs_length)
             else:
-                length = epochLength
+                length = epoch_length
                 while length > 0:
                     length = self._runEpisode(length)
                 i += 1
             for c in self._controllers: c.onEpochEnd(self)
+            
+        self._environment.end()
         for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):

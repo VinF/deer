@@ -78,7 +78,7 @@ if __name__ == "__main__":
         parameters.update_rule,
         parameters.batch_accumulator,
         rng,
-        DoubleQ=True)
+        double_Q=True)
     
     # --- Instantiate agent ---
     agent = NeuralAgent(

@@ -122,20 +122,19 @@ class LearningRateController(Controller):
         """Initializer.
 
         """
-
         super(self.__class__, self).__init__()
         self._epoch_count = 0
         self._init_lr = initial_learning_rate
         self._lr = initial_learning_rate
         self._lr_decay = learning_rate_decay
         self._periodicity = periodicity
-    
+
     def onStart(self, agent):
         if (self._active == False):
             return
 
         self._epoch_count = 0
-        agent.setLearningRate(self._init_lr)
+        agent._network.setLearningRate(self._init_lr)
         self._lr = self._init_lr * self._lr_decay
 
     def onEpochEnd(self, agent):
@@ -144,9 +143,8 @@ class LearningRateController(Controller):
 
         self._epoch_count += 1
         if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
-            agent.setLearningRate(self._lr)
+            agent._network.setLearningRate(self._lr)
             self._lr *= self._lr_decay
-
 
 class EpsilonController(Controller):
     """ A controller that modifies the probability "epsilon" of taking a random action periodically.
@@ -267,7 +265,7 @@ class DiscountFactorController(Controller):
             return
 
         self._epoch_count = 0
-        agent.setDiscountFactor(self._init_df)
+        agent._network.setDiscountFactor(self._init_df)
         if (self._init_df < self._df_max):
             self._df = 1 - (1 - self._init_df) * self._df_growth
         else:
@@ -280,7 +278,7 @@ class DiscountFactorController(Controller):
         self._epoch_count += 1
         if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
             if (self._df < self._df_max):
-                agent.setDiscountFactor(self._df)
+                agent._network.setDiscountFactor(self._df)
                 self._df = 1 - (1 - self._df) * self._df_growth
 
 
@@ -489,8 +487,8 @@ class VerboseController(Controller):
     def _print(self, agent):
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             print("{} {}:".format(self._string, self._count + 1))
-            print("Learning rate: {}".format(agent.learningRate()))
-            print("Discount factor: {}".format(agent.discountFactor()))
+            print("Learning rate: {}".format(agent._network.learningRate()))
+            print("Discount factor: {}".format(agent._network.discountFactor()))
             print("Epsilon: {}".format(agent._train_policy.epsilon()))
         self._count += 1
 

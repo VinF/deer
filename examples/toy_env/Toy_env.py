@@ -84,8 +84,8 @@ class MyEnv(Environment):
         print ("Summary Perf")
         
         observations = test_data_set.observations()
-        prices = observations[0]
-        invest = observations[1]
+        prices = observations[0][:100]
+        invest = observations[1][:100]
         
         steps=np.arange(len(prices))
         steps_long=np.arange(len(prices)*10)/10.
@@ -110,6 +110,7 @@ class MyEnv(Environment):
         par1.axis["right"].label.set_color(p2.get_color())
     
         plt.savefig("plot.png")
+        print ("A plot of the policy obtained has been saved under the name plot.png")
     
     def inputDimensions(self):
         return [(6,), (1,)]     # We consider an observation made up of an history of 
