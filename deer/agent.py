@@ -2,16 +2,18 @@
 
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
+
+from theano import config
 import os
 import numpy as np
 import copy
 import sys
 import joblib
 from warnings import warn
-from theano import config
 
 from .experiment import base_controllers as controllers
 from .helper import tree 
+from deer.policies import EpsilonGreedyPolicy
 
 
 class NeuralAgent(object):
@@ -38,7 +40,7 @@ class NeuralAgent(object):
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
     """
 
-    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0):
+    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None):
         inputDims = environment.inputDimensions()
         
         if replay_start_size == None:
@@ -66,7 +68,14 @@ class NeuralAgent(object):
         self._state = []
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
-        self._epsilon=0.1 # Default epsilon
+        if (train_policy==None):
+            self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
+        else:
+            self._train_policy = train_policy
+        if (test_policy==None):
+            self._test_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.)
+        else:
+            self._test_policy = test_policy
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -74,15 +83,25 @@ class NeuralAgent(object):
         for i in toDisable:
             self._controllers[i].setActive(active)
 
-    def setEpsilon(self, e):
-        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
+    def setLearningRate(self, lr):
+        """ Set the learning rate for the gradient descent
         """
-        self._epsilon = e
+        self._network.setLearningRate(lr)
 
-    def epsilon(self):
-        """ Get the epsilon for :math:`\epsilon`-greedy exploration
+    def learningRate(self):
+        """ Get the learning rate
         """
-        return self._epsilon
+        return self._network.learningRate()
+
+    def setDiscountFactor(self, df):
+        """ Set the discount factor
+        """
+        self._network.setDiscountFactor(df)
+
+    def discountFactor(self):
+        """ Get the discount factor
+        """
+        return self._network.discountFactor()
 
     def overrideNextAction(self, action):
         """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
@@ -275,15 +294,12 @@ class NeuralAgent(object):
     def _chooseAction(self):
         
         if self._mode != -1:
-            action, V = self.bestAction()
+            # Act according to the test policy if not in training mode
+            action, V = self._test_policy.act(self._state)
         else:
             if self._dataset.n_elems > self._replay_start_size:
-                # e-Greedy policy
-                if self._random_state.rand() < self._epsilon:
-                    action = self._random_state.randint(0, self._environment.nActions())
-                    V = 0
-                else:
-                    action, V = self.bestAction()
+                # follow the train policy
+                action, V = self._train_policy.act(self._state)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
                 action = self._random_state.randint(0, self._environment.nActions())

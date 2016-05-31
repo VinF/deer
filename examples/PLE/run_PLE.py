@@ -10,12 +10,15 @@ from joblib import hash, dump
 import os
 
 from deer.default_parser import process_args
-from deer.agent_ale import ALEAgent
-from deer.q_networks.q_net_keras import MyQNetwork
+from deer.agent import NeuralAgent
+from deer.q_networks.q_net_theano import MyQNetwork
 from PLE_env import MyEnv as PLE_env
 import deer.experiment.base_controllers as bc
 
 from ple.games.snake import Snake
+
+from deer.policies import EpsilonGreedyPolicy
+
 
 class Defaults:
     # ----------------------
@@ -87,14 +90,17 @@ if __name__ == "__main__":
         parameters.batch_accumulator,
         rng)
     
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)
+
     # --- Instantiate agent ---
-    agent = ALEAgent(
+    agent = NeuralAgent(
         env,
         qnetwork,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+        test_policy=test_policy)
 
     # --- Create unique filename for FindBestController ---
     h = hash(vars(parameters), hash_name="sha1")
