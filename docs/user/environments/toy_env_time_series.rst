@@ -70,7 +70,7 @@ You can also choose the full version of the launcher that allows to specify the 
 
     python run_toy_env.py
 
-After 10 epochs, this kind of graph is obtained:
+Every 10 epochs, a graph is saved in the 'toy_env' folder. You can then see that kind of behaviour for the test policy:
 
 .. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/plot_toy_example.png
    :width: 250 px
@@ -78,4 +78,4 @@ After 10 epochs, this kind of graph is obtained:
    :align: center
 
 
-In this graph, you can see that the agent has already successfully learned to take advantage of the price pattern to buy when it is low and to sell when it is high. This example is of course easy due to the fact that the patterns are very systematic which allows the agent to successfuly learn it. It is important to note that the results shown are made on a validation set that is different from the training and we can see that learning generalizes well. For instance, the action of buying at time step 7 and 16 is the expected result because in average this will allow to make profit since the agent has no information on the future.
+In this graph, you can see that the agent has successfully learned to take advantage of the price pattern to buy when it is low and to sell when it is high. This example is of course easy due to the fact that the patterns are very systematic which allows the agent to successfuly learn it. It is important to note that the results shown are made on a validation set that is different from the training and we can see that learning generalizes well. For instance, the action of buying at time step 7 and 16 is the expected result because in average this will allow to make profit since the agent has no information on the future.
