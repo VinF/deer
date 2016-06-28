@@ -1,7 +1,6 @@
 """
 Neural network using Keras (called by q_net_keras)
-
-.. Authors: Vincent Francois-Lavet
+.. Author: Vincent Francois-Lavet
 """
 
 import numpy as np
@@ -36,9 +35,8 @@ class NN():
         inputs=[]
 
         for i, dim in enumerate(self._input_dimensions):
-            nfilter=[]
             # - observation[i] is a FRAME
-            if len(dim) == 3: #FIXME
+            if len(dim) == 3:
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
                 #reshaped=Reshape((dim[0],dim[1],dim[2]), input_shape=(dim[0],dim[1]))(input)
@@ -51,14 +49,19 @@ class NN():
                 out = Flatten()(x)
                 
             # - observation[i] is a VECTOR
-            elif len(dim) == 2 and dim[0] > 3: #FIXME
-                input = Input(shape=(dim[0],dim[1]))
-                inputs.append(input)
-                reshaped=Reshape((1,dim[0],dim[1]), input_shape=(dim[0],dim[1]))(input)
-                x = Convolution2D(16, 2, 1, border_mode='valid')(reshaped)
-                x = Convolution2D(16, 2, 2)(x)
-                
-                out = Flatten()(x)
+            elif len(dim) == 2:
+                if dim[0] > 3:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+                    reshaped=Reshape((1,dim[0],dim[1]), input_shape=(dim[0],dim[1]))(input)
+                    x = Convolution2D(16, 2, 1, border_mode='valid')(reshaped)
+                    x = Convolution2D(16, 2, 2)(x)
+
+                    out = Flatten()(x)
+                else:
+                    input = Input(shape=(dim[1],dim[0]))
+                    inputs.append(input)
+                    out = Flatten()(input)
 
             # - observation[i] is a SCALAR -
             else:
@@ -73,17 +76,9 @@ class NN():
                     out = Flatten()(x)
                                         
                 else:
-                    if(len(dim) == 2):
-                    # this returns a tensor
-
-                        input = Input(shape=(dim[1],dim[0]))
-                        inputs.append(input)
-                        out = Flatten()(input)
-
-                    if(len(dim) == 1):
-                        input = Input(shape=(dim[0],))
-                        inputs.append(input)
-                        out=input
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+                    out=input
                     
             outs_conv.append(out)
 
@@ -109,4 +104,3 @@ class NN():
 
 if __name__ == '__main__':
     pass
-
