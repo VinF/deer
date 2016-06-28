@@ -1,5 +1,5 @@
 """
-Neural network using LSTM's with Keras (called by q_net_keras)
+Neural network with LSTM's using Keras (called by q_net_keras)
 
 .. Author: Vincent Francois-Lavet
 """
@@ -12,14 +12,14 @@ import theano.tensor as T
 
 class NN():
     """
-    Deep Q-learning network using Keras
+    Deep Q-learning network with LSTM's using Keras
     
     Parameters
     -----------
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent
-    input_dimensions :
-    n_actions :
+    input_dimensions : tuples
+    n_actions : int
     random_state : numpy random number generator
     """
     def __init__(self, batch_size, input_dimensions, n_actions, random_state):
