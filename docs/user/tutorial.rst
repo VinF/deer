@@ -60,4 +60,12 @@ If you find something that is not yet implemented and if you wish to contribute,
 ..
     From there, you can look at this documentation for more informations on the controllers and the other environments. 
 
+Any Question?
+-------------
+
+.. |Google_group| raw:: html
+
+   <a href="https://groups.google.com/forum/#!forum/deer-library" target="_blank">https://groups.google.com/forum/#!forum/deer-library</a>
+
+A google group has been created to allow users to ask any type of questions about the DeeR project : |Google_group|
 
