@@ -182,7 +182,15 @@ class NeuralAgent(object):
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 
-    def dumpNetwork(self, fname, nEpoch):
+    def dumpNetwork(self, fname, nEpoch=-1):
+        """ Dump the network
+        Parameters
+        -----------
+        fname : string
+            Name of the file where the network will be dumped
+        nEpoch : int
+            Epoch number (Optional)
+        """
         try:
             os.mkdir("nnets")
         except Exception:
@@ -193,9 +201,31 @@ class NeuralAgent(object):
             if fname in f:
                 os.remove("nnets/" + f)
 
-        all_params, all_params_conv = self._network.toDump()
-        joblib.dump([all_params, all_params_conv], basename + ".epoch={}".format(nEpoch))
-                
+        all_params = self._network.getAllParams()
+
+        if (nEpoch>=0):
+            joblib.dump(all_params, basename + ".epoch={}".format(nEpoch))
+        else:
+            joblib.dump(all_params, basename, compress=True)
+
+    def setNetwork(self, fname, nEpoch=-1):
+        """ Set values into the network
+        Parameters
+        -----------
+        fname : string
+            Name of the file where the values are
+        nEpoch : int
+            Epoch number (Optional)
+        """
+
+        basename = "nnets/" + fname
+
+        if (nEpoch>=0):
+            all_params = joblib.load(basename + ".epoch={}".format(nEpoch))
+        else:
+            all_params = joblib.load(basename)
+
+        self._network.setAllParams(all_params)
 
     def run(self, n_epochs, epoch_length):
         for c in self._controllers: c.onStart(self)

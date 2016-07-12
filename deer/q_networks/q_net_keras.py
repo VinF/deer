@@ -12,7 +12,7 @@ from keras.optimizers import SGD,RMSprop
 
 class MyQNetwork(QNetwork):
     """
-    Deep Q-learning network using Keras
+    Deep Q-learning network using Keras with Theano backend
     
     Parameters
     -----------
@@ -81,12 +81,15 @@ class MyQNetwork(QNetwork):
 
         self._resetQHat()
 
+    def getAllParams(self):
+        params_value=[]
+        for i,p in enumerate(self.params):
+            params_value.append(p.get_value())
+        return params_value
 
-    def toDump(self):
-        # FIXME
-
-        return None,None
-
+    def setAllParams(self, list_of_values):
+        for i,p in enumerate(self.params):
+            p.set_value(list_of_values[i])
 
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
@@ -176,4 +179,4 @@ class MyQNetwork(QNetwork):
         
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
-            next_param.set_value(param.get_value())        
+            next_param.set_value(param.get_value())

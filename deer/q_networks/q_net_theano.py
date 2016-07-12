@@ -221,11 +221,16 @@ class MyQNetwork(QNetwork):
                                       givens=givens2,
                                       on_unused_input='warn')
 
-            
-    def toDump(self):
-        # FIXME
 
-        return None,None
+    def getAllParams(self):
+        params_value=[]
+        for i,p in enumerate(self.params):
+            params_value.append(p.get_value())
+        return params_value
+
+    def setAllParams(self, list_of_values):
+        for i,p in enumerate(self.params):
+            p.set_value(list_of_values[i])
     
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
