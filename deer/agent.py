@@ -184,6 +184,7 @@ class NeuralAgent(object):
 
     def dumpNetwork(self, fname, nEpoch=-1):
         """ Dump the network
+        
         Parameters
         -----------
         fname : string
@@ -210,6 +211,7 @@ class NeuralAgent(object):
 
     def setNetwork(self, fname, nEpoch=-1):
         """ Set values into the network
+        
         Parameters
         -----------
         fname : string
