@@ -39,9 +39,9 @@ The documentation is available at : http://deer.readthedocs.io/en/master/
 
 Here are a few examples :
 
-.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/seaquest.gif
-   :align: center
-
-.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif
-   :width: 500 px
-   :align: center
+<table>
+  <tr>
+    <td><img src="http://vincent.francois-l.be/img_GeneralDeepQRL/seaquest.gif" height="200"></td>
+    <td><img src="http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif" height="200"></td>
+  </tr>
+</table>
