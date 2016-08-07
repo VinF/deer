@@ -22,17 +22,26 @@ DeeR
 
 DeeR is a python library for Deep Reinforcement. It is build with modularity in mind so that it can easily be adapted to any need. It provides many possibilities out of the box (prioritized experience replay, double Q-learning, etc). Many different environment examples are also provided (some of them using OpenAI gym). 
 
-Full Documentation
-==================
-
-The documentation is available at : http://deer.readthedocs.io/en/master/
-
 Dependencies
 ============
 
 This framework is tested to work under Python 2.7, and Python 3.5. It should also work with Python 3.3 and 3.4.
 
-The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need theano >= 0.7 (lasagne is optional) or you can write your own neural network using your favorite framework.
+The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need theano >= 0.7 with or without the keras library.
 
-For running the examples, Matplotlib >= 1.1.1 is required. 
+For running the examples, Matplotlib >= 1.1.1 is required.
 For running the atari games environment, you need to install ALE >= 0.4.
+
+Full Documentation
+==================
+
+The documentation is available at : http://deer.readthedocs.io/en/master/
+
+Here are a few examples :
+
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/seaquest.gif
+   :align: center
+
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif
+   :width: 500 px
+   :align: center
