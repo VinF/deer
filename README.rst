@@ -39,9 +39,8 @@ The documentation is available at : http://deer.readthedocs.io/en/master/
 
 Here are a few examples :
 
-<table>
-  <tr>
-    <td><img src="http://vincent.francois-l.be/img_GeneralDeepQRL/seaquest.gif" height="200"></td>
-    <td><img src="http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif" height="200"></td>
-  </tr>
-</table>
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/seaquest.gif
+   :width: 200 px
+   
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/output7.gif
+   :width: 200 px
