@@ -98,7 +98,7 @@ Main microgrid parameters
      - :math:`L^{PV}`
      - :math:`20 years`
 
-.. list-table:: Data used for the LiFePO$_4$battery
+.. list-table:: Data used for the :math:`LiFePO_4` battery
    :widths: 30 10 20
 
    * - cost
