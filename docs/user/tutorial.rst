@@ -17,7 +17,7 @@ Deep reinforcement learning is the combination of two fields:
    
 * *Deep learning* is a branch of machine learning for regression and classification. It is particularly well suited to model high-level abstractions in data by using multiple processing layers composed of multiple non-linear transformations.
 
-This combination allows to learn complex tasks such as playing ATARI games from high-dimensional sensory inputs. For more informations, you can refer to one of the main paper in the domain : |Human-level_link|.
+This combination allows to learn complex tasks such as playing ATARI games from high-dimensional sensory inputs. For more informations, you can refer to one of the main papers in the domain : |Human-level_link|.
 
 .. |Human-level_link| raw:: html
 
