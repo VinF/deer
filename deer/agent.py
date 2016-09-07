@@ -1,5 +1,4 @@
 """This module contains classes used to define any agent wrapping a DQN.
-
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
@@ -15,12 +14,10 @@ from .experiment import base_controllers as controllers
 from .helper import tree 
 from deer.policies import EpsilonGreedyPolicy
 
-
 class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
-
     Parameters
     -----------
     environment : object from class Environment
@@ -38,9 +35,11 @@ class NeuralAgent(object):
     exp_priority : float
         The exponent that determines how much prioritization is used, default is 0 (uniform priority).
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
+    only_full_history : boolean
+        Whether we wish to train the neural network only on full histories or we wish to fill with zeroes the observations before the beginning of the episode
     """
 
-    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None):
+    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
         inputDims = environment.inputDimensions()
         
         if replay_start_size == None:
@@ -56,7 +55,8 @@ class NeuralAgent(object):
         self._batch_size = batch_size
         self._random_state = random_state
         self._exp_priority = exp_priority
-        self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority)
+        self._only_full_history = only_full_history
+        self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority, only_full_history=self._only_full_history)
         self._tmp_dataset = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._mode_epochs_length = 0
@@ -155,9 +155,9 @@ class NeuralAgent(object):
         else:
             self._mode = mode
             self._mode_epochs_length = epochLength
-            self._total_mode_reward = 0
+            self._total_mode_reward = 0.
             del self._tmp_dataset
-            self._tmp_dataset = DataSet(self._environment, self._random_state, max_size=self._replay_memory_size)
+            self._tmp_dataset = DataSet(self._environment, self._random_state, max_size=self._replay_memory_size, only_full_history=self._only_full_history)
 
     def resumeTrainingMode(self):
         self._mode = -1
@@ -169,7 +169,10 @@ class NeuralAgent(object):
         self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
-        if self._dataset.n_elems < self._replay_start_size:
+        # We make sure that the number of elements in the replay memory
+        # is strictly superior to self._replay_start_size before taking 
+        # a random batch and perform training
+        if self._dataset.n_elems <= self._replay_start_size:
             return
 
         try:
@@ -263,20 +266,17 @@ class NeuralAgent(object):
             maxSteps -= 1
 
             obs = self._environment.observe()
+
+            for i in range(len(obs)):
+                self._state[i][0:-1] = self._state[i][1:]
+                self._state[i][-1] = obs[i]
+
+            V, action, reward = self._step()
+            self._Vs_on_last_episode.append(V)
+            if self._mode != -1:
+                self._total_mode_reward += reward
+
             is_terminal = self._environment.inTerminalState()
-
-            if (is_terminal==True):
-                action=0
-                reward=0
-            else:
-                for i in range(len(obs)):
-                    self._state[i][0:-1] = self._state[i][1:]
-                    self._state[i][-1] = obs[i]
-
-                V, action, reward = self._step()
-                self._Vs_on_last_episode.append(V)
-                if self._mode != -1:
-                    self._total_mode_reward += reward
                 
             self._addSample(obs, action, reward, is_terminal)
             for c in self._controllers: c.onActionTaken(self)
@@ -296,13 +296,11 @@ class NeuralAgent(object):
         In the case the agent is not in testing mode, if its replay memory has enough samples, it will select the best 
         action it can with probability 1-CurrentEpsilon and a random action otherwise. If there are not enough samples, 
         it will always select a random action.
-
         Parameters
         -----------
         state : ndarray
             An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
                input.historySize x "shape of a given ponctual observation for this input".
-
         Returns
         -------
         action : int
@@ -342,7 +340,6 @@ class NeuralAgent(object):
 
 class AgentError(RuntimeError):
     """Exception raised for errors when calling the various Agent methods at wrong times.
-
     Attributes:
         expr -- input expression in which the error occurred
         msg  -- explanation of the error
@@ -355,7 +352,6 @@ class AgentError(RuntimeError):
 
 class AgentWarning(RuntimeWarning):
     """Warning issued of the various Agent methods.
-
     Attributes:
         expr -- input expression in which the error occurred
         msg  -- explanation of the error
@@ -364,9 +360,8 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, random_state=None, max_size=1000, use_priority=False):
+    def __init__(self, env, random_state=None, max_size=1000, use_priority=False, only_full_history=True):
         """Initializer.
-
         Parameters
         -----------
         inputDims : list of tuples
@@ -382,6 +377,7 @@ class DataSet(object):
         self._max_history_size = np.max([self._batch_dimensions[i][0] for i in range (len(self._batch_dimensions))])
         self._size = max_size
         self._use_priority = use_priority
+        self._only_full_history = only_full_history
         self._actions      = CircularBuffer(max_size, dtype="int8")
         self._rewards      = CircularBuffer(max_size)
         self._terminals    = CircularBuffer(max_size, dtype="bool")
@@ -447,7 +443,6 @@ class DataSet(object):
         -----------
         size : int
             Number of transitions to return.
-
         Returns
         -------
         states : ndarray
@@ -467,7 +462,6 @@ class DataSet(object):
         terminals : ndarray
             An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
             to terminal states and False otherwise
-
         Throws
         -------
             SliceError
@@ -482,53 +476,86 @@ class DataSet(object):
                 .format(self.n_elems, self._max_history_size))
 
         if (self._use_priority):
+            #FIXME : take into account the case where self._only_full_history is false
             rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
             rndValidIndices = np.zeros(size, dtype='int32')
-            for i in range(size): # TODO: multithread this loop?
-                rndValidIndices[i] = self._randomValidStateIndex()
+            if (self._only_full_history):
+                for i in range(size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size)
+            else:
+                for i in range(size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=1)
+                
+
         actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     
         states = np.zeros(len(self._batch_dimensions), dtype='object')
         next_states = np.zeros_like(states)
-        
+        # We calculate the first terminal index backward in time and set it 
+        # at maximum to the value self._max_history_size
+        first_terminals=[]
+        for rndValidIndex in rndValidIndices:
+            first_terminal=1
+            while first_terminal<self._max_history_size:
+                if (self._terminals[rndValidIndex-first_terminal]==True or first_terminal>rndValidIndex):
+                    break 
+                first_terminal+=1
+            first_terminals.append(first_terminal)
+            
         for input in range(len(self._batch_dimensions)):
             states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(size):
-                states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+1-self._batch_dimensions[input][0], rndValidIndices[i]+1)
+                slice=self._observations[input].getSlice(rndValidIndices[i]+1-min(self._batch_dimensions[input][0],first_terminals[i]), rndValidIndices[i]+1)
+                if (len(slice)==len(states[input][i])):
+                    states[input][i] = slice
+                else:
+                    for j in range(len(slice)):
+                        states[input][i][-j-1]=slice[-j-1]
+                 # If transition leads to terminal, we don't care about next state
                 if rndValidIndices[i] >= self.n_elems - 1 or terminals[i]:
                     next_states[input][i] = np.zeros_like(states[input][i])
                 else:
-                    next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-self._batch_dimensions[input][0], rndValidIndices[i]+2)
-
+                    slice=self._observations[input].getSlice(rndValidIndices[i]+2-min(self._batch_dimensions[input][0],first_terminals[i]+1), rndValidIndices[i]+2)
+                    if (len(slice)==len(states[input][i])):
+                        next_states[input][i] = slice
+                    else:
+                        for j in range(len(slice)):
+                            next_states[input][i][-j-1]=slice[-j-1]
+                    #next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-min(self._batch_dimensions[input][0],first_terminal), rndValidIndices[i]+2)
+        
         if (self._use_priority):
             return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
         else:
             return states, actions, rewards, next_states, terminals, rndValidIndices
 
-    def _randomValidStateIndex(self):
-        index_lowerBound = self._max_history_size - 1
-        index = self._random_state.randint(index_lowerBound, self.n_elems)
+    def _randomValidStateIndex(self, minimum_without_terminal):
+        """ Returns the index corresponding to a timestep that is valid
+        """
+        index_lowerBound = minimum_without_terminal - 1
+        # We try out an index in the acceptable range of the replay memory
+        index = self._random_state.randint(index_lowerBound, self.n_elems-1) 
 
         # Check if slice is valid wrt terminals
+        # The selected index may correspond to a terminal transition but not 
+        # the previous minimum_without_terminal-1 transition
         firstTry = index
         startWrapped = False
         while True:
             i = index-1
             processed = 0
-            for _ in range(self._max_history_size-1):
+            for _ in range(minimum_without_terminal-1):
                 if (i < 0 or self._terminals[i]):
                     break;
 
                 i -= 1
                 processed += 1
-
-            if (processed < self._max_history_size - 1):
+            if (processed < minimum_without_terminal - 1):
                 # if we stopped prematurely, shift slice to the left and try again
                 index = i
                 if (index < index_lowerBound):
@@ -552,7 +579,6 @@ class DataSet(object):
 
     def addSample(self, obs, action, reward, is_terminal, priority):
         """Store a (observation[for all subjects], action, reward, is_terminal) in the dataset. 
-
         Parameters
         -----------
         obs : ndarray
@@ -566,7 +592,6 @@ class DataSet(object):
             Tells whether [action] lead to a terminal state (i.e. corresponded to a terminal transition).
         priority : float
             The priority to be associated with the sample
-
         """        
         # Store observations
         for i in range(len(self._batch_dimensions)):
@@ -654,7 +679,6 @@ class CircularBuffer(object):
 
 class SliceError(LookupError):
     """Exception raised for errors when getting slices from CircularBuffers.
-
     Attributes:
         expr -- input expression in which the error occurred
         msg  -- explanation of the error
