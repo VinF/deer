@@ -122,7 +122,7 @@ Main microgrid parameters
 
    * - cost
      - :math:`c^{H_2}`
-     - :math:`14 euro/W$_p`
+     - :math:`14 euro/W_p`
    * - discharge efficiency
      - :math:`\eta_0^{H_2}`
      - :math:`65\%`
@@ -132,3 +132,13 @@ Main microgrid parameters
    * - Life time
      - :math:`L^{H_2}`
      - :math:`20 years`
+     
+.. list-table:: Data used for reward function
+   :widths: 30 10 20
+
+   * - cost endured per kWh not supplied within the microgrid
+     - :math:`k`
+     - :math:`2 euro/kWh`
+   * - revenue/cost per kWh of hydrogen produced/used
+     - :math:`k^{H_2}` 
+     - :math:`0.1 euro/kWh`
