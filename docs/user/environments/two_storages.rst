@@ -28,7 +28,7 @@ Two actions are possible for the agent:
 * Action 1 corresponds to charging the long-term storage
 
 More information can be found in the paper to be published :
-    Deep Reinforcement Learning with Limited Time Series - Application to Energy Microgrids, Vincent François-Lavet, David Taralla, Damien Ernst, Raphael Fonteneau
+    Deep Reinforcement Learning Solutions for Energy Microgrids Management, Vincent François-Lavet, David Taralla, Damien Ernst, Raphael Fonteneau
 
 
 Annex to the paper

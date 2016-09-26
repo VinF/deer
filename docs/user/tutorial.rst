@@ -67,5 +67,9 @@ Any Question?
 
    <a href="https://groups.google.com/forum/#!forum/deer-library" target="_blank">https://groups.google.com/forum/#!forum/deer-library</a>
 
-A google group has been created to allow users to ask any type of questions about the DeeR project : |Google_group|
+.. |Deer_issues| raw:: html
+
+   <a href="https://github.com/VinF/deer/issues" target="_blank">https://github.com/VinF/deer/issues</a>
+
+You can raise questions about the DeeR project on github : |Deer_issues|
 
