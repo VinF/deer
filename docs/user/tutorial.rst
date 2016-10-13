@@ -8,7 +8,7 @@ What is deep reinforcement learning?
 
 Deep reinforcement learning is the combination of two fields:
 
-* *Reinforcement learning (RL)* is a theory that allows an agent to learn a startegy so as to maximize a sum of cumulated (delayed) rewards from any given environement. If you are not familiar with RL, you can get up to speed easily with |SB_link| by Sutton and Barto.
+* *Reinforcement learning (RL)* is a theory that allows an agent to learn a startegy so as to maximize a sum of cumulated (delayed) rewards from any given environment. If you are not familiar with RL, you can get up to speed easily with |SB_link| by Sutton and Barto.
 
 .. |SB_link| raw:: html
 

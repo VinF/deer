@@ -1,7 +1,7 @@
 Welcome to DeeR's documentation!
 ==================================
 
-DeeR (Deep Reinforcement) is a python library to train an agent how to behave in a given environement so as to maximize a cumulative sum of rewards.
+DeeR (Deep Reinforcement) is a python library to train an agent how to behave in a given environment so as to maximize a cumulative sum of rewards.
 It is based on the original deep Q learning algorithm described in :
 Mnih, Volodymyr, et al. "Human-level control through deep reinforcement learning." Nature 518.7540 (2015): 529-533. (see :ref:`what-is-deer`)
 
