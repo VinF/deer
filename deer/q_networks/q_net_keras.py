@@ -9,6 +9,7 @@ from ..base_classes import QNetwork
 from .NN_keras import NN # Default Neural network used
 from warnings import warn
 from keras.optimizers import SGD,RMSprop
+from keras import backend as K
 
 class MyQNetwork(QNetwork):
     """
@@ -179,4 +180,4 @@ class MyQNetwork(QNetwork):
         
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
-            next_param.set_value(param.get_value())
+            K.set_value(next_param,K.get_value(param))
