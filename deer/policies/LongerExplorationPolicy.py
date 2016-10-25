@@ -68,26 +68,20 @@ class LongerExplorationPolicy(Policy):
             """ Sample an action sequence of length self._l, where the unordered sequences have uniform probabilities"""
             actions_list = range(self.n_actions)
         else:   
-            #print ("here")
-            #print self.n_actions
             
-            possible_actions=[]#copy.deepcopy(self.n_actions)
+            possible_actions=[]
             # Add for all actions N random element between min and max
             N=3
             for i,a in enumerate(self.n_actions):
                 possible_actions.append([])
                 for j in range(N):
                     possible_actions[i].append( self.random_state.uniform(self.n_actions[i][0],self.n_actions[i][1]) )
-            #print list(itertools.product(*possible_actions))
             actions_list = list(itertools.product(*possible_actions))
-            print "actions_list"
-            print actions_list
             
         sequences_with_replacement = list(itertools.combinations_with_replacement(actions_list, self._l))
         index_pick = self.random_state.randint(0, len(sequences_with_replacement))
         sequence = list(sequences_with_replacement[index_pick])
         self.random_state.shuffle(sequence)
-        #print sequence
         
         return sequence
 

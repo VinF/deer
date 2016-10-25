@@ -6,7 +6,7 @@ from theano import config
 import numpy as np
 
 class QNetwork(object):
-    """ All the Q-networks classes should inherit this interface.
+    """ All the Q-networks and actor-critic networks should inherit this interface.
 
     Parameters
     -----------
