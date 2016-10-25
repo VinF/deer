@@ -110,7 +110,7 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        Average loss of the batch training
+        Average loss of the batch training (RMSE)
         Individual losses for each tuple
         """
         
@@ -135,7 +135,7 @@ class MyQNetwork(QNetwork):
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
         diff = - q_val + target 
-        loss_ind=0.5*pow(diff,2)
+        loss_ind=pow(diff,2)
                 
         q_vals[  np.arange(self._batch_size), actions_val.reshape((-1,))  ] = target
                 
@@ -147,6 +147,7 @@ class MyQNetwork(QNetwork):
                 
         self.update_counter += 1        
 
+        # loss*self._n_actions = np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
 
@@ -159,7 +160,7 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        The q value for the provided belief state
+        The q values for the provided belief state
         """ 
         return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
 
@@ -176,7 +177,7 @@ class MyQNetwork(QNetwork):
         """        
         q_vals = self.qValues(state)
 
-        return np.argmax(q_vals)
+        return np.argmax(q_vals),np.max(q_vals)
         
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):

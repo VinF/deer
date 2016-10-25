@@ -332,8 +332,7 @@ class NeuralAgent(object):
                 action, V = self._train_policy.act(self._state)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
-                action = self._random_state.randint(0, self._environment.nActions())
-                V = 0
+                action, V = self._train_policy.randomAction()
                 
         for c in self._controllers: c.onActionChosen(self, action)
         return action, V
@@ -378,7 +377,10 @@ class DataSet(object):
         self._size = max_size
         self._use_priority = use_priority
         self._only_full_history = only_full_history
-        self._actions      = CircularBuffer(max_size, dtype="int8")
+        if ( isinstance(env.nActions(),int) ):
+            self._actions      = CircularBuffer(max_size, dtype="int8")
+        else:
+            self._actions      = CircularBuffer(max_size, dtype='object')
         self._rewards      = CircularBuffer(max_size)
         self._terminals    = CircularBuffer(max_size, dtype="bool")
         if (self._use_priority):

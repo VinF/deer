@@ -247,10 +247,9 @@ class MyQNetwork(QNetwork):
         next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
         terminals_val : b x 1 numpy boolean array (currently ignored)
 
-
         Returns
         -------
-        average loss of the batch training
+        Square root of the loss on the batch training
         individual losses for each tuple
         """
         
@@ -260,7 +259,6 @@ class MyQNetwork(QNetwork):
         for i in range(len(self.states_shared)):
             self.next_states_shared[i].set_value(next_states_val[i])
 
-        
         self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
         self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
@@ -274,6 +272,8 @@ class MyQNetwork(QNetwork):
             loss, loss_ind, _ = self._train(self._df, self._lr)
 
         self.update_counter += 1
+        
+        # NB : loss=np.average(loss_ind) if batch_accumulator="average"
         return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
@@ -285,7 +285,7 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        The q value for the provided belief state
+        The q values for the provided belief state
         """ 
         # Set the first element of the batch to values provided by state_val
         for i in range(len(self.states_shared)):
@@ -308,7 +308,7 @@ class MyQNetwork(QNetwork):
         """        
         q_vals = self.qValues(state)
 
-        return np.argmax(q_vals)
+        return np.argmax(q_vals),np.max(q_vals)
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
