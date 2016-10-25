@@ -325,11 +325,11 @@ class NeuralAgent(object):
         
         if self._mode != -1:
             # Act according to the test policy if not in training mode
-            action, V = self._test_policy.act(self._state)
+            action, V = self._test_policy.action(self._state)
         else:
             if self._dataset.n_elems > self._replay_start_size:
                 # follow the train policy
-                action, V = self._train_policy.act(self._state)     #is self._state the only way to store/pass the state?
+                action, V = self._train_policy.action(self._state)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
                 action, V = self._train_policy.randomAction()
