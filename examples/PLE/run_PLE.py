@@ -38,8 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = 0.0005
+    LEARNING_RATE = 0.005
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.95
     DISCOUNT_INC = 0.99
@@ -87,7 +86,6 @@ if __name__ == "__main__":
         parameters.batch_size,
         parameters.network_type,
         parameters.update_rule,
-        parameters.batch_accumulator,
         rng)
     
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)

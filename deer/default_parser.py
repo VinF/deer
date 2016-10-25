@@ -35,9 +35,6 @@ def process_args(args, defaults):
                         type=str, default=defaults.UPDATE_RULE,
                         help=('deepmind_rmsprop|rmsprop|sgd ' +
                               '(default: %(default)s)'))
-    parser.add_argument('--batch-accumulator', dest="batch_accumulator",
-                        type=str, default=defaults.BATCH_ACCUMULATOR,
-                        help=('sum|mean (default: %(default)s)'))
     parser.add_argument('--learning-rate', dest="learning_rate",
                         type=float, default=defaults.LEARNING_RATE,
                         help='Learning rate (default: %(default)s)')

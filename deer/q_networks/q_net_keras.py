@@ -34,8 +34,6 @@ class MyQNetwork(QNetwork):
         Not used. Default : None
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
     double_Q : bool, optional
         Activate or not the double_Q learning.
@@ -44,7 +42,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -111,7 +109,7 @@ class MyQNetwork(QNetwork):
         Returns
         -------
         Average loss of the batch training (RMSE)
-        Individual losses for each tuple
+        Individual (square) losses for each tuple
         """
         
         if self.update_counter % self._freeze_interval == 0:

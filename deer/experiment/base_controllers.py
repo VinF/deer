@@ -118,7 +118,7 @@ class LearningRateController(Controller):
         How many epochs are necessary before an update of the learning rate occurs
     """
 
-    def __init__(self, initial_learning_rate=0.0002, learning_rate_decay=1., periodicity=1):
+    def __init__(self, initial_learning_rate=0.005, learning_rate_decay=1., periodicity=1):
         """Initializer.
 
         """

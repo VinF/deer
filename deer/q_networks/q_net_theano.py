@@ -37,8 +37,6 @@ class MyQNetwork(QNetwork):
         Not used. Default : None
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
         Default : random seed.
     double_Q : bool
@@ -48,7 +46,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -160,12 +158,7 @@ class MyQNetwork(QNetwork):
         else:
             loss_ind = 0.5 * diff ** 2
 
-        if batch_accumulator == 'sum':
-            loss = T.sum(loss_ind)
-        elif batch_accumulator == 'mean':
-            loss = T.mean(loss_ind)
-        else:
-            raise ValueError("Bad accumulator: {}".format(batch_accumulator))
+        loss = T.mean(loss_ind)
 
         givens = {
             rewards: self.rewards_shared,
@@ -249,8 +242,8 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        Square root of the loss on the batch training
-        individual losses for each tuple
+        Average loss of the batch training (RMSE)
+        Individual (square) losses for each tuple
         """
         
         for i in range(len(self.states_shared)):
@@ -273,7 +266,7 @@ class MyQNetwork(QNetwork):
 
         self.update_counter += 1
         
-        # NB : loss=np.average(loss_ind) if batch_accumulator="average"
+        # NB : loss=np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
