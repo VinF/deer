@@ -10,13 +10,13 @@ class Policy(object):
         pass
 
     def bestAction(self, state):
-        """ Returns the best Action
+        """ Returns the best Action of the current state. This is an additional encapsulation for q-network.
         """
         action = self.q_network.chooseBestAction(state)
         V = max(self.q_network.qValues(state))
         return action, V
 
-    def act(self, state):
+    def action(self, state):
         """Main method of the Policy class. It can be called by agent.py, given a state,
         and should return a valid action w.r.t. the environment given to the constructor.
         """
