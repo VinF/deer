@@ -1,4 +1,4 @@
-""" Exploration policy for permutation invariant environement
+""" Exploration policy for permutation invariant environment
 Authors: Vincent Francois-Lavet, Adrien Couetoux
 """
 
@@ -25,9 +25,6 @@ class LongerExplorationPolicy(Policy):
         self._action_sequence = []
 
     def act(self, state):
-#        if ( isinstance(self.n_actions,int)):
-#            """For N exploration steps, the goal is to have the same proportion of all combinations 
-#            of actions and among one given combination, we select uniformly all permutations."""
         if self._count_down >= 0:
             # Take the next exploration action in the sequence
             V = 0
@@ -44,12 +41,6 @@ class LongerExplorationPolicy(Policy):
             else:
                 # Simply act greedily with respect to what is currently believed to be the best action
                 action, V = self.bestAction(state)
-#        else:
-#            """For N exploration steps, the goal is to have actions such that their sum spans
-#            uniformly the whole range of possibility. Among those possibilities, random choice of actions. """
-            
-        #print "action, V"
-        #print action, V
         
         return np.array(action), V
 
@@ -68,6 +59,8 @@ class LongerExplorationPolicy(Policy):
             """ Sample an action sequence of length self._l, where the unordered sequences have uniform probabilities"""
             actions_list = range(self.n_actions)
         else:   
+            """For N exploration steps, the goal is to have actions such that their sum spans quite uniformly 
+            the whole range of possibilities. Among those possibilities, random choice/order of actions. """
             
             possible_actions=[]
             # Add for all actions N random element between min and max
@@ -84,5 +77,3 @@ class LongerExplorationPolicy(Policy):
         self.random_state.shuffle(sequence)
         
         return sequence
-
-        
