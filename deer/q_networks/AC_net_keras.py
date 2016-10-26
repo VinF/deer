@@ -134,9 +134,6 @@ class MyACNetwork(ACNetwork):
         Average loss of the batch training
         Individual losses for each tuple
         """
-        #print "states_val, actions_val, rewards_val"
-        #print states_val, actions_val, rewards_val
-        
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
@@ -146,69 +143,34 @@ class MyACNetwork(ACNetwork):
 
         ns_list=next_states_val.tolist()
         ns_list.append( next_actions_val )
-        #print ("ns_list")
-        #print (ns_list)
         next_q_vals = self.next_q_vals.predict(  ns_list  )
-        #print ("next_q_vals")
-        #print (next_q_vals)
-        #print ("rewards_val")
-        #print (rewards_val)
-        #print ("terminals_val")
-        #print (terminals_val)
         
         not_terminals=np.ones_like(terminals_val) - terminals_val
         
         target = rewards_val + not_terminals * self._df * next_q_vals.reshape((-1))
-        #print ("target")
-        #print (target)
         
         s_list=states_val.tolist()
         s_list.append( actions_val  )
-        print ("s_list")
-        print (s_list)
         q_vals=self.q_vals.predict( s_list ).reshape((-1))
         
-        print ("q_vals")
-        print (q_vals)
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         diff_q = - q_vals + target 
         loss_ind_q=pow(diff_q,2)
-                
         loss_q=self.q_vals.train_on_batch( s_list , target ) 
-
-        
-        print "loss_q"
-        print loss_q
-        print "loss_ind_q"    
-        print loss_ind_q
-        
         
         ### Tain self.policy
-        
         cur_action=self.policy.predict(states_val.tolist())
         cur_action=self.clip_action(cur_action)
-        print "states_val,cur_action"
-        print states_val.tolist(),cur_action
         gg=self.gradients(states_val.tolist(),cur_action)
-        
-        #print "gg"
-        #print gg
         
         target_action=self.clip_action(cur_action+gg)
         
-        print "target_action"
-        print target_action
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         diff_policy = - cur_action + target_action
         loss_ind_policy=np.sum(pow(diff_policy,2),axis=-1)
 
         loss_policy=self.policy.train_on_batch(states_val.tolist(), target_action)
-        
-        print "loss_policy"
-        print loss_policy
-        print "loss_ind_policy"
-        print loss_ind_policy
-                
+                        
         self.update_counter += 1        
         
         
@@ -226,13 +188,8 @@ class MyACNetwork(ACNetwork):
             aadict[ self.inputsQ[i] ] = s
         
         aadict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
-        #print "aadict"
-        #print aadict
-        
-        #print self.action_grads
         
         out=self.sess.run(self.action_grads, feed_dict=aadict)[0]
-        #print out
         
         return out
 
@@ -252,9 +209,6 @@ class MyACNetwork(ACNetwork):
         best_action=self.policy.predict([np.expand_dims(s,axis=0) for s in state])
         the_list=[np.expand_dims(s,axis=0) for s in state]
         the_list.append( best_action )
-        #print "the_list"
-        #print the_list
-        #print self.q_vals.predict(the_list)
         estim_value=(self.q_vals.predict(the_list)[0,0])
         
         return best_action,estim_value
