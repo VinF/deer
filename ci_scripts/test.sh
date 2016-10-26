@@ -10,6 +10,11 @@ elif [[ "$EXAMPLE" == "toy_env_simple" ]]; then
     cd examples/toy_env
     python run_toy_env_simple.py & sleep 30; kill $!
 
+elif [[ "$EXAMPLE" == "mountain_car" ]]; then
+    pip install gym
+    cd examples/gym
+    python run_mountain_car.py  --epochs 5
+
 else
     # Get into a temp directory to run test from the installed and
     # check if we do not leave artifacts
