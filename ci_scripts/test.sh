@@ -14,7 +14,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
 
     pip -V pip
     pip install --upgrade pip
-    
+    conda install libgcc
     if [[ "$PYTHON_VERSION" == "2.7" ]]; then
       pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl;
     elif [[ "$PYTHON_VERSION" == "3.5" ]]; then
