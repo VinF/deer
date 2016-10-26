@@ -126,9 +126,9 @@ class NeuralAgent(object):
             return 0
 
     def totalRewardOverLastTest(self):
-        """ Returns the average sum of reward per episode
+        """ Returns the average sum of rewards per episode and the number of episode
         """
-        return self._total_mode_reward/self._totalModeNbrEpisode
+        return self._total_mode_reward/self._totalModeNbrEpisode, self._totalModeNbrEpisode
 
     def bestAction(self):
         """ Returns the best Action

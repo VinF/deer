@@ -348,7 +348,8 @@ class InterleavedTestEpochController(Controller):
         elif mod == 1:
             self._summary_counter += 1
             if self._show_score:
-                print("Testing score per episode (id: {}) is {}".format(self._id, agent.totalRewardOverLastTest()))
+                score,nbr_episodes=agent.totalRewardOverLastTest()
+                print("Testing score per episode (id: {}) is {} (average over {} episode(s))".format(self._id, score, nbr_episodes))
             if self._summary_periodicity > 0 and self._summary_counter % self._summary_periodicity == 0:
                 agent.summarizeTestPerformance()
             agent.resumeTrainingMode()
@@ -541,14 +542,15 @@ class FindBestController(Controller):
 
         mode = agent.mode()
         if mode == self._validationID:
-            score = agent.totalRewardOverLastTest()
+            score, _ = agent.totalRewardOverLastTest()
             self._validationScores.append(score)
             self._epochNumbers.append(self._trainingEpochCount)
             if score > self._bestValidationScoreSoFar:
                 self._bestValidationScoreSoFar = score
                 agent.dumpNetwork(self._filename, self._trainingEpochCount)
         elif mode == self._testID:
-            self._testScores.append(agent.totalRewardOverLastTest())
+            score, _ = agent.totalRewardOverLastTest()
+            self._testScores.append(score)
         else:
             self._trainingEpochCount += 1
         
