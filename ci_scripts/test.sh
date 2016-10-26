@@ -14,7 +14,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
 
     pip -V pip
     pip install --upgrade pip
-    pip install tensorflow>=0.10
+    pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0rc0-cp27-none-linux_x86_64.whl
     pip install keras
     python run_mountain_car_continuous.py  --epochs 5
 
