@@ -21,6 +21,7 @@ env:
     - PYTHON_VERSION="3.5"
     - PYTHON_VERSION="2.7" EXAMPLE="toy_env"
     - PYTHON_VERSION="3.5" EXAMPLE="toy_env"
+    - PYTHON_VERSION="3.5" EXAMPLE="toy_env_simple"
 
 install: source ci_scripts/install.sh
 script: bash ci_scripts/test.sh

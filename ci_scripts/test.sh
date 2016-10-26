@@ -6,6 +6,10 @@ if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
     python run_toy_env.py --epochs 5
 
+elif [[ "$EXAMPLE" == "toy_env" ]]; then
+    cd examples/toy_env
+    python run_toy_env_simple.py --epochs 5
+
 else
     # Get into a temp directory to run test from the installed and
     # check if we do not leave artifacts
