@@ -1,5 +1,5 @@
 """
-Code for general deep Q-learning using Keras that can take as inputs scalars, vectors and matrices
+Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 
 .. Author: Vincent Francois-Lavet
 """
@@ -182,14 +182,14 @@ class MyACNetwork(ACNetwork):
     
 
     def gradients(self, states, actions):
-        aadict={}
+        feed_dict={}
         for i,s in enumerate(states):
             #print i,s
-            aadict[ self.inputsQ[i] ] = s
+            feed_dict[ self.inputsQ[i] ] = s
         
-        aadict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
+        feed_dict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
         
-        out=self.sess.run(self.action_grads, feed_dict=aadict)[0]
+        out=self.sess.run(self.action_grads, feed_dict=feed_dict)[0]
         
         return out
 

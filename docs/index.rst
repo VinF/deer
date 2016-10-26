@@ -21,10 +21,12 @@ It is a work in progress and input is welcome. Please submit any contribution vi
 
 What is new
 ------------
-Version 0.3 (in development)
-****************************
+Version 0.3 
+************
 - Choice between different exploration/exploitation policies and possibility to easily built your own.
-- :ref:`naming_conv` has been updated. This may cause broken backward compatibility if you used old examples. In that case, make the changes to the new convention (if needed have a look at the API) and you'll easily be able to get it run smoothly.
+- Integration of DDPG for continuous action spaces
+- :ref:`naming_conv` has been updated. This may cause broken backward compatibility if you used old examples. In that case, make the changes to the new convention by looking at the API or by looking at the current version of the examples.
+- Additional automated tests
 
 
 Version 0.2

@@ -24,7 +24,7 @@ class LongerExplorationPolicy(Policy):
         self._count_down = -1
         self._action_sequence = []
 
-    def act(self, state):
+    def action(self, state):
         if self._count_down >= 0:
             # Take the next exploration action in the sequence
             V = 0

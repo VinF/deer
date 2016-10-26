@@ -401,7 +401,7 @@ class TrainerController(Controller):
             self._update(agent)
 
         if self._show_avg_Bellman_residual: print("Average training loss: {}".format(agent.avgBellmanResidual()))
-        if self._show_episode_avg_V_value: print("Episode average V value: {}".format(agent.avgEpisodeVValue()))
+        if self._show_episode_avg_V_value: print("Episode average V value: {}".format(agent.avgEpisodeVValue())) # (on non-random action time-steps)
 
     def onEpochEnd(self, agent):
         if (self._active == False):

@@ -116,11 +116,14 @@ class NeuralAgent(object):
         return np.average(self._training_loss_averages)
 
     def avgEpisodeVValue(self):
-        """ Returns the average V value on the episode
+        """ Returns the average V value on the episode (on time steps where a non-random action has been taken)
         """
         if (len(self._Vs_on_last_episode) == 0):
             return -1
-        return np.average(self._Vs_on_last_episode)
+        if(np.trim_zeros(self._Vs_on_last_episode)!=[]):
+            return np.average(np.trim_zeros(self._Vs_on_last_episode))
+        else:
+            return 0
 
     def totalRewardOverLastTest(self):
         """ Returns the average sum of reward per episode
