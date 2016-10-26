@@ -18,7 +18,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     if [[ "$PYTHON_VERSION" == "2.7" ]]; then
       pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl;
     elif [[ "$PYTHON_VERSION" == "3.5" ]]; then
-      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp35-cp34m-linux_x86_64.whl;
+      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp35-cp35m-linux_x86_64.whl;
     fi
     
     pip install keras
