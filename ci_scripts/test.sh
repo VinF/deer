@@ -6,7 +6,7 @@ if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
     python run_toy_env.py --epochs 5
 
-elif [[ "$EXAMPLE" == "toy_env" ]]; then
+elif [[ "$EXAMPLE" == "toy_env_simple" ]]; then
     cd examples/toy_env
     python run_toy_env_simple.py --epochs 5
 
