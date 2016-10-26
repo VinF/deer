@@ -5,9 +5,6 @@ set -e
 if [[ "$EXAMPLE" == "toy_env" ]]; then
     cd examples/toy_env
     python run_toy_env.py --epochs 5
-
-elif [[ "$EXAMPLE" == "toy_env_simple" ]]; then
-    cd examples/toy_env
     python run_toy_env_simple.py & sleep 30; kill $!
 
 elif [[ "$EXAMPLE" == "mountain_car" ]]; then
@@ -15,13 +12,10 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     cd examples/gym
     python run_mountain_car.py  --epochs 5
 
-elif [[ "$EXAMPLE" == "mountain_car_continuous" ]]; then
     pip -V pip
     pip install --upgrade pip
-    pip install gym
     pip install tensorflow>=0.10
     pip install keras
-    cd examples/gym
     python run_mountain_car_continuous.py  --epochs 5
 
 else
