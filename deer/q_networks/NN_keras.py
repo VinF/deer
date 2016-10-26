@@ -86,8 +86,7 @@ class NN():
 
         if (self._action_as_input==True):
             if ( isinstance(self._n_actions,int)):
-                print self._n_actions
-                print("Error")
+                print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
             else:
                 input = Input(shape=(len(self._n_actions),))
                 inputs.append(input)
