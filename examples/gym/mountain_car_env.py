@@ -3,6 +3,7 @@ import copy
 import math
 from deer.base_classes import Environment
 import gym
+import sys
 
 class MyEnv(Environment):
     def __init__(self, rng):

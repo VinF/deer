@@ -15,7 +15,6 @@ class Policy(object):
         """ Returns the best Action of the current state. This is an additional encapsulation for q-network.
         """
         action,V = self.q_network.chooseBestAction(state)
-        #V = max(self.q_network.qValues(state,action))
         return action, V
 
     def randomAction(self):

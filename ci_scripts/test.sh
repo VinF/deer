@@ -17,7 +17,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
 
 elif [[ "$EXAMPLE" == "mountain_car_continuous" ]]; then
     pip install gym
-    pip install --upgrade tensorflow
+    pip install tensorflow>=0.10
     pip install keras
     cd examples/gym
     python run_mountain_car_continuous.py  --epochs 5
