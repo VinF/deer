@@ -11,11 +11,9 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        #print gym.envs.registry.all()
         self.env = gym.make('MountainCar-v0')
         self.rng=rng
         self._last_observation = self.env.reset()
-        print self._last_observation
         self.is_terminal=False
         self._input_dim = [(1,), (1,)]      # self.env.observation_space.shape is equal to 4 
                                             # and we use only the current value in the belief state

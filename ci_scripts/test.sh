@@ -15,6 +15,13 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     cd examples/gym
     python run_mountain_car.py  --epochs 5
 
+elif [[ "$EXAMPLE" == "mountain_car_continuous" ]]; then
+    pip install gym
+    pip install tensorflow
+    pip install keras
+    cd examples/gym
+    python run_mountain_car_continuous.py  --epochs 5
+
 else
     # Get into a temp directory to run test from the installed and
     # check if we do not leave artifacts
