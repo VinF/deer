@@ -8,7 +8,7 @@ if [[ "$EXAMPLE" == "toy_env" ]]; then
 
 elif [[ "$EXAMPLE" == "toy_env_simple" ]]; then
     cd examples/toy_env
-    python run_toy_env_simple.py --epochs 5
+    python run_toy_env_simple.py & sleep 30; kill $!
 
 else
     # Get into a temp directory to run test from the installed and
