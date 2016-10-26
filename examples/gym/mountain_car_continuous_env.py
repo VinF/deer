@@ -16,11 +16,9 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        #print gym.envs.registry.all()
         self.env = gym.make('MountainCarContinuous-v0')
         self.rng=rng
         self._last_observation = self.env.reset()
-        print self._last_observation
         self.is_terminal=False
         self._input_dim = [(1,), (1,)]
         
