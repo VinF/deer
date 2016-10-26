@@ -28,7 +28,10 @@ class MyEnv(Environment):
                 break
         
             if (self.mode==0): # Show the policy only at test time
-                self.env.render()
+                try:
+                    self.env.render()
+                except:
+                    print("Warning:", sys.exc_info()[0])
         
         s=copy.deepcopy(self._last_observation)
         
