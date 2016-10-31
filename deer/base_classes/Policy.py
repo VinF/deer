@@ -1,7 +1,15 @@
 import numpy as np
 
 class Policy(object):
-    """Abstract class for all policies, i.e. objects that can take any space as input, and output an action.
+    """Abstract class for all policies.
+    A policy takes observations as input, and outputs an action.
+
+    Parameters
+    -----------
+    q_network : object from class QNetwork
+    n_actions : int or list
+        Definition of the action space
+    random_state : numpy random number generator
     """
 
     def __init__(self, q_network, n_actions,random_state):

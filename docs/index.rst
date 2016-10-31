@@ -53,7 +53,7 @@ User Guide
   user/tutorial
   user/environments
   user/development
-    
+
 API reference
 -------------
 
@@ -66,9 +66,8 @@ If you are looking for information on a specific function, class or method, this
   modules/controllers
   modules/environments
   modules/q-networks
+  modules/policies
   
-  
-
 Indices and tables
 ------------------
 
@@ -76,4 +75,4 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _GitHub: https://github.com/VinF/General_Deep_Q_RL
+.. _GitHub: https://github.com/VinF/Deer

@@ -1,4 +1,7 @@
-"""This module contains classes used to define any agent wrapping a DQN.
+"""This module contains classes used to define the standard behavior of the agent.
+It relies on the controllers, the chosen training/test policy and the learning algorithm
+to specify its behavior in the environment.
+
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
@@ -18,6 +21,7 @@ class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
+    
     Parameters
     -----------
     environment : object from class Environment

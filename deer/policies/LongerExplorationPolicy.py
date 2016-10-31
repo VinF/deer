@@ -1,4 +1,4 @@
-""" Exploration policy for permutation invariant environment
+""" Exploration policy for permutation invariant environments
 Authors: Vincent Francois-Lavet, Adrien Couetoux
 """
 
@@ -9,13 +9,15 @@ import copy
 import numpy as np
 
 class LongerExplorationPolicy(Policy):
-    """simple alternative to $\epsilon$-greedy that can explore the state space more
+    """Simple alternative to :math:`\epsilon`-greedy that can explore more
     efficiently for a broad class of realistic problems.
 
     Parameters
     -----------
+    epsilon : float
+        Proportion of random steps
     length : int
-        length of the exploration sequences that will be considered
+        Length of the exploration sequences that will be considered
     """
     def __init__(self, q_network, n_actions, random_state, epsilon, length=10):
         Policy.__init__(self, q_network, n_actions, random_state)

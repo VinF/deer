@@ -5,11 +5,10 @@ Code for general deep Q-learning using Keras that can take as inputs scalars, ve
 """
 
 import numpy as np
-from ..base_classes import QNetwork
-from .NN_keras import NN # Default Neural network used
-from warnings import warn
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
+from ..base_classes import QNetwork
+from .NN_theano import NN # Default Neural network used
 
 class MyQNetwork(QNetwork):
     """
@@ -104,7 +103,6 @@ class MyQNetwork(QNetwork):
         rewards_val : b x 1 numpy array
         next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
         terminals_val : b x 1 numpy boolean array
-
 
         Returns
         -------

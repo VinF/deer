@@ -17,11 +17,11 @@ try:
     assert(K.backend()=="tensorflow")
 except:
     print('Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json')
-    sys.exit(0)
+    #sys.exit(0)
 
 class MyACNetwork(ACNetwork):
     """
-    Deep Q-learning network using Keras with Theano backend
+    Deep Q-learning network using Keras with Tensorflow backend
     
     Parameters
     -----------
