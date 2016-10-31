@@ -103,7 +103,7 @@ class MyQNetwork(QNetwork):
         actions_val : b x 1 numpy array of integers
         rewards_val : b x 1 numpy array
         next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val : b x 1 numpy boolean array (currently ignored)
+        terminals_val : b x 1 numpy boolean array
 
 
         Returns
