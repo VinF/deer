@@ -499,7 +499,7 @@ class DataSet(object):
                     rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=1)
                 
 
-        actions   = self._actions.getSliceBySeq(rndValidIndices)
+        actions   = np.vstack( self._actions.getSliceBySeq(rndValidIndices) )
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     

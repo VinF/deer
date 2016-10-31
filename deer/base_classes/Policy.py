@@ -20,7 +20,7 @@ class Policy(object):
         pass
 
     def bestAction(self, state):
-        """ Returns the best Action of the current state. This is an additional encapsulation for q-network.
+        """ Returns the best Action for the given state. This is an additional encapsulation for q-network.
         """
         action,V = self.q_network.chooseBestAction(state)
         return action, V

@@ -151,6 +151,7 @@ class MyACNetwork(ACNetwork):
         
         s_list=states_val.tolist()
         s_list.append( actions_val  )
+        
         q_vals=self.q_vals.predict( s_list ).reshape((-1))
         
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
@@ -211,7 +212,7 @@ class MyACNetwork(ACNetwork):
         the_list.append( best_action )
         estim_value=(self.q_vals.predict(the_list)[0,0])
         
-        return best_action,estim_value
+        return best_action[0],estim_value
         
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):

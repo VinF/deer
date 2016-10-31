@@ -26,9 +26,8 @@ class MyEnv(Environment):
         """ Simulate one time step in the environment.
         """
         reward=0
-
         for _ in range(5): # Increase the duration of one time step by a factor 5
-            self._last_observation, r, self.is_terminal, info = self.env.step(action)
+            self._last_observation, r, self.is_terminal, info = self.env.step([action[0]])
             reward+=r
             if(self.is_terminal==True):
                 break
