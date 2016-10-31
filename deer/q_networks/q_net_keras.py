@@ -13,7 +13,7 @@ from keras import backend as K
 
 class MyQNetwork(QNetwork):
     """
-    Deep Q-learning network using Keras with Theano backend
+    Deep Q-learning network using Keras (with any backend)
     
     Parameters
     -----------
