@@ -16,7 +16,7 @@ try:
     import tensorflow as tf
     assert(K.backend()=="tensorflow")
 except:
-    print('Error : Tensorflow has to be used as a backend for AC_net_keras')
+    print('Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json')
     sys.exit(0)
 
 class MyACNetwork(ACNetwork):

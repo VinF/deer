@@ -8,6 +8,7 @@
     deer.base_classes.QNetwork
     deer.q_networks.q_net_theano.MyQNetwork
     deer.q_networks.q_net_keras.MyQNetwork
+    deer.q_networks.AC_net_keras.MyACNetwork
 
 Detailed description
 --------------------
@@ -18,5 +19,8 @@ Detailed description
    :members:
    :show-inheritance:
 .. autoclass:: deer.q_networks.q_net_keras.MyQNetwork
+   :members:
+   :show-inheritance:
+.. autoclass:: deer.q_networks.AC_net_keras.MyACNetwork
    :members:
    :show-inheritance:
