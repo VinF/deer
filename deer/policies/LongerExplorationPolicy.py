@@ -47,12 +47,12 @@ class LongerExplorationPolicy(Policy):
         return np.array(action), V
 
     def setEpsilon(self, e):
-        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
+        """ Set the epsilon
         """
         self._epsilon = e
 
     def epsilon(self):
-        """ Get the epsilon for :math:`\epsilon`-greedy exploration
+        """ Get the epsilon
         """
         return self._epsilon
 
