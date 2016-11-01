@@ -8,7 +8,7 @@ class Policy(object):
     -----------
     q_network : object from class QNetwork
     n_actions : int or list
-        Definition of the action space
+        Definition of the action space provided by Environment.nActions()
     random_state : numpy random number generator
     """
 

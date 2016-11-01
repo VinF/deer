@@ -47,7 +47,6 @@ class Defaults:
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    NETWORK_TYPE = "General_DQN_0"
     FREEZE_INTERVAL = 100
     DETERMINISTIC = True
 
@@ -73,7 +72,6 @@ if __name__ == "__main__":
         parameters.clip_delta,
         parameters.freeze_interval,
         parameters.batch_size,
-        parameters.network_type,
         parameters.update_rule,
         rng)
     

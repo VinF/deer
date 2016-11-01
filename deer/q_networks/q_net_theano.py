@@ -26,15 +26,13 @@ class MyQNetwork(QNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Not implemented. Default : 0
+        Not implemented.
     clip_delta : float
         If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
     freeze_interval : int
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
-    network_type : str
-        Not used. Default : None
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
     random_state : numpy random number generator
@@ -46,7 +44,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """

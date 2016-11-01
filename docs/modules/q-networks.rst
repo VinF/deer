@@ -9,6 +9,8 @@ Q-learning
     deer.q_networks.q_net_theano.MyQNetwork
     deer.q_networks.q_net_keras.MyQNetwork
 
+.. _actor-critic:
+
 Actor-critic learning
 ---------------------
 .. autosummary::

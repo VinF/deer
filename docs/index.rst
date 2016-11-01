@@ -5,9 +5,9 @@ DeeR (Deep Reinforcement) is a python library to train an agent how to behave in
 
 Here are key advantages of the library:
 
+* You have access within a single library to techniques such as Double Q-learning, prioritized Experience Replay, Deep deterministic policy gradient (DDQN), etc.
 * This package provides a general framework where observations are made up of any number of elements : scalars, vectors and frames. The belief state on which the agent is based to build the Q function or the policy is made up of any length history of each element provided in the observation.
 * You can easily add up a validation phase that allows to stop the training process before overfitting. This possibility is useful when the environment is dependent on scarce data (e.g. limited time series).
-* You also have access to techniques such as Double Q-learning, prioritized Experience Replay, Deep deterministic policy gradient (DDQN), etc. that are readily available in the library.
 
 In addition, the framework is made in such a way that it is easy to 
 
@@ -21,8 +21,8 @@ What is new
 ------------
 Version 0.3 
 ************
-- Integration of different exploration/exploitation policies and possibility to easily built your own.
-- Integration of DDPG for continuous action spaces
+- Integration of different exploration/exploitation policies and possibility to easily built your own (see :ref:`policies`)
+- Integration of DDPG for continuous action spaces (see :ref:`actor-critic`)
 - :ref:`naming_conv` has been updated. This may cause broken backward compatibility if you used old examples. In that case, make the changes to the new convention by looking at the API or by looking at the current version of the examples.
 - Additional automated tests
 

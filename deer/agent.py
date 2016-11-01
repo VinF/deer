@@ -39,6 +39,10 @@ class NeuralAgent(object):
     exp_priority : float
         The exponent that determines how much prioritization is used, default is 0 (uniform priority).
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
+    train_policy : object from class Policy
+        Policy followed when in training mode (mode -1)
+    test_policy : object from class Policy
+        Policy followed when in other modes than training (validation and test modes)
     only_full_history : boolean
         Whether we wish to train the neural network only on full histories or we wish to fill with zeroes the observations before the beginning of the episode
     """
