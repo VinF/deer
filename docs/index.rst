@@ -23,7 +23,7 @@ Version 0.3
 ************
 - Integration of different exploration/exploitation policies and possibility to easily built your own (see :ref:`policies`)
 - Integration of DDPG for continuous action spaces (see :ref:`actor-critic`)
-- :ref:`naming_conv` has been updated. This may cause broken backward compatibility if you used old examples. In that case, make the changes to the new convention by looking at the API or by looking at the current version of the examples.
+- :ref:`naming_conv` and some interfaces have been updated. This may cause broken backward compatibility. In that case, make the changes to the new convention by looking at the API in this documentation or by looking at the current version of the examples.
 - Additional automated tests
 
 

@@ -67,8 +67,7 @@ class MyQNetwork(QNetwork):
         elif (update_rule=="rmsprop"):
             optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
         else:
-            raise Exception('The update_rule '+update_rule+ 'is not'
-                            'implemented.')
+            raise Exception('The update_rule '+update_rule+' is not implemented.')
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
        
