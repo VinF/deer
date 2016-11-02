@@ -34,8 +34,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    BATCH_ACCUMULATOR = 'sum'
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.005
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 0.99
@@ -50,7 +49,6 @@ class Defaults:
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    NETWORK_TYPE = "General_DQN_0"
     FREEZE_INTERVAL = 1000
     DETERMINISTIC = True
 
@@ -79,9 +77,7 @@ if __name__ == "__main__":
         parameters.clip_delta,
         parameters.freeze_interval,
         parameters.batch_size,
-        parameters.network_type,
         parameters.update_rule,
-        parameters.batch_accumulator,
         rng)
     
     # --- Instantiate agent ---

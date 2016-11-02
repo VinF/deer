@@ -5,15 +5,14 @@ Code for general deep Q-learning using Keras that can take as inputs scalars, ve
 """
 
 import numpy as np
-from ..base_classes import QNetwork
-from .NN_keras import NN # Default Neural network used
-from warnings import warn
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
+from ..base_classes import QNetwork
+from .NN_theano import NN # Default Neural network used
 
 class MyQNetwork(QNetwork):
     """
-    Deep Q-learning network using Keras with Theano backend
+    Deep Q-learning network using Keras (with any backend)
     
     Parameters
     -----------
@@ -30,12 +29,8 @@ class MyQNetwork(QNetwork):
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
-    network_type : str
-        Not used. Default : None
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
     double_Q : bool, optional
         Activate or not the double_Q learning.
@@ -44,7 +39,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -72,8 +67,7 @@ class MyQNetwork(QNetwork):
         elif (update_rule=="rmsprop"):
             optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
         else:
-            raise Exception('The update_rule '+update_rule+ 'is not'
-                            'implemented.')
+            raise Exception('The update_rule '+update_rule+' is not implemented.')
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
        
@@ -105,13 +99,12 @@ class MyQNetwork(QNetwork):
         actions_val : b x 1 numpy array of integers
         rewards_val : b x 1 numpy array
         next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val : b x 1 numpy boolean array (currently ignored)
-
+        terminals_val : b x 1 numpy boolean array
 
         Returns
         -------
-        Average loss of the batch training
-        Individual losses for each tuple
+        Average loss of the batch training (RMSE)
+        Individual (square) losses for each tuple
         """
         
         if self.update_counter % self._freeze_interval == 0:
@@ -135,7 +128,7 @@ class MyQNetwork(QNetwork):
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
         diff = - q_val + target 
-        loss_ind=0.5*pow(diff,2)
+        loss_ind=pow(diff,2)
                 
         q_vals[  np.arange(self._batch_size), actions_val.reshape((-1,))  ] = target
                 
@@ -147,6 +140,7 @@ class MyQNetwork(QNetwork):
                 
         self.update_counter += 1        
 
+        # loss*self._n_actions = np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
 
@@ -159,7 +153,7 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        The q value for the provided belief state
+        The q values for the provided belief state
         """ 
         return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
 
@@ -176,7 +170,7 @@ class MyQNetwork(QNetwork):
         """        
         q_vals = self.qValues(state)
 
-        return np.argmax(q_vals)
+        return np.argmax(q_vals),np.max(q_vals)
         
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):

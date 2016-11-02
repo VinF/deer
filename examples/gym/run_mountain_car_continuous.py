@@ -1,7 +1,7 @@
-""" Pendulum environment launcher.
+""" Launcher for mountain car environment with continuous action space.
 Same principles as run_toy_env. See the wiki for more details.
 
-Authors: Vincent Francois-Lavet, David Taralla
+Author: Vincent Francois-Lavet
 """
 
 import sys
@@ -11,16 +11,18 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
-from pendulum_env import MyEnv as pendulum_env
+from deer.q_networks.AC_net_keras import MyACNetwork
+from mountain_car_continuous_env import MyEnv as mountain_car_continuous_env
+from deer.policies import LongerExplorationPolicy
+
 
 class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 200
     EPOCHS = 200
-    STEPS_PER_TEST = 1000
+    STEPS_PER_TEST = 200
     PERIOD_BTW_SUMMARY_PERFS = 10
 
     # ----------------------
@@ -35,14 +37,14 @@ class Defaults:
     LEARNING_RATE = 0.005
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
-    DISCOUNT_INC = .99
+    DISCOUNT_INC = 0.99
     DISCOUNT_MAX = 0.95
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
-    EPSILON_MIN = .2
+    EPSILON_MIN = 0.2
     EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
@@ -61,10 +63,10 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = pendulum_env(rng)
+    env = mountain_car_continuous_env(rng)
 
     # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    qnetwork = MyACNetwork(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
@@ -75,6 +77,8 @@ if __name__ == "__main__":
         parameters.update_rule,
         rng)
     
+    train_policy=LongerExplorationPolicy(qnetwork, env.nActions(), rng, 1.,10)
+    
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
@@ -82,7 +86,9 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+        exp_priority=1.,
+        train_policy=train_policy)
 
     # --- Bind controllers to the agent ---
     # For comments, please refer to run_toy_env.py

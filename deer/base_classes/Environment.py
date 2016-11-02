@@ -65,7 +65,9 @@ class Environment(object):
         raise NotImplementedError()
 
     def nActions(self):
-        """Get the number of different actions that can be taken on this environment."""
+        """Get the number of different actions that can be taken on this environment.
+        It can be either an integer in the case of a finite discrete number of actions 
+        or it can be a list of couples [min_action_value,max_action_value] for a continuous action space"""
 
         raise NotImplementedError()
 

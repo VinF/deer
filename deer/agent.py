@@ -1,4 +1,7 @@
-"""This module contains classes used to define any agent wrapping a DQN.
+"""This module contains classes used to define the standard behavior of the agent.
+It relies on the controllers, the chosen training/test policy and the learning algorithm
+to specify its behavior in the environment.
+
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
@@ -18,6 +21,7 @@ class NeuralAgent(object):
     """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
+    
     Parameters
     -----------
     environment : object from class Environment
@@ -35,6 +39,10 @@ class NeuralAgent(object):
     exp_priority : float
         The exponent that determines how much prioritization is used, default is 0 (uniform priority).
         One may check out Schaul et al. (2016) - Prioritized Experience Replay.
+    train_policy : object from class Policy
+        Policy followed when in training mode (mode -1)
+    test_policy : object from class Policy
+        Policy followed when in other modes than training (validation and test modes)
     only_full_history : boolean
         Whether we wish to train the neural network only on full histories or we wish to fill with zeroes the observations before the beginning of the episode
     """
@@ -116,16 +124,19 @@ class NeuralAgent(object):
         return np.average(self._training_loss_averages)
 
     def avgEpisodeVValue(self):
-        """ Returns the average V value on the episode
+        """ Returns the average V value on the episode (on time steps where a non-random action has been taken)
         """
         if (len(self._Vs_on_last_episode) == 0):
             return -1
-        return np.average(self._Vs_on_last_episode)
+        if(np.trim_zeros(self._Vs_on_last_episode)!=[]):
+            return np.average(np.trim_zeros(self._Vs_on_last_episode))
+        else:
+            return 0
 
     def totalRewardOverLastTest(self):
-        """ Returns the average sum of reward per episode
+        """ Returns the average sum of rewards per episode and the number of episode
         """
-        return self._total_mode_reward/self._totalModeNbrEpisode
+        return self._total_mode_reward/self._totalModeNbrEpisode, self._totalModeNbrEpisode
 
     def bestAction(self):
         """ Returns the best Action
@@ -332,8 +343,7 @@ class NeuralAgent(object):
                 action, V = self._train_policy.action(self._state)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
-                action = self._random_state.randint(0, self._environment.nActions())
-                V = 0
+                action, V = self._train_policy.randomAction()
                 
         for c in self._controllers: c.onActionChosen(self, action)
         return action, V
@@ -378,7 +388,10 @@ class DataSet(object):
         self._size = max_size
         self._use_priority = use_priority
         self._only_full_history = only_full_history
-        self._actions      = CircularBuffer(max_size, dtype="int8")
+        if ( isinstance(env.nActions(),int) ):
+            self._actions      = CircularBuffer(max_size, dtype="int8")
+        else:
+            self._actions      = CircularBuffer(max_size, dtype='object')
         self._rewards      = CircularBuffer(max_size)
         self._terminals    = CircularBuffer(max_size, dtype="bool")
         if (self._use_priority):
@@ -490,7 +503,7 @@ class DataSet(object):
                     rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=1)
                 
 
-        actions   = self._actions.getSliceBySeq(rndValidIndices)
+        actions   = np.vstack( self._actions.getSliceBySeq(rndValidIndices) )
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     

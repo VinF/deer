@@ -1,9 +1,13 @@
+""" Mountain car environment with continuous action space.
+
+Author: Vincent Francois-Lavet
+"""
+
 import numpy as np
 import copy
 import math
 from deer.base_classes import Environment
 import gym
-import sys
 
 class MyEnv(Environment):
     def __init__(self, rng):
@@ -12,37 +16,29 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        self.env = gym.make('MountainCar-v0')
+        self.env = gym.make('MountainCarContinuous-v0')
         self.rng=rng
         self._last_observation = self.env.reset()
         self.is_terminal=False
-        self._input_dim = [(1,), (1,)]      # self.env.observation_space.shape is equal to 4 
-                                            # and we use only the current value in the belief state
+        self._input_dim = [(1,), (1,)]
+        
     def act(self, action):
         """ Simulate one time step in the environment.
         """
         reward=0
-        for _ in range(5):
-            self._last_observation, r, self.is_terminal, info = self.env.step(action)
+        for _ in range(5): # Increase the duration of one time step by a factor 5
+            self._last_observation, r, self.is_terminal, info = self.env.step([action[0]])
             reward+=r
             if(self.is_terminal==True):
                 break
-        
+                
             if (self.mode==0): # Show the policy only at test time
                 try:
                     self.env.render()
                 except:
                     pass
-                    #print("Warning:", sys.exc_info()[0])
-        
-        s=copy.deepcopy(self._last_observation)
-        
-        ## Possibility to add a reward shaping for faster convergence   
-        #s[0]+=math.pi/6
-        #if(s[0]>0):
-        #    reward+=pow(s[0],2)#np.linalg.norm(s[0])
                 
-        return reward
+        return reward/100. #Scale the reward so that it's 1 at maximum
                 
     def reset(self, mode=0):
         """ Reset environment for a new episode.
@@ -54,11 +50,6 @@ class MyEnv(Environment):
         self.mode=mode
         
         self._last_observation = self.env.reset()
-        if (self.mode==-1): # Reset to a random value when in training mode (that allows to increase exploration)
-            high=self.env.observation_space.high
-            low=self.env.observation_space.low
-            self._last_observation=low+self.rng.rand(2)*(high-low)            
-            self.env.state=self._last_observation
 
         self.is_terminal=False
         
@@ -75,7 +66,7 @@ class MyEnv(Environment):
         return self._input_dim  
 
     def nActions(self):
-        return 3 #Would be useful to have this directly in gym : self.env.action_space.shape  
+        return [[self.env.action_space.low[0],self.env.action_space.high[0]]]
 
     def observe(self):
         return copy.deepcopy(self._last_observation)
@@ -84,8 +75,17 @@ def main():
     # This function can be used for debug purposes
     rng = np.random.RandomState(123456)
     myenv=MyEnv(rng)
-
+    print(myenv.env.action_space)
+    print(myenv.env.action_space.low)
+    print(myenv.env.action_space.high)    
+    print(myenv.env.observation_space)
+    
     print (myenv.observe())
+    myenv.act([0])
+    print (myenv.observe())
+    myenv.act([1])
+    print (myenv.observe())
+    
     
 if __name__ == "__main__":
     main()

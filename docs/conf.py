@@ -28,7 +28,8 @@ sys.modules['lasagne.updates'] = Mock()
 sys.modules['keras.models'] = Mock()
 sys.modules['keras.layers'] = Mock()
 sys.modules['keras.optimizers'] = Mock()
-
+sys.modules['keras.backend'] = Mock()
+sys.modules['keras'] = Mock()
 
 
 # -*- coding: utf-8 -*-

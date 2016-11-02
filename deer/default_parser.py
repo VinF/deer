@@ -35,9 +35,6 @@ def process_args(args, defaults):
                         type=str, default=defaults.UPDATE_RULE,
                         help=('deepmind_rmsprop|rmsprop|sgd ' +
                               '(default: %(default)s)'))
-    parser.add_argument('--batch-accumulator', dest="batch_accumulator",
-                        type=str, default=defaults.BATCH_ACCUMULATOR,
-                        help=('sum|mean (default: %(default)s)'))
     parser.add_argument('--learning-rate', dest="learning_rate",
                         type=float, default=defaults.LEARNING_RATE,
                         help='Learning rate (default: %(default)s)')
@@ -90,10 +87,6 @@ def process_args(args, defaults):
                         type=int, default=defaults.UPDATE_FREQUENCY,
                         help=('Number of actions before each SGD update. '+
                               '(default: %(default)s)'))
-    parser.add_argument('--network-type', dest="network_type",
-                        type=str, default=defaults.NETWORK_TYPE,
-                        help=('General_DQN_0' +
-                              '|linear (default: %(default)s)'))
     parser.add_argument('--deterministic', dest='deterministic', action='store_true',
                         help=('If fixed seed (default: %(default)s)'))
     parser.add_argument('--no-deterministic', dest='deterministic', action='store_false',

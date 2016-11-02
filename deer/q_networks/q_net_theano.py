@@ -26,19 +26,15 @@ class MyQNetwork(QNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Not implemented. Default : 0
+        Not implemented.
     clip_delta : float
         If > 0, the squared loss is linear past the clip point which keeps the gradient constant. Default : 0
     freeze_interval : int
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
-    network_type : str
-        Not used. Default : None
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
         Default : random seed.
     double_Q : bool
@@ -48,7 +44,7 @@ class MyQNetwork(QNetwork):
         default is deer.qnetworks.NN_theano
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, network_type=None, update_rule="rmsprop", batch_accumulator="sum", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
@@ -160,12 +156,7 @@ class MyQNetwork(QNetwork):
         else:
             loss_ind = 0.5 * diff ** 2
 
-        if batch_accumulator == 'sum':
-            loss = T.sum(loss_ind)
-        elif batch_accumulator == 'mean':
-            loss = T.mean(loss_ind)
-        else:
-            raise ValueError("Bad accumulator: {}".format(batch_accumulator))
+        loss = T.mean(loss_ind)
 
         givens = {
             rewards: self.rewards_shared,
@@ -245,13 +236,12 @@ class MyQNetwork(QNetwork):
         actions_val : b x 1 numpy array of integers
         rewards_val : b x 1 numpy array
         next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val : b x 1 numpy boolean array (currently ignored)
-
+        terminals_val : b x 1 numpy boolean array
 
         Returns
         -------
-        average loss of the batch training
-        individual losses for each tuple
+        Average loss of the batch training (RMSE)
+        Individual (square) losses for each tuple
         """
         
         for i in range(len(self.states_shared)):
@@ -260,7 +250,6 @@ class MyQNetwork(QNetwork):
         for i in range(len(self.states_shared)):
             self.next_states_shared[i].set_value(next_states_val[i])
 
-        
         self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
         self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
@@ -274,6 +263,8 @@ class MyQNetwork(QNetwork):
             loss, loss_ind, _ = self._train(self._df, self._lr)
 
         self.update_counter += 1
+        
+        # NB : loss=np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
     def qValues(self, state_val):
@@ -285,7 +276,7 @@ class MyQNetwork(QNetwork):
 
         Returns
         -------
-        The q value for the provided belief state
+        The q values for the provided belief state
         """ 
         # Set the first element of the batch to values provided by state_val
         for i in range(len(self.states_shared)):
@@ -308,7 +299,7 @@ class MyQNetwork(QNetwork):
         """        
         q_vals = self.qValues(state)
 
-        return np.argmax(q_vals)
+        return np.argmax(q_vals),np.max(q_vals)
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
