@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 import deer
 
 NAME = 'deer'
-VERSION = '0.3.dev1'
+VERSION = '0.3'
 AUTHOR = "Vincent Francois-Lavet"
 AUTHOR_EMAIL = "v.francois@ulg.ac.be"
 URL = 'https://github.com/VinF/deer'
