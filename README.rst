@@ -35,7 +35,7 @@ For running the atari games environment, you need to install ALE >= 0.4.
 Full Documentation
 ==================
 
-The documentation is available at : http://deer.readthedocs.io/en/master/
+The documentation is available at : http://deer.readthedocs.io/
 
 Here are a few examples :
 
