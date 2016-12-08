@@ -8,7 +8,7 @@ import numpy as np
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 from ..base_classes import QNetwork
-from .NN_theano import NN # Default Neural network used
+from .NN_keras import NN # Default Neural network used
 
 class MyQNetwork(QNetwork):
     """
