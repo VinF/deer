@@ -357,7 +357,7 @@ class InterleavedTestEpochController(Controller):
 
 
 class TrainerController(Controller):
-    """A controller that make the agent train on its current database periodically.
+    """A controller that makes the agent train on its current database periodically.
 
     Parameters
     ----------

@@ -22,7 +22,7 @@ class Environment(object):
     """
                
     def reset(self, mode):
-        """Reset the environment and put it in mode [mode].
+        """Resets the environment and put it in mode [mode]. This function is called when beginning every new episode. 
         
         The [mode] can be used to discriminate for instance between an agent which is training or trying to get a 
         validation or generalization score. The mode the environment is in should always be redefined by resetting the
@@ -37,7 +37,7 @@ class Environment(object):
         raise NotImplementedError()
         
     def act(self, action):
-        """Apply the agent action [action] on the environment.
+        """Applies the agent action [action] on the environment.
 
         Parameters
         -----------
@@ -49,7 +49,7 @@ class Environment(object):
         raise NotImplementedError()
 
     def inputDimensions(self):
-        """Get the shape of the input space for this environment.
+        """Gets the shape of the input space for this environment.
         
         This returns a list whose length is the number of subjects observed on the environment. Each element of the 
         list is a tuple whose content and size depends on the type of data observed: the first integer is always the 
@@ -65,14 +65,14 @@ class Environment(object):
         raise NotImplementedError()
 
     def nActions(self):
-        """Get the number of different actions that can be taken on this environment.
+        """Gets the number of different actions that can be taken on this environment.
         It can be either an integer in the case of a finite discrete number of actions 
         or it can be a list of couples [min_action_value,max_action_value] for a continuous action space"""
 
         raise NotImplementedError()
 
     def inTerminalState(self):
-        """Tell whether the environment reached a terminal state after the last transition (i.e. the last transition 
+        """Tells whether the environment reached a terminal state after the last transition (i.e. the last transition 
         that occured was terminal).
 
         As the majority of control tasks considered have no end (a continuous control should be operated), by default 
@@ -88,7 +88,7 @@ class Environment(object):
         return False
 
     def observe(self):
-        """Get a list of punctual observations on all subjects composing this environment.
+        """Gets a list of punctual observations on all subjects composing this environment.
         
         This returns a list where element i is a punctual observation on subject i. You will notice that the history 
         of observations on this subject is not returned; only the very last observation. Each element is thus either 
@@ -115,7 +115,7 @@ class Environment(object):
         pass
 
     def observationType(self, subject):
-        """Get the most inner type (np.uint8, np.float32, ...) of [subject].
+        """Gets the most inner type (np.uint8, np.float32, ...) of [subject].
 
         Parameters
         -----------

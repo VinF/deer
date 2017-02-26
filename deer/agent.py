@@ -31,7 +31,8 @@ class NeuralAgent(object):
     replay_memory_size : int
         Size of the replay memory. Default : 1000000
     replay_start_size : int
-        Number of observations (=number of time steps taken) in the replay memory before starting learning. Default: minimum possible according to environment.inputDimensions().
+        Number of observations (=number of time steps taken) in the replay memory before starting learning. 
+        Default: minimum possible according to environment.inputDimensions().
     batch_size : int
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
     random_state : numpy random number generator
@@ -44,7 +45,8 @@ class NeuralAgent(object):
     test_policy : object from class Policy
         Policy followed when in other modes than training (validation and test modes)
     only_full_history : boolean
-        Whether we wish to train the neural network only on full histories or we wish to fill with zeroes the observations before the beginning of the episode
+        Whether we wish to train the neural network only on full histories or we wish to fill with zeroes the 
+        observations before the beginning of the episode
     """
 
     def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
@@ -180,6 +182,10 @@ class NeuralAgent(object):
         self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
+        """
+        This function selects a random batch of data (with self._dataset.randomBatch) and performs a 
+        Q-learning iteration (with self._network.train).        
+        """
         # We make sure that the number of elements in the replay memory
         # is strictly superior to self._replay_start_size before taking 
         # a random batch and perform training
@@ -244,6 +250,20 @@ class NeuralAgent(object):
         self._network.setAllParams(all_params)
 
     def run(self, n_epochs, epoch_length):
+        """
+        This function encapsulates the whole process of the learning.
+        It starts by calling the controllers method "onStart", 
+        Then it runs a given number of epochs where an epoch is made up of one or many episodes (called with 
+        agent._runEpisode) and where an epoch ends up after the number of steps reaches the argument "epoch_length".
+        It ends up by calling the controllers method "end".
+
+        Parameters
+        -----------
+        n_epochs : number of epochs 
+            int
+        epoch_length : maximum number of steps for a given epoch
+            int
+        """
         for c in self._controllers: c.onStart(self)
         i = 0
         while i < n_epochs or self._mode_epochs_length > 0:
@@ -265,6 +285,15 @@ class NeuralAgent(object):
         for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):
+        """
+        This function runs an episode of learning. An episode ends up when the environment method "inTerminalState" 
+        returns True (or when the number of steps reaches the argument "maxSteps")
+        
+        Parameters
+        -----------
+        maxSteps : maximum number of steps before automatically ending the episode
+            int
+        """
         self._in_episode = True
         initState = self._environment.reset(self._mode)
         inputDims = self._environment.inputDimensions()
@@ -283,6 +312,7 @@ class NeuralAgent(object):
                 self._state[i][-1] = obs[i]
 
             V, action, reward = self._step()
+            
             self._Vs_on_last_episode.append(V)
             if self._mode != -1:
                 self._total_mode_reward += reward
