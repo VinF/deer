@@ -21,7 +21,7 @@ except:
 
 class MyACNetwork(ACNetwork):
     """
-    Deep Q-learning network using Keras with Tensorflow backend
+    Actor-critic learning (using Keras) with Deep Deterministic Policy Gradient (DDPG) for the continuous action domain
     
     Parameters
     -----------
@@ -150,12 +150,13 @@ class MyACNetwork(ACNetwork):
         s_list=states_val.tolist()
         s_list.append( actions_val  )
         
-        q_vals=self.q_vals.predict( s_list ).reshape((-1))
-        
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
+        q_vals=self.q_vals.predict( s_list ).reshape((-1))
         diff_q = - q_vals + target 
         loss_ind_q=pow(diff_q,2)
+        
         loss_q=self.q_vals.train_on_batch( s_list , target ) 
+        
         
         ### Tain self.policy
         cur_action=self.policy.predict(states_val.tolist())
