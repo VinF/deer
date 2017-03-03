@@ -42,11 +42,11 @@ class NN():
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
                 #reshaped=Reshape((dim[0],dim[1],dim[2]), input_shape=(dim[0],dim[1]))(input)
-                x = Convolution2D(32, 8, 8, border_mode='valid')(input)
+                x = Convolution2D(32, 8, 8, activation='relu', border_mode='valid')(input)
                 x = MaxPooling2D(pool_size=(4, 4), strides=None, border_mode='valid')(x)
-                x = Convolution2D(64, 4, 4, border_mode='valid')(x)
+                x = Convolution2D(64, 4, 4, activation='relu', border_mode='valid')(x)
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, border_mode='valid')(x)
-                x = Convolution2D(64, 3, 3)(x)
+                x = Convolution2D(64, 3, 3, activation='relu', border_mode='valid')(x)
                 
                 out = Flatten()(x)
                 
@@ -56,8 +56,8 @@ class NN():
                     input = Input(shape=(dim[0],dim[1]))
                     inputs.append(input)
                     reshaped=Reshape((1,dim[0],dim[1]), input_shape=(dim[0],dim[1]))(input)
-                    x = Convolution2D(16, 2, 1, border_mode='valid')(reshaped)
-                    x = Convolution2D(16, 2, 2)(x)
+                    x = Convolution2D(16, 2, 1, activation='relu', border_mode='valid')(reshaped)
+                    x = Convolution2D(16, 2, 2, activation='relu', border_mode='valid')(x)
 
                     out = Flatten()(x)
                 else:
@@ -72,8 +72,8 @@ class NN():
                     input = Input(shape=(dim[0],))
                     inputs.append(input)
                     reshaped=Reshape((1,1,dim[0]), input_shape=(dim[0],))(input)
-                    x = Convolution2D(8, 1, 2, border_mode='valid')(reshaped)
-                    x = Convolution2D(8, 1, 2)(x)
+                    x = Convolution2D(8, 1, 2, activation='relu', border_mode='valid')(reshaped)
+                    x = Convolution2D(8, 1, 2, activation='relu', border_mode='valid')(x)
                     
                     out = Flatten()(x)
                                         
@@ -124,3 +124,4 @@ class NN():
 
 if __name__ == '__main__':
     pass
+    
