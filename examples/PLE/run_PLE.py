@@ -11,11 +11,11 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.q_networks.q_net_keras import MyQNetwork
 from PLE_env import MyEnv as PLE_env
 import deer.experiment.base_controllers as bc
 
-from ple.games.snake import Snake
+from ple.games.catcher import Catcher
 
 from deer.policies import EpsilonGreedyPolicy
 
@@ -24,24 +24,24 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
-    EPOCHS = 40
-    STEPS_PER_TEST = 125000
+    STEPS_PER_EPOCH = 1000
+    EPOCHS = 100
+    STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------
     # Environment Parameters
     # ----------------------
-    FRAME_SKIP = 4
+    FRAME_SKIP = 2
 
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.005
+    LEARNING_RATE = 0.0005
     LEARNING_RATE_DECAY = 0.99
-    DISCOUNT = 0.95
-    DISCOUNT_INC = 0.99
+    DISCOUNT = 0.9
+    DISCOUNT_INC = 1
     DISCOUNT_MAX = 0.99
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
@@ -49,18 +49,18 @@ class Defaults:
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = .1
-    EPSILON_DECAY = 100000
+    EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    FREEZE_INTERVAL = 10000
+    FREEZE_INTERVAL = 1000
     DETERMINISTIC = True
 
 
 
 
 if __name__ == "__main__":
-    game = Snake(width=64, height=64) 
+    game = Catcher(width=64, height=64) 
     logging.basicConfig(level=logging.INFO)
     
     # --- Parse parameters ---

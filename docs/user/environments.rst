@@ -29,5 +29,6 @@ Examples are better than precepts and the best is to get started with the follow
   environments/toy_env_pendulum.rst
   environments/gym.rst
   environments/two_storages.rst  
-  environments/ALE.rst
   environments/PLE.rst
+  environments/ALE.rst
+  

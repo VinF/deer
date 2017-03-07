@@ -249,18 +249,25 @@ class MyQNetwork(QNetwork):
             
         for i in range(len(self.states_shared)):
             self.next_states_shared[i].set_value(next_states_val[i])
-
+        
+        #print rewards_val
+        #print actions_val
         self.actions_shared.set_value(actions_val.reshape(len(actions_val), 1))
         self.rewards_shared.set_value(rewards_val.reshape(len(rewards_val), 1))
         self.terminals_shared.set_value(terminals_val.reshape(len(terminals_val), 1))
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
+        #print self._q_vals()
+        
         if(self._double_Q==True):
             self._next_q_curr_qnet = self.next_q_vals_current_qnet()
             loss, loss_ind, _ = self._train(self._df, self._lr,self._next_q_curr_qnet)
         else:
             loss, loss_ind, _ = self._train(self._df, self._lr)
+
+        #print "after self._q_vals"
+        #print self._q_vals()
 
         self.update_counter += 1
         

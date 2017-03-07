@@ -49,6 +49,7 @@ class MyQNetwork(QNetwork):
         self._rho = rho
         self._rms_epsilon = rms_epsilon
         self._momentum = momentum
+        self._update_rule = update_rule
         #self.clip_delta = clip_delta
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
@@ -62,15 +63,8 @@ class MyQNetwork(QNetwork):
             warn("The update_rule used is rmsprop")
             update_rule='rmsprop'            
         
-        if (update_rule=="sgd"):
-            optimizer = SGD(lr=self._lr, momentum=momentum, nesterov=False)
-        elif (update_rule=="rmsprop"):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
-        else:
-            raise Exception('The update_rule '+update_rule+' is not implemented.')
-        
-        self.q_vals.compile(optimizer=optimizer, loss='mse')
-       
+        self._compile()
+
         self.next_q_vals, self.next_params = Q_net._buildDQN()
         self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
 
@@ -172,6 +166,18 @@ class MyQNetwork(QNetwork):
 
         return np.argmax(q_vals),np.max(q_vals)
         
+    def _compile(self):
+        """ compile self.q_vals
+        """
+        if (self._update_rule=="sgd"):
+            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False)
+        elif (self._update_rule=="rmsprop"):
+            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
+        else:
+            raise Exception('The update_rule '+self._update_rule+' is not implemented.')
+        
+        self.q_vals.compile(optimizer=optimizer, loss='mse')
+
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             K.set_value(next_param,K.get_value(param))

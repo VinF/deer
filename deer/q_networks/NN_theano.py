@@ -46,12 +46,12 @@ class NN():
                 ### First layer
                 newR = dim[1]
                 newC = dim[2]
-                fR=8  # filter Rows
-                fC=8  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(32)
-                stride_size=4
+                fR=4  # filter Rows
+                fC=4  # filter Column
+                pR=2  # pool Rows
+                pC=2  # pool Column
+                nfilter.append(8)
+                stride_size=2
                 l_conv1 = ConvolutionalLayer(
                     rng=self._random_state,
                     input=inputs[i].reshape((self._batch_size,dim[0],newR,newC)),
@@ -68,9 +68,9 @@ class NN():
                 ### Second layer
                 fR=4  # filter Rows
                 fC=4  # filter Column
-                pR=1  # pool Rows
-                pC=1  # pool Column
-                nfilter.append(64)
+                pR=2  # pool Rows
+                pC=2  # pool Column
+                nfilter.append(16)
                 stride_size=2
                 l_conv2 = ConvolutionalLayer(
                     rng=self._random_state,
@@ -90,7 +90,7 @@ class NN():
                 fC=3  # filter Column
                 pR=1  # pool Rows
                 pC=1  # pool Column
-                nfilter.append(64)
+                nfilter.append(16)
                 stride_size=1
                 l_conv3 = ConvolutionalLayer(
                     rng=self._random_state,

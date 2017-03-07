@@ -83,13 +83,13 @@ class MyEnv(Environment):
         return [(4, 48, 48)]
 
     def observationType(self, subject):
-        return np.uint8
+        return np.float32
 
     def nActions(self):
         return len(self._actions)
 
     def observe(self):
-        return [np.array(self._reduced_screen)]
+        return [np.array(self._reduced_screen)/256.]
 
     def inTerminalState(self):
         return self._ple.game_over()
