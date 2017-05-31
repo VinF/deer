@@ -21,8 +21,8 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
       pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp35-cp35m-linux_x86_64.whl;
     fi
     
-    pip install keras
-    python run_mountain_car_continuous.py  --epochs 5
+#    pip install keras
+#    python run_mountain_car_continuous.py  --epochs 5
 
 else
     # Get into a temp directory to run test from the installed and
