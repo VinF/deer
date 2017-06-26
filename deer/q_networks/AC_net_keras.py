@@ -113,9 +113,7 @@ class MyACNetwork(ACNetwork):
     def setAllParams(self, list_of_values):
         for i,p in enumerate(self.params):
             K.set_value(p,list_of_values[i])
-            print i
         for j,p in enumerate(self.params_policy):
-            print i+j
             K.set_value(p,list_of_values[j+i+1])
 
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
