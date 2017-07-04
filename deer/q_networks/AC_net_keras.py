@@ -62,6 +62,7 @@ class MyACNetwork(ACNetwork):
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
+        self._nActions=environment.nActions()
         self.update_counter = 0
         
         self.sess = tf.Session()
@@ -163,7 +164,7 @@ class MyACNetwork(ACNetwork):
         loss_q=self.q_vals.train_on_batch( s_list , target ) 
         
         
-        ### Tain self.policy
+        ### Train self.policy
         cur_action=self.policy.predict(states_val.tolist())
         cur_action=self.clip_action(cur_action)
         gg=self.gradients(states_val.tolist(),cur_action)
@@ -183,13 +184,15 @@ class MyACNetwork(ACNetwork):
 
 
     def clip_action(self, action):
-        return np.clip(action,-1,1) #FIXME
+        return np.clip(action,np.array(self._nActions)[:,0],np.array(self._nActions)[:,1])
     
 
     def gradients(self, states, actions):
+        """
+        Returns the gradients on the Q-network for the different actions (used for policy update)
+        """
         feed_dict={}
         for i,s in enumerate(states):
-            #print i,s
             feed_dict[ self.inputsQ[i] ] = s
         
         feed_dict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
@@ -212,6 +215,8 @@ class MyACNetwork(ACNetwork):
         """        
         
         best_action=self.policy.predict([np.expand_dims(s,axis=0) for s in state])
+        best_action=self.clip_action(best_action)
+        
         the_list=[np.expand_dims(s,axis=0) for s in state]
         the_list.append( best_action )
         estim_value=(self.q_vals.predict(the_list)[0,0])
