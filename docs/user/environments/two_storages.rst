@@ -27,9 +27,10 @@ Two actions are possible for the agent:
 * Action 0 corresponds to discharging the long-term storage
 * Action 1 corresponds to charging the long-term storage
 
-More information can be found in the paper to be published :
-    Deep Reinforcement Learning Solutions for Energy Microgrids Management, Vincent François-Lavet, David Taralla, Damien Ernst, Raphael Fonteneau
+More information can be found in 
+    `Deep Reinforcement Learning Solutions for Energy Microgrids Management`_, Vincent François-Lavet, David Taralla, Damien Ernst, Raphael Fonteneau
 
+.. _Deep Reinforcement Learning Solutions for Energy Microgrids Management: https://ewrl.files.wordpress.com/2016/11/ewrl13-2016-submission_21.pdf
 
 Annex to the paper
 ##################
