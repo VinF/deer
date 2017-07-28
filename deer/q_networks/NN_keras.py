@@ -60,7 +60,7 @@ class NN():
 
                     out = Flatten()(x)
                 else:
-                    input = Input(shape=(dim[1],dim[0]))
+                    input = Input(shape=(dim[0],dim[1]))
                     inputs.append(input)
                     out = Flatten()(input)
 
