@@ -259,10 +259,10 @@ class NeuralAgent(object):
 
         Parameters
         -----------
-        n_epochs : number of epochs 
-            int
-        epoch_length : maximum number of steps for a given epoch
-            int
+        n_epochs : int
+            number of epochs
+        epoch_length : int
+            maximum number of steps for a given epoch
         """
         for c in self._controllers: c.onStart(self)
         i = 0
@@ -291,8 +291,8 @@ class NeuralAgent(object):
         
         Parameters
         -----------
-        maxSteps : maximum number of steps before automatically ending the episode
-            int
+        maxSteps : int
+            maximum number of steps before automatically ending the episode
         """
         self._in_episode = True
         initState = self._environment.reset(self._mode)
