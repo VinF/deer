@@ -32,6 +32,10 @@ class Environment(object):
         -----------
         mode : int
             The mode to put the environment into. Mode "-1" is reserved and always means "training".
+
+        Returns
+        -------
+        Initialization of the pseudo state at the beginning of a new episode: list (of lists) with size given by inputDimensions
         """
 
         raise NotImplementedError()
@@ -52,10 +56,10 @@ class Environment(object):
         """Gets the shape of the input space for this environment.
         
         This returns a list whose length is the number of subjects observed on the environment. Each element of the 
-        list is a tuple whose content and size depends on the type of data observed: the first integer is always the 
-        history size (or batch size) for observing this subject and the rest describes the shape of a single 
-        observation on this subject:
-        - () or (1,) means each observation on this subject is a single number and the history size is 1 (= no history)
+        list is a tuple: the first integer is always the history size considered for this subject and the rest describes 
+        the shape of a single observation on this subject:
+        - () or (1,) means each observation on this subject is a single number and the history size is 1 (= only current 
+        observation)
         - (N,) means each observation on this subject is a single number and the history size is N
         - (N, M) means each observation on this subject is a vector of length M  and the history size is N
         - (N, M1, M2) means each observation on this subject is a matrix with M1 rows and M2 columns and the history 

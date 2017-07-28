@@ -13,17 +13,26 @@ class MyEnv(Environment):
     def __init__(self, rng):
         """ Initialize environment.
 
-        Arguments:
-            rng - the numpy random number generator            
+        Parameters
+        -----------
+            rng : numpy random number generator
         """
         self.env = gym.make('MountainCarContinuous-v0')
         self.rng=rng
-        self._last_observation = self.env.reset()
+        self._last_observation = self.reset()
         self.is_terminal=False
         self._input_dim = [(1,), (1,)]
         
     def act(self, action):
-        """ Simulate one time step in the environment.
+        """ Simulate one time step in the environment and returns the reward for the time step
+        
+        Parameters
+        -----------
+        action : list of floats (in this case one float, because there is one action)
+
+        Returns
+        -------
+        reward : float
         """
         reward=0
         for _ in range(5): # Increase the duration of one time step by a factor 5
@@ -43,7 +52,8 @@ class MyEnv(Environment):
     def reset(self, mode=0):
         """ Reset environment for a new episode.
 
-        Arguments:
+        Parameters
+        -----------
         Mode : int
             -1 corresponds to training and 0 to test
         """
@@ -52,13 +62,16 @@ class MyEnv(Environment):
         self._last_observation = self.env.reset()
 
         self.is_terminal=False
-        
 
         return self._last_observation
                 
     def inTerminalState(self):
-        """ Tell whether the environment reached a terminal state after the last transition (i.e. the last transition 
-        that occured was terminal).
+        """ This returns whether the environment reached a terminal state after the last transition 
+        (i.e. whether the last transition that occurred was terminal).
+
+        Returns
+        -------
+        self.is_terminal : bool
         """
         return self.is_terminal
 
@@ -66,6 +79,12 @@ class MyEnv(Environment):
         return self._input_dim  
 
     def nActions(self):
+        """ Provides the bounds on the action space
+
+        Returns
+        -------
+        bounds on the action space
+        """
         return [[self.env.action_space.low[0],self.env.action_space.high[0]]]
 
     def observe(self):
