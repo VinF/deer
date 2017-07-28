@@ -32,6 +32,10 @@ class Environment(object):
         -----------
         mode : int
             The mode to put the environment into. Mode "-1" is reserved and always means "training".
+
+        Returns
+        -------
+        Initialization of the pseudo state at the beginning of a new episode: list (of lists) with size given by inputDimensions
         """
 
         raise NotImplementedError()

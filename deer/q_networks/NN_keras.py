@@ -5,7 +5,7 @@ Neural network using Keras (called by q_net_keras)
 
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Convolution2D, MaxPooling2D, Reshape
+from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute
 
 class NN():
     """
@@ -41,11 +41,11 @@ class NN():
             if len(dim) == 3:
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
-                x = Convolution2D(8, 4, 4, activation='relu', border_mode='valid')(input)
-                x = MaxPooling2D(pool_size=(2, 2), strides=None)(x)
-                x = Convolution2D(16, 3, 3, activation='relu', border_mode='valid')(x)
+                reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
+                x = Conv2D(8, 4, 4, activation='relu', border_mode='valid')(reshaped)   #Conv on the frames
+                x = Conv2D(16, 3, 3, activation='relu', border_mode='valid')(x)         #Conv on the frames
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, border_mode='valid')(x)
-                x = Convolution2D(16, 3, 3, activation='relu', border_mode='valid')(x)
+                x = Conv2D(16, 3, 3, activation='relu', border_mode='valid')(x)         #Conv on the frames
                 
                 out = Flatten()(x)
                 
@@ -54,9 +54,9 @@ class NN():
                 if dim[0] > 3:
                     input = Input(shape=(dim[0],dim[1]))
                     inputs.append(input)
-                    reshaped=Reshape((1,dim[0],dim[1]), input_shape=(dim[0],dim[1]))(input)
-                    x = Convolution2D(16, 2, 1, activation='relu', border_mode='valid')(reshaped)
-                    x = Convolution2D(16, 2, 2, activation='relu', border_mode='valid')(x)
+                    reshaped=Reshape((dim[0],dim[1],1), input_shape=(dim[0],dim[1]))(input) 
+                    x = Conv2D(16, (2, 1), activation='relu', border_mode='valid')(reshaped)#Conv on the history
+                    x = Conv2D(16, (2, 2), activation='relu', border_mode='valid')(x)       #Conv on the history & features
 
                     out = Flatten()(x)
                 else:
@@ -70,9 +70,9 @@ class NN():
                     # this returns a tensor
                     input = Input(shape=(dim[0],))
                     inputs.append(input)
-                    reshaped=Reshape((1,1,dim[0]), input_shape=(dim[0],))(input)
-                    x = Convolution2D(8, 1, 2, activation='relu', border_mode='valid')(reshaped)
-                    x = Convolution2D(8, 1, 2, activation='relu', border_mode='valid')(x)
+                    reshaped=Reshape((1,dim[0],1), input_shape=(dim[0],))(input)  
+                    x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(reshaped)  #Conv on the history
+                    x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(x)         #Conv on the history
                     
                     out = Flatten()(x)
                                         
