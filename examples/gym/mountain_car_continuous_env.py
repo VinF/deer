@@ -19,12 +19,13 @@ class MyEnv(Environment):
         """
         self.env = gym.make('MountainCarContinuous-v0')
         self.rng=rng
-        self._last_observation = self.env.reset()
+        self._last_observation = self.reset()
         self.is_terminal=False
         self._input_dim = [(1,), (1,)]
         
     def act(self, action):
         """ Simulate one time step in the environment and returns the reward for the time step
+        
         Parameters
         -----------
         action : list of floats (in this case one float, because there is one action)
@@ -82,7 +83,7 @@ class MyEnv(Environment):
 
         Returns
         -------
-        bound on the action space (format has to be updated in following versions of DeeR)
+        bounds on the action space
         """
         return [[self.env.action_space.low[0],self.env.action_space.high[0]]]
 

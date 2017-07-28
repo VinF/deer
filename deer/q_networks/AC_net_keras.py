@@ -184,6 +184,10 @@ class MyACNetwork(ACNetwork):
 
 
     def clip_action(self, action):
+        """
+        Clip the possible actions if it is outside the action space defined by self._nActions
+        self._nActions is given as [[low_action1,high_action1],[low_action2,high_action2], ...]
+        """
         return np.clip(action,np.array(self._nActions)[:,0],np.array(self._nActions)[:,1])
     
 
