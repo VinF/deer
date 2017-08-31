@@ -46,7 +46,9 @@ class MyACNetwork(ACNetwork):
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
-    neural_network : object, optional
+    neural_network_critic : object, optional
+        default is deer.qnetworks.NN_keras
+    neural_network_actor : object, optional
         default is deer.qnetworks.NN_keras
     """
 
