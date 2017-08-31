@@ -21,12 +21,15 @@ class NN():
     input_dimensions : tuples
     n_actions : int
     random_state : numpy random number generator
+    action_as_input : Boolean
+        Whether the action is given as input or as output
     """
-    def __init__(self, batch_size, input_dimensions, n_actions, random_state):
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False):
         self._input_dimensions=input_dimensions
         self._batch_size=batch_size
         self._random_state=random_state
         self._n_actions=n_actions
+        self._action_as_input=action_as_input
 
     def _buildDQN(self):
         """
@@ -89,6 +92,14 @@ class NN():
                             
             outs_conv.append(x)
         
+        if (self._action_as_input==True):
+            if ( isinstance(self._n_actions,int)):
+                print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
+            else:
+                input = Input(shape=(len(self._n_actions),))
+                inputs.append(input)
+                outs_conv.append(input)
+
         if len(outs_conv)>1:
             x = merge(outs_conv, mode='concat')
         else:
@@ -96,7 +107,14 @@ class NN():
                     
         x = Dense(50, activation='relu')(x)
         x = Dense(20, activation='relu')(x)
-        out = Dense(self._n_actions)(x)
+
+        if (self._action_as_input==False):
+            if ( isinstance(self._n_actions,int)):
+                out = Dense(self._n_actions)(x)
+            else:
+                out = Dense(len(self._n_actions))(x)
+        else:
+            out = Dense(1)(x)
 
         model = Model(input=inputs, output=out)
         layers=model.layers
@@ -106,7 +124,10 @@ class NN():
                     for layer in layers 
                     for param in layer.trainable_weights ]
 
-        return model, params
+        if (self._action_as_input==True):
+            return model, params, inputs
+        else:
+            return model, params
 
 if __name__ == '__main__':
     pass

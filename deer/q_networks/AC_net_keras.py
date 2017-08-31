@@ -46,7 +46,9 @@ class MyACNetwork(ACNetwork):
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
-    neural_network : object, optional
+    neural_network_critic : object, optional
+        default is deer.qnetworks.NN_keras
+    neural_network_actor : object, optional
         default is deer.qnetworks.NN_keras
     """
 
@@ -171,7 +173,7 @@ class MyACNetwork(ACNetwork):
         
         target_action=self.clip_action(cur_action+gg)
         
-        # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
+        # Calculation of the individual losses for the policy network
         diff_policy = - cur_action + target_action
         loss_ind_policy=np.sum(pow(diff_policy,2),axis=-1)
 
