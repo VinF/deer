@@ -7,7 +7,7 @@ Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 import sys
 import numpy as np
 from ..base_classes import QNetwork as ACNetwork
-from .NN_keras import NN # Default Neural network used
+from .NN_keras_LSTM import NN # Default Neural network used
 from warnings import warn
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
@@ -171,7 +171,7 @@ class MyACNetwork(ACNetwork):
         
         target_action=self.clip_action(cur_action+gg)
         
-        # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
+        # Calculation of the individual losses for the policy network
         diff_policy = - cur_action + target_action
         loss_ind_policy=np.sum(pow(diff_policy,2),axis=-1)
 
