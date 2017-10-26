@@ -1,4 +1,4 @@
-"""Toy environment launcher. See the wiki for more details about this environment.
+"""Toy environment launcher. See the docs for more details about this environment.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """

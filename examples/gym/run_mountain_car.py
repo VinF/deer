@@ -1,5 +1,5 @@
 """ Mountain car environment launcher.
-Same principles as run_toy_env. See the wiki for more details.
+Same principles as run_toy_env. See the docs for more details.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
