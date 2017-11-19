@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras import MyQNetwork
+from deer.q_networks.q_net_keras_lp import MyQNetwork
 from PLE_env import MyEnv as PLE_env
 import deer.experiment.base_controllers as bc
 
