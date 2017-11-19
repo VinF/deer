@@ -59,10 +59,6 @@ class MyQNetwork(QNetwork):
         Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
         self.q_vals, self.params = Q_net._buildDQN()
         
-        if update_rule == 'deepmind_rmsprop':
-            warn("The update_rule used is rmsprop")
-            update_rule='rmsprop'            
-        
         self._compile()
 
         self.next_q_vals, self.next_params = Q_net._buildDQN()
