@@ -1,4 +1,4 @@
-"""2-Storage Microgrid launcher. See Wiki for more details about this experiment.
+"""2-Storage Microgrid launcher. See the docs for more details about this experiment.
 
 Authors: Vincent Francois-Lavet, David Taralla
 """
