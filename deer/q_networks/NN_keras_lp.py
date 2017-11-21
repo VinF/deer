@@ -5,7 +5,8 @@ Neural network using Keras (called by q_net_keras)
 
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute
+from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add
+from keras import regularizers
 
 np.random.seed(102912)
 
@@ -44,20 +45,22 @@ class NN():
         model with output x (= encoding of s)
     
         """
-        inputs = [ Input( shape=(4,48,48,) ) ]
-        # input_distr, conditional info
+        inputs = [ Input( shape=(2,48,48,) ) ]
+        # input_distr
         
         x = inputs[0]
         x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')(x)
+        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
         x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')(x)
+        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+        x = Conv2D(8, (4, 4), padding='same', activation='relu')(x)
+        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
         
         x = Flatten()(x)
         
         x = Dense(20, activation='relu')(x)
 
-        x = Dense(self._internal_dim, activation='relu')(x)
+        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.0001))(x) #, activation='relu'
         
         model = Model(input=inputs, output=x)
         
@@ -77,13 +80,15 @@ class NN():
         model with output Tx (= model estimate of x')
     
         """
-        inputs = [ Input( shape=(4,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ) ] #s,a,z
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ) ] #s,a,z
         
-        x = encoder_model(inputs[0]) #s,a,z --> x,a,z
+        enc_x = encoder_model(inputs[0]) #s --> x
         
-        x = merge([x]+inputs[1:],mode='concat',concat_axis=-1)
+        x = merge([enc_x]+inputs[1:],mode='concat',concat_axis=-1)
         x = Dense(20, activation='relu')(x)
-        x = Dense(self._internal_dim, activation='relu')(x)
+        x = Dense(20, activation='relu')(x)
+        x = Dense(self._internal_dim)(x) #, activation='relu'
+        #x = Add()([enc_x,x])
         
         model = Model(input=inputs, output=x)
         
@@ -102,10 +107,11 @@ class NN():
         model with output D
     
         """
-        inputs = [ Input( shape=(self._internal_dim,) ), Input( shape=(self._n_actions,) ) ]
-        # distr Tx/x', conditional info a
+        inputs = [ Input( shape=(self._internal_dim,) ), Input( shape=(self._internal_dim,) ), Input( shape=(self._n_actions,) ) ]
+        # distr Tx/x', conditional info x, a
      
         x=merge(inputs,mode='concat')
+        x = Dense(20, activation='relu')(x)
         x = Dense(20, activation='relu')(x)
         true_or_model=Dense(1, activation='sigmoid')(x)
         model = Model(input=inputs, output=true_or_model)
@@ -119,100 +125,62 @@ class NN():
         s
         a
         random z
-        x'
+        x
     
         Returns
         -------
         model with output D
     
         """
-        inputs = [ Input( shape=(4,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ), Input( shape=(self._internal_dim,) ) ]
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ), Input( shape=(self._internal_dim,) )]#, Input( shape=(self._internal_dim,) ) ]
         # input_distr, conditional info
         T = generator_transition_model(inputs[0:3])
         
         discriminator.trainable = False
-        gan_V = discriminator([T, inputs[1]])
+        gan_V = discriminator([T, inputs[3], inputs[1]])
         model = Model(input=inputs, output=gan_V)
         return model
 
-    def full_model_enc(self,generator_transition_model, encoder_model, discriminator):
+    def full_model_enc(self,encoder_model, discriminator):
         """
     
         Parameters
         -----------
         s'
         a
-        Tx
+        x
             
         Returns
         -------
         model with output D
     
         """
-        inputs = [ Input( shape=(4,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._internal_dim,) ) ] #s,a,Tx
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._internal_dim,) ) ] #s,a,Tx
         # input_distr, conditional info
-        T = generator_transition_model(inputs[0:2])
+        x = encoder_model(inputs[0])
         
         discriminator.trainable = False
-        gan_V = discriminator([T, inputs[1]])
+        gan_V = discriminator([x, inputs[2], inputs[1]])
         model = Model(input=inputs, output=gan_V)
         return model
 
 
-    def _buildDQN(self):
+    def _buildDQN(self,encoder_model):
         """
         Build a network consistent with each type of inputs
         """
         layers=[]
         outs_conv=[]
         inputs=[]
-
+        
+        #if len(dim) == 3:
         for i, dim in enumerate(self._input_dimensions):
-            # - observation[i] is a FRAME
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
-                inputs.append(input)
-                reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
-                x = Conv2D(8, (4, 4), activation='relu', padding='valid')(reshaped)   #Conv on the frames
-                x = Conv2D(16, (3, 3), activation='relu', padding='valid')(x)         #Conv on the frames
-                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')(x)
-                x = Conv2D(16, (3, 3), activation='relu', padding='valid')(x)         #Conv on the frames
-                
-                out = Flatten()(x)
-                
-            # - observation[i] is a VECTOR
-            elif len(dim) == 2:
-                if dim[0] > 3:
-                    input = Input(shape=(dim[0],dim[1]))
-                    inputs.append(input)
-                    reshaped=Reshape((dim[0],dim[1],1), input_shape=(dim[0],dim[1]))(input) 
-                    x = Conv2D(16, (2, 1), activation='relu', padding='valid')(reshaped)#Conv on the history
-                    x = Conv2D(16, (2, 2), activation='relu', padding='valid')(x)       #Conv on the history & features
+            input = Input(shape=(dim[0],dim[1],dim[2]))
+            inputs.append(input)
 
-                    out = Flatten()(x)
-                else:
-                    input = Input(shape=(dim[0],dim[1]))
-                    inputs.append(input)
-                    out = Flatten()(input)
-
-            # - observation[i] is a SCALAR -
-            else:
-                if dim[0] > 3:
-                    # this returns a tensor
-                    input = Input(shape=(dim[0],))
-                    inputs.append(input)
-                    reshaped=Reshape((1,dim[0],1), input_shape=(dim[0],))(input)  
-                    x = Conv2D(8, (1,2), activation='relu', padding='valid')(reshaped)  #Conv on the history
-                    x = Conv2D(8, (1,2), activation='relu', padding='valid')(x)         #Conv on the history
-                    
-                    out = Flatten()(x)
-                                        
-                else:
-                    input = Input(shape=(dim[0],))
-                    inputs.append(input)
-                    out=input
-                    
-            outs_conv.append(out)
+        out = encoder_model(inputs)
+        
+        outs_conv.append(out)
 
         if (self._action_as_input==True):
             if ( isinstance(self._n_actions,int)):

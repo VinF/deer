@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 class MyEnv(Environment):
     VALIDATION_MODE = 0
 
-    def __init__(self, rng, game=None, frame_skip=4, 
-            ple_options={"display_screen": True, "force_fps":True, "fps":30}):
+    def __init__(self, rng, game=None, frame_skip=2, 
+            ple_options={"display_screen": True, "force_fps":True, "fps":15}):
 
         self._mode = -1
         self._mode_score = 0.0
@@ -57,7 +57,7 @@ class MyEnv(Environment):
         self._screen = self._ple.getScreenGrayscale()
         cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
         
-        return [4 * [48 * [48 * [0]]]]
+        return [2 * [48 * [48 * [0]]]]
         
         
     def act(self, action):
@@ -82,7 +82,7 @@ class MyEnv(Environment):
 
 
     def inputDimensions(self):
-        return [(4, 48, 48)]
+        return [(2, 48, 48)]
 
     def observationType(self, subject):
         return np.float32
