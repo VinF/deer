@@ -47,7 +47,6 @@ class QNetwork(object):
             The learning rate that has to bet set
         """
         self._lr = lr
-        self._compile()
 
     def setDiscountFactor(self, df):
         """ Setting the discount factor

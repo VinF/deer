@@ -60,7 +60,7 @@ class NN():
         
         x = Dense(20, activation='relu')(x)
 
-        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.0001))(x) #, activation='relu'
+        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         
         model = Model(input=inputs, output=x)
         
@@ -134,9 +134,12 @@ class NN():
         """
         inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ), Input( shape=(self._internal_dim,) )]#, Input( shape=(self._internal_dim,) ) ]
         # input_distr, conditional info
+        
+        for layer in discriminator.layers:
+            layer.trainable = False
+
         T = generator_transition_model(inputs[0:3])
         
-        discriminator.trainable = False
         gan_V = discriminator([T, inputs[3], inputs[1]])
         model = Model(input=inputs, output=gan_V)
         return model
@@ -159,7 +162,8 @@ class NN():
         # input_distr, conditional info
         x = encoder_model(inputs[0])
         
-        discriminator.trainable = False
+        for layer in discriminator.layers:
+            layer.trainable = False
         gan_V = discriminator([x, inputs[2], inputs[1]])
         model = Model(input=inputs, output=gan_V)
         return model

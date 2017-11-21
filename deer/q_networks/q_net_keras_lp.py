@@ -70,10 +70,7 @@ class MyQNetwork(QNetwork):
 
         self.generator_transition = Q_net.generator_transition_model(self.encoder)
         self.discriminator = Q_net.discriminator_model()
-        self.full_trans = Q_net.full_model_trans(self.generator_transition, self.encoder, self.discriminator)
-        self.full_enc = Q_net.full_model_enc(self.encoder, self.discriminator)
 
-        self.discriminator.trainable = True
         self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer2)
         self.generator_transition.compile(optimizer=optimizer,
                   loss='mae',
@@ -81,6 +78,10 @@ class MyQNetwork(QNetwork):
         self.encoder.compile(optimizer=optimizer,
                   loss='mae',
                   metrics=['accuracy'])
+                  
+        # Full models have to be instatiated and compiled afterwards (we put the discriminator weights to non-trainable)
+        self.full_trans = Q_net.full_model_trans(self.generator_transition, self.encoder, self.discriminator)
+        self.full_enc = Q_net.full_model_enc(self.encoder, self.discriminator)
         self.full_trans.compile(loss='binary_crossentropy', optimizer=optimizer)
         self.full_enc.compile(loss='binary_crossentropy', optimizer=optimizer)
             
@@ -161,7 +162,7 @@ class MyQNetwork(QNetwork):
         noise_to_avoid_too_easy_disc=np.random.normal(size=X.shape)*(0.7-min(self.d_loss,0.7))*1#*100/max(100,epoch)
         self.d_loss=0
         for i in range(5):
-            self.discriminator.trainable = True
+
             loss = self.discriminator.train_on_batch([X+noise_to_avoid_too_easy_disc, np.tile(Es,(2,1)), np.tile(onehot_actions,(2,1))], y)
             self.d_loss += loss
             if loss < 0.01:
@@ -173,11 +174,16 @@ class MyQNetwork(QNetwork):
             print self.d_loss
                     
         # Training generator ETs
-        self.discriminator.trainable = False # required?
+        #print "self.discriminator.get_weights()1"
+        #print self.discriminator.get_weights()
+        
         g_loss1 = self.full_trans.train_on_batch([states_val[0], onehot_actions, noise, Es], [0] * self._batch_size) # ETs should look like Es_
 
         # Training generator Es'
         g_loss2 = self.full_enc.train_on_batch([next_states_val[0], onehot_actions, Es], [1] * self._batch_size) # Es_ should look like ETs
+
+        #print "self.discriminator.get_weights()2"
+        #print self.discriminator.get_weights()
 
         if(self.update_counter%100==0):
             print "g_losses"
@@ -214,8 +220,8 @@ class MyQNetwork(QNetwork):
         # Only some elements of next_q_vals are actual value that I target. 
         # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
-        if (self.update_counter<10000):
-            loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
+        #if (self.update_counter<10000):
+        loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
                 
         if(self.update_counter%100==0):
             print self.update_counter
