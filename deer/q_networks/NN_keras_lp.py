@@ -86,9 +86,9 @@ class NN():
         
         x = merge([enc_x]+inputs[1:],mode='concat',concat_axis=-1)
         x = Dense(20, activation='relu')(x)
-        x = Dense(20, activation='relu')(x)
-        x = Dense(self._internal_dim)(x) #, activation='relu'
-        #x = Add()([enc_x,x])
+        #x = Dense(20, activation='relu')(x)
+        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Add()([enc_x,x])
         
         model = Model(input=inputs, output=x)
         
@@ -112,7 +112,7 @@ class NN():
      
         x=merge(inputs,mode='concat')
         x = Dense(20, activation='relu')(x)
-        x = Dense(20, activation='relu')(x)
+        #x = Dense(20, activation='relu')(x)
         true_or_model=Dense(1, activation='sigmoid')(x)
         model = Model(input=inputs, output=true_or_model)
         return model

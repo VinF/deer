@@ -159,7 +159,7 @@ class MyQNetwork(QNetwork):
             
         y = [1] * self._batch_size + [0] * self._batch_size # first batch size is ETs and second is Es'
         
-        noise_to_avoid_too_easy_disc=np.random.normal(size=X.shape)*(0.7-min(self.d_loss,0.7))*1#*100/max(100,epoch)
+        noise_to_avoid_too_easy_disc=np.random.normal(size=X.shape)*(0.7-min(self.d_loss,0.7))*0.5#*100/max(100,epoch)
         self.d_loss=0
         for i in range(5):
 
@@ -222,7 +222,9 @@ class MyQNetwork(QNetwork):
         # Workaround here is that many values are already "exact" in this update
         #if (self.update_counter<10000):
         loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
-                
+        #print "self.q_vals.optimizer.lr"
+        #print K.eval(self.q_vals.optimizer.lr)
+        
         if(self.update_counter%100==0):
             print self.update_counter
         

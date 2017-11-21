@@ -38,7 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.002
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
