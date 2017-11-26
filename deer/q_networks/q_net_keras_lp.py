@@ -11,6 +11,9 @@ from keras import backend as K
 from ..base_classes import QNetwork
 from .NN_keras_lp import NN # Default Neural network used
 
+def mean_squared_error_1(y_true, y_pred):
+    return K.abs(y_pred - y_true)
+
 class MyQNetwork(QNetwork):
     """
     Deep Q-learning network using Keras (with any backend)
@@ -57,37 +60,23 @@ class MyQNetwork(QNetwork):
         self._random_state = random_state
         self.update_counter = 0    
         self.d_loss=1.
+        self.loss1=0
+        self.loss2=0
+        self.loss3=0
+        
+        self.Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
 
-                
-        Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
 
-        optimizer=RMSprop(lr=0.00005, rho=0.9, epsilon=1e-06)
-        optimizer2=RMSprop(lr=0.0001, rho=0.9, epsilon=1e-06)#.Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, epsilon=1e-08)
+        self.encoder = self.Q_net.encoder_model()
 
-        self.encoder = Q_net.encoder_model()
+        self.q_vals, self.params = self.Q_net._buildDQN(self.encoder)
 
-        self.q_vals, self.params = Q_net._buildDQN(self.encoder)
-
-        self.generator_transition = Q_net.generator_transition_model(self.encoder)
-        self.discriminator = Q_net.discriminator_model()
-
-        self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer2)
-        self.generator_transition.compile(optimizer=optimizer,
-                  loss='mae',
-                  metrics=['accuracy'])
-        self.encoder.compile(optimizer=optimizer,
-                  loss='mae',
-                  metrics=['accuracy'])
-                  
-        # Full models have to be instatiated and compiled afterwards (we put the discriminator weights to non-trainable)
-        self.full_trans = Q_net.full_model_trans(self.generator_transition, self.encoder, self.discriminator)
-        self.full_enc = Q_net.full_model_enc(self.encoder, self.discriminator)
-        self.full_trans.compile(loss='binary_crossentropy', optimizer=optimizer)
-        self.full_enc.compile(loss='binary_crossentropy', optimizer=optimizer)
-            
+        self.generator_transition = self.Q_net.generator_transition_model(self.encoder)
+        self.generator_diff_s_s_ = self.Q_net.generator_diff_s_s_(self.encoder)
+                              
         self._compile()
 
-        self.next_q_vals, self.next_params = Q_net._buildDQN(self.encoder)
+        self.next_q_vals, self.next_params = self.Q_net._buildDQN(self.encoder)
         self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
 
         self._resetQHat()
@@ -126,7 +115,6 @@ class MyQNetwork(QNetwork):
         #print "self.discriminator.get_weights()"
         #print self.discriminator.get_weights()
 
-        noise = np.random.uniform(-1,1,size=(self._batch_size,5)) #self._rand_vect_size=5
         ##print "[states_val[0],actions_val,noise]"
         ##print [states_val[0],actions_val,noise]
         ##print "states_val.tolist()"
@@ -136,7 +124,7 @@ class MyQNetwork(QNetwork):
         #print onehot_actions
         #print "[states_val[0],onehot_actions,noise]"
         #print [states_val[0],onehot_actions,noise]
-        ETs=self.generator_transition.predict([states_val[0],onehot_actions,noise])
+        ETs=self.generator_transition.predict([states_val[0],onehot_actions])
         Es_=self.encoder.predict([next_states_val[0]])
         Es=self.encoder.predict([states_val[0]])
         
@@ -148,53 +136,27 @@ class MyQNetwork(QNetwork):
             print actions_val, rewards_val, terminals_val
             print "Es"
             print Es
-            print "X"
+            print "ETs,Es_"
             print ETs,Es_
             #print "disc"
             #print self.discriminator.predict([X, np.tile(onehot_actions,(2,1))])
-            print "full trans"
-            print self.full_trans.predict([states_val[0], onehot_actions, noise, Es])
-            print "full enc"
-            print self.full_enc.predict([next_states_val[0], onehot_actions, Es])
             
-        y = [1] * self._batch_size + [0] * self._batch_size # first batch size is ETs and second is Es'
+        self.loss1+=self.generator_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
+        self.loss2+=self.encoder.train_on_batch(next_states_val[0], ETs ) 
+
+        self.loss3+=self.generator_diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*1) 
         
-        noise_to_avoid_too_easy_disc=np.random.normal(size=X.shape)*(0.7-min(self.d_loss,0.7))*0.5#*100/max(100,epoch)
-        self.d_loss=0
-        for i in range(5):
-
-            loss = self.discriminator.train_on_batch([X+noise_to_avoid_too_easy_disc, np.tile(Es,(2,1)), np.tile(onehot_actions,(2,1))], y)
-            self.d_loss += loss
-            if loss < 0.01:
-                break
-        self.d_loss=self.d_loss/(i+1)
-
         if(self.update_counter%100==0):
-            print "d_loss"
-            print self.d_loss
-                    
-        # Training generator ETs
-        #print "self.discriminator.get_weights()1"
-        #print self.discriminator.get_weights()
-        
-        g_loss1 = self.full_trans.train_on_batch([states_val[0], onehot_actions, noise, Es], [0] * self._batch_size) # ETs should look like Es_
-
-        # Training generator Es'
-        g_loss2 = self.full_enc.train_on_batch([next_states_val[0], onehot_actions, Es], [1] * self._batch_size) # Es_ should look like ETs
-
-        #print "self.discriminator.get_weights()2"
-        #print self.discriminator.get_weights()
-
-        if(self.update_counter%100==0):
-            print "g_losses"
-            print g_loss1
-            print g_loss2
-
+            print "losses"
+            print self.loss1/100.,self.loss2/100.,self.loss3/100.
+            self.loss1=0
+            self.loss2=0
+            self.loss3=0
 
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        next_q_vals = self.next_q_vals.predict(next_states_val.tolist())
+        next_q_vals = self.next_q_vals.predict([next_states_val[0],np.zeros((32,self.Q_net.internal_dim))])
         
         if(self._double_Q==True):
             next_q_vals_current_qnet=self.q_vals.predict(next_states_val.tolist())
@@ -207,7 +169,7 @@ class MyQNetwork(QNetwork):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.q_vals.predict(states_val.tolist())
+        q_vals=self.q_vals.predict([states_val[0],np.zeros((32,self.Q_net.internal_dim))])
 
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
@@ -221,7 +183,9 @@ class MyQNetwork(QNetwork):
         # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
         #if (self.update_counter<10000):
-        loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
+        noise_to_be_robust=np.random.normal(size=(32,self.Q_net.internal_dim))*0.25
+
+        loss=self.q_vals.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         #print "self.q_vals.optimizer.lr"
         #print K.eval(self.q_vals.optimizer.lr)
         
@@ -245,7 +209,7 @@ class MyQNetwork(QNetwork):
         -------
         The q values for the provided belief state
         """ 
-        return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
+        return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((32,self.Q_net.internal_dim))])[0]
 
     def chooseBestAction(self, state):
         """ Get the best action for a belief state
@@ -273,7 +237,25 @@ class MyQNetwork(QNetwork):
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
+        
+
+        optimizer=RMSprop(lr=self._lr/20., rho=0.9, epsilon=1e-06)
+        optimizer2=RMSprop(lr=self._lr/10., rho=0.9, epsilon=1e-06)#.Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, epsilon=1e-08)
+
+        self.generator_transition.compile(optimizer=optimizer,
+                  loss='mae')
+                  #metrics=['accuracy'])
+        self.encoder.compile(optimizer=optimizer,
+                  loss='mae')
+                  #metrics=['accuracy'])
+        self.generator_diff_s_s_.compile(optimizer=optimizer2,
+                  loss=mean_squared_error_1)
+                  #metrics=['accuracy'])
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             K.set_value(next_param,K.get_value(param))
+
+        self._compile() # recompile to take into account new optimizer parameters that may have changed since
+                        # self._compile() was called in __init__. FIXME: this call should ideally be done elsewhere
+        

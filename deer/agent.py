@@ -179,7 +179,7 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmp_dataset)
+        self._environment.summarizePerformance(self._tmp_dataset, self._network)
 
     def train(self):
         """

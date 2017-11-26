@@ -39,7 +39,7 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
     LEARNING_RATE = 0.002
-    LEARNING_RATE_DECAY = 0.99
+    LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
     DISCOUNT_MAX = 0.99

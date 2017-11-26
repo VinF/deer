@@ -4,8 +4,9 @@ Neural network using Keras (called by q_net_keras)
 """
 
 import numpy as np
+from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add
+from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, add, Dot, Multiply, Average, Lambda
 from keras import regularizers
 
 np.random.seed(102912)
@@ -30,7 +31,7 @@ class NN():
         self._random_state=random_state
         self._n_actions=n_actions
         self._action_as_input=action_as_input
-        self._internal_dim=3 # size random vector
+        self.internal_dim=5 # size random vector
         self._rand_vect_size=5 # size output distribution
 
     def encoder_model(self):
@@ -60,7 +61,7 @@ class NN():
         
         x = Dense(20, activation='relu')(x)
 
-        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Dense(self.internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         
         model = Model(input=inputs, output=x)
         
@@ -80,44 +81,21 @@ class NN():
         model with output Tx (= model estimate of x')
     
         """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ) ] #s,a,z
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) ] #s,a
         
         enc_x = encoder_model(inputs[0]) #s --> x
         
         x = merge([enc_x]+inputs[1:],mode='concat',concat_axis=-1)
         x = Dense(20, activation='relu')(x)
         #x = Dense(20, activation='relu')(x)
-        x = Dense(self._internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([enc_x,x])
         
         model = Model(input=inputs, output=x)
         
         return model
-    
-    def discriminator_model(self):
-        """
-    
-        Parameters
-        -----------
-        Tx or x'
-        conditional info a
-    
-        Returns
-        -------
-        model with output D
-    
-        """
-        inputs = [ Input( shape=(self._internal_dim,) ), Input( shape=(self._internal_dim,) ), Input( shape=(self._n_actions,) ) ]
-        # distr Tx/x', conditional info x, a
-     
-        x=merge(inputs,mode='concat')
-        x = Dense(20, activation='relu')(x)
-        #x = Dense(20, activation='relu')(x)
-        true_or_model=Dense(1, activation='sigmoid')(x)
-        model = Model(input=inputs, output=true_or_model)
-        return model
-        
-    def full_model_trans(self,generator_transition_model, encoder_model, discriminator):
+
+    def generator_diff_s_s_(self,encoder_model):
         """
     
         Parameters
@@ -125,49 +103,23 @@ class NN():
         s
         a
         random z
-        x
     
         Returns
         -------
-        model with output D
+        model with output Tx (= model estimate of x')
     
         """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._rand_vect_size,) ), Input( shape=(self._internal_dim,) )]#, Input( shape=(self._internal_dim,) ) ]
-        # input_distr, conditional info
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(2,48,48,) ) ] #s,s'
         
-        for layer in discriminator.layers:
-            layer.trainable = False
-
-        T = generator_transition_model(inputs[0:3])
+        enc_x = encoder_model(inputs[0]) #s --> x
+        enc_x_ = encoder_model(inputs[1]) #s --> x
         
-        gan_V = discriminator([T, inputs[3], inputs[1]])
-        model = Model(input=inputs, output=gan_V)
+        x = Subtract()([enc_x,enc_x_])
+        x = Dot(axes=-1, normalize=False)([x,x])
+        
+        model = Model(input=inputs, output=x )
+        
         return model
-
-    def full_model_enc(self,encoder_model, discriminator):
-        """
-    
-        Parameters
-        -----------
-        s'
-        a
-        x
-            
-        Returns
-        -------
-        model with output D
-    
-        """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ), Input( shape=(self._internal_dim,) ) ] #s,a,Tx
-        # input_distr, conditional info
-        x = encoder_model(inputs[0])
-        
-        for layer in discriminator.layers:
-            layer.trainable = False
-        gan_V = discriminator([x, inputs[2], inputs[1]])
-        model = Model(input=inputs, output=gan_V)
-        return model
-
 
     def _buildDQN(self,encoder_model):
         """
@@ -181,8 +133,11 @@ class NN():
         for i, dim in enumerate(self._input_dimensions):
             input = Input(shape=(dim[0],dim[1],dim[2]))
             inputs.append(input)
+        
+        input = Input(shape=(self.internal_dim,))
+        inputs.append(input)
 
-        out = encoder_model(inputs)
+        out = encoder_model(inputs[:-1])
         
         outs_conv.append(out)
 
@@ -198,6 +153,8 @@ class NN():
             x = merge(outs_conv, mode='concat')
         else:
             x= outs_conv [0]
+        
+        x = Add()([x,inputs[-1]])
         
         # we stack a deep fully-connected network on top
         x = Dense(50, activation='relu')(x)
