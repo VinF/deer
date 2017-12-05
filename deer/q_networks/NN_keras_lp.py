@@ -6,7 +6,7 @@ Neural network using Keras (called by q_net_keras)
 import numpy as np
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, add, Dot, Multiply, Average, Lambda
+from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate
 from keras import regularizers
 
 np.random.seed(102912)
@@ -31,7 +31,7 @@ class NN():
         self._random_state=random_state
         self._n_actions=n_actions
         self._action_as_input=action_as_input
-        self.internal_dim=5 # size random vector
+        self.internal_dim=3 # size random vector
         self._rand_vect_size=5 # size output distribution
 
     def encoder_model(self):
@@ -60,21 +60,46 @@ class NN():
         x = Flatten()(x)
         
         x = Dense(20, activation='relu')(x)
+        x = Dense(10, activation='relu')(x)
 
-        x = Dense(self.internal_dim, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         
-        model = Model(input=inputs, output=x)
+        model = Model(inputs=inputs, outputs=x)
         
         return model
 
-    def generator_transition_model(self,encoder_model):
+    def transition_model(self):
+        """
+    
+        Parameters
+        -----------
+        x
+        a
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
+    
+        """
+        inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
+
+        x = Concatenate()(inputs)#,axis=-1)
+        x = Dense(20, activation='relu')(x)
+        x = Dense(20, activation='relu')(x)
+        x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Add()([inputs[0],x])
+        
+        model = Model(inputs=inputs, outputs=x)
+        
+        return model
+
+    def full_transition_model(self,encoder_model,transition_model):
         """
     
         Parameters
         -----------
         s
         a
-        random z
     
         Returns
         -------
@@ -85,17 +110,13 @@ class NN():
         
         enc_x = encoder_model(inputs[0]) #s --> x
         
-        x = merge([enc_x]+inputs[1:],mode='concat',concat_axis=-1)
-        x = Dense(20, activation='relu')(x)
-        #x = Dense(20, activation='relu')(x)
-        x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
-        x = Add()([enc_x,x])
+        x = transition_model([enc_x]+inputs[1:])
         
-        model = Model(input=inputs, output=x)
+        model = Model(inputs=inputs, outputs=x)
         
         return model
 
-    def generator_diff_s_s_(self,encoder_model):
+    def diff_s_s_(self,encoder_model):
         """
     
         Parameters
@@ -117,13 +138,134 @@ class NN():
         x = Subtract()([enc_x,enc_x_])
         x = Dot(axes=-1, normalize=False)([x,x])
         
-        model = Model(input=inputs, output=x )
+        model = Model(inputs=inputs, outputs=x )
         
         return model
 
-    def _buildDQN(self,encoder_model):
+    def diff_Tx(self,transition_model):
+        """
+    
+        Parameters
+        -----------
+        x
+        a
+        x
+        a
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
+    
+        """
+        inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ), Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) )] #x,a,x,a
+        
+        #identity_mat=inputs[2]#K.constant(np.diag(np.ones(self._n_actions)), name="identity_mat")
+        Tx = transition_model(inputs[:2])
+        Tx2 = transition_model(inputs[2:])
+        
+        #tile_x=K.tile(inputs[0],(self._n_actions,1))        
+        #Tx_ = transition_model([tile_x]+[identity_mat])
+        
+        x = Subtract()([Tx,Tx2])
+        x = Dot(axes=-1, normalize=False)([x,x])
+        
+        model = Model(inputs=inputs, outputs=x )
+        
+        return model
+
+    def R_model(self):
         """
         Build a network consistent with each type of inputs
+
+        Parameters
+        -----------
+        x
+        a
+    
+        Returns
+        -------
+        r
+        """
+        
+        inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
+        
+        x = Concatenate()(inputs[:1]+inputs[1:])#,axis=-1)
+        x = Dense(20, activation='relu')(inputs[0])
+        #x = Dense(10, activation='relu')(inputs[0])
+        
+        out = Dense(1)(x)
+                
+        model = Model(inputs=inputs, outputs=out)
+        
+        return model
+
+    def full_R_model(self,encoder_model,R_model):
+        """
+        Maps internal state to immediate rewards
+
+        Parameters
+        -----------
+        s
+        a
+        (noise in abstract state space) : FIXME
+    
+        Returns
+        -------
+        r
+        """
+        
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) ] #s,a
+        
+        enc_x = encoder_model(inputs[0]) #s --> x
+                
+        out = R_model([enc_x]+inputs[1:])
+                
+        model = Model(inputs=inputs, outputs=out)
+        
+        return model
+
+    def Q_model(self):
+        
+        inputs = [ Input( shape=(self.internal_dim,) ) ] #x
+        
+        #if (self._action_as_input==True):
+        #    if ( isinstance(self._n_actions,int)):
+        #        print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
+        #    else:
+        #        input = Input(shape=(len(self._n_actions),))
+        #        inputs.append(input)
+                
+        #x = Add()([x,inputs[-1]]) #????
+        
+        # we stack a deep fully-connected network on top
+        x = Dense(50, activation='relu')(inputs[0])
+        x = Dense(20, activation='relu')(x)
+        
+        #if (self._action_as_input==False):
+        #    if ( isinstance(self._n_actions,int)):
+        out = Dense(self._n_actions)(x)
+        #    else:
+        #        out = Dense(len(self._n_actions))(x)
+        #else:
+        #    out = Dense(1)(x)
+                
+        model = Model(inputs=inputs, outputs=out)
+        
+        return model
+
+
+    def full_Q_model(self, encoder_model, Q_model):
+        """
+        Build a network consistent with each type of inputs
+
+        Parameters
+        -----------
+        s
+        noise in abstract state space
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
         """
         layers=[]
         outs_conv=[]
@@ -138,48 +280,14 @@ class NN():
         inputs.append(input)
 
         out = encoder_model(inputs[:-1])
-        
-        outs_conv.append(out)
-
-        if (self._action_as_input==True):
-            if ( isinstance(self._n_actions,int)):
-                print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
-            else:
-                input = Input(shape=(len(self._n_actions),))
-                inputs.append(input)
-                outs_conv.append(input)
-        
-        if len(outs_conv)>1:
-            x = merge(outs_conv, mode='concat')
-        else:
-            x= outs_conv [0]
-        
-        x = Add()([x,inputs[-1]])
-        
-        # we stack a deep fully-connected network on top
-        x = Dense(50, activation='relu')(x)
-        x = Dense(20, activation='relu')(x)
-        
-        if (self._action_as_input==False):
-            if ( isinstance(self._n_actions,int)):
-                out = Dense(self._n_actions)(x)
-            else:
-                out = Dense(len(self._n_actions))(x)
-        else:
-            out = Dense(1)(x)
                 
-        model = Model(input=inputs, output=out)
-        layers=model.layers
+        x=Add()([out,inputs[-1]]) # adding noise in the abstract state space
         
-        # Grab all the parameters together.
-        params = [ param
-                    for layer in layers 
-                    for param in layer.trainable_weights ]
+        out = Q_model(out)
+
+        model = Model(inputs=inputs, outputs=out)
         
-        if (self._action_as_input==True):
-            return model, params, inputs
-        else:
-            return model, params
+        return model
 
 if __name__ == '__main__':
     pass

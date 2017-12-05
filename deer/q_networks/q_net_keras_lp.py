@@ -54,7 +54,6 @@ class MyQNetwork(QNetwork):
         self._rms_epsilon = rms_epsilon
         self._momentum = momentum
         self._update_rule = update_rule
-        #self.clip_delta = clip_delta
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
@@ -62,22 +61,41 @@ class MyQNetwork(QNetwork):
         self.d_loss=1.
         self.loss1=0
         self.loss2=0
-        self.loss3=0
+        self.loss_disentangle_t=0
+        self.loss_disentangle_a=0
+        self.lossR=0
         
-        self.Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
+        self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
 
+        self.encoder = self.learn_and_plan.encoder_model()
+        self.Q = self.learn_and_plan.Q_model()
+        self.R = self.learn_and_plan.R_model()
+        self.transition = self.learn_and_plan.transition_model()
 
-        self.encoder = self.Q_net.encoder_model()
+        self.full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
+        self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
 
-        self.q_vals, self.params = self.Q_net._buildDQN(self.encoder)
-
-        self.generator_transition = self.Q_net.generator_transition_model(self.encoder)
-        self.generator_diff_s_s_ = self.Q_net.generator_diff_s_s_(self.encoder)
+        self.full_transition = self.learn_and_plan.full_transition_model(self.encoder,self.transition)
+        self.diff_s_s_ = self.learn_and_plan.diff_s_s_(self.encoder)
+        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
                               
+        
+        layers=self.full_Q.layers
+        # Grab all the parameters together.
+        self.params = [ param
+                    for layer in layers 
+                    for param in layer.trainable_weights ]
+
         self._compile()
 
-        self.next_q_vals, self.next_params = self.Q_net._buildDQN(self.encoder)
-        self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
+        self.next_full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
+        self.next_full_Q.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.full_Q
+
+        layers=self.next_full_Q.layers
+        # Grab all the parameters together.
+        self.next_params = [ param
+                    for layer in layers 
+                    for param in layer.trainable_weights ]
 
         self._resetQHat()
 
@@ -112,19 +130,9 @@ class MyQNetwork(QNetwork):
         Individual (square) losses for each tuple
         """
         
-        #print "self.discriminator.get_weights()"
-        #print self.discriminator.get_weights()
-
-        ##print "[states_val[0],actions_val,noise]"
-        ##print [states_val[0],actions_val,noise]
-        ##print "states_val.tolist()"
-        ##print states_val.tolist()
         onehot_actions = np.zeros((self._batch_size, self._n_actions))
         onehot_actions[np.arange(self._batch_size), actions_val[:,0]] = 1
-        #print onehot_actions
-        #print "[states_val[0],onehot_actions,noise]"
-        #print [states_val[0],onehot_actions,noise]
-        ETs=self.generator_transition.predict([states_val[0],onehot_actions])
+        ETs=self.full_transition.predict([states_val[0],onehot_actions])
         Es_=self.encoder.predict([next_states_val[0]])
         Es=self.encoder.predict([states_val[0]])
         
@@ -132,34 +140,44 @@ class MyQNetwork(QNetwork):
         X = np.concatenate((ETs, Es_))
         if(self.update_counter%100==0):
             print states_val[0][0]
+            print "len(states_val)"
+            print len(states_val)
             print next_states_val[0][0]
             print actions_val, rewards_val, terminals_val
             print "Es"
             print Es
             print "ETs,Es_"
             print ETs,Es_
-            #print "disc"
-            #print self.discriminator.predict([X, np.tile(onehot_actions,(2,1))])
             
-        self.loss1+=self.generator_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
+        self.loss1+=self.full_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
         self.loss2+=self.encoder.train_on_batch(next_states_val[0], ETs ) 
 
-        self.loss3+=self.generator_diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*1) 
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
+
+        # Loss to have all s' following s,a with a to a distance 1 of s,a)
+        tiled_x=np.tile(Es,(self._n_actions,1))
+        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
+        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
+        self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(32*self._n_actions)) 
+
+        self.lossR+=self.full_R.train_on_batch([states_val[0],onehot_actions], rewards_val) 
         
         if(self.update_counter%100==0):
             print "losses"
-            print self.loss1/100.,self.loss2/100.,self.loss3/100.
+            print self.loss1/100.,self.loss2/100.,self.loss_disentangle_t/100.,self.lossR/100.,self.loss_disentangle_a/100.
             self.loss1=0
             self.loss2=0
-            self.loss3=0
+            self.loss_disentangle_t=0
+            self.loss_disentangle_a=0
+            self.lossR=0
 
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        next_q_vals = self.next_q_vals.predict([next_states_val[0],np.zeros((32,self.Q_net.internal_dim))])
+        next_q_vals = self.next_full_Q.predict([next_states_val[0],np.zeros((32,self.learn_and_plan.internal_dim))])
         
         if(self._double_Q==True):
-            next_q_vals_current_qnet=self.q_vals.predict(next_states_val.tolist())
+            next_q_vals_current_qnet=self.full_Q.predict(next_states_val.tolist())
             argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
             max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
         else:
@@ -169,7 +187,7 @@ class MyQNetwork(QNetwork):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.q_vals.predict([states_val[0],np.zeros((32,self.Q_net.internal_dim))])
+        q_vals=self.full_Q.predict([states_val[0],np.zeros((32,self.learn_and_plan.internal_dim))])
 
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
@@ -183,9 +201,9 @@ class MyQNetwork(QNetwork):
         # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
         #if (self.update_counter<10000):
-        noise_to_be_robust=np.random.normal(size=(32,self.Q_net.internal_dim))*0.25
+        noise_to_be_robust=np.random.normal(size=(32,self.learn_and_plan.internal_dim))*0.#25
 
-        loss=self.q_vals.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
+        loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         #print "self.q_vals.optimizer.lr"
         #print K.eval(self.q_vals.optimizer.lr)
         
@@ -199,7 +217,7 @@ class MyQNetwork(QNetwork):
 
 
     def qValues(self, state_val):
-        """ Get the q values for one belief state
+        """ Get the q values for one belief state (without planning)
 
         Arguments
         ---------
@@ -209,7 +227,34 @@ class MyQNetwork(QNetwork):
         -------
         The q values for the provided belief state
         """ 
-        return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((32,self.Q_net.internal_dim))])[0]
+        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((32,self.learn_and_plan.internal_dim))])[0]
+
+    def qValues_planning(self, state_val, d=2.):
+        """ Get the q values for one belief state with a planning depth d
+
+        Arguments
+        ---------
+        state_val : one belief state
+        d : planning depth
+
+        Returns
+        -------
+        The q values with planning depth d for the provided belief state
+        """ 
+        identity_matrix = np.diag(np.ones(self._n_actions))
+        
+        encoded_x = self.encoder.predict([np.expand_dims(state,axis=0) for state in state_val])
+
+        q_vals_d0=self.Q.predict([encoded_x])[0]
+        #print "q_vals_d0"
+        #print q_vals_d0
+        
+        next_x_predicted=self.full_transition.predict([np.array([state for state in state_val for i in range(self._n_actions)])]+[identity_matrix])
+        q_vals_d1=self.Q.predict([next_x_predicted])
+        #print q_vals_d1
+        #print (1-1/d)+(1-1/d)**2
+        #print ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*np.array([np.max(vals) for vals in q_vals_d1])
+        return ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*np.array([np.max(vals) for vals in q_vals_d1])
 
     def chooseBestAction(self, state):
         """ Get the best action for a belief state
@@ -222,8 +267,8 @@ class MyQNetwork(QNetwork):
         -------
         The best action : int
         """        
-        q_vals = self.qValues(state)
-
+        q_vals = self.qValues_planning(state)#self.qValues(state)#
+        
         return np.argmax(q_vals),np.max(q_vals)
         
     def _compile(self):
@@ -236,19 +281,22 @@ class MyQNetwork(QNetwork):
         else:
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
-        self.q_vals.compile(optimizer=optimizer, loss='mse')
-        
+        self.full_Q.compile(optimizer=optimizer, loss='mse')
+        self.full_R.compile(optimizer=optimizer, loss='mse')
 
         optimizer=RMSprop(lr=self._lr/20., rho=0.9, epsilon=1e-06)
         optimizer2=RMSprop(lr=self._lr/10., rho=0.9, epsilon=1e-06)#.Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, epsilon=1e-08)
 
-        self.generator_transition.compile(optimizer=optimizer,
+        self.full_transition.compile(optimizer=optimizer,
                   loss='mae')
                   #metrics=['accuracy'])
         self.encoder.compile(optimizer=optimizer,
                   loss='mae')
                   #metrics=['accuracy'])
-        self.generator_diff_s_s_.compile(optimizer=optimizer2,
+        self.diff_s_s_.compile(optimizer=optimizer2,
+                  loss=mean_squared_error_1)
+                  #metrics=['accuracy'])
+        self.diff_Tx.compile(optimizer=optimizer,
                   loss=mean_squared_error_1)
                   #metrics=['accuracy'])
 

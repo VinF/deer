@@ -66,30 +66,32 @@ class MyEnv(Environment):
         
         
     def act(self, action):
-        action = self._actions[action]
-        
+        #print action
+        #print self._actions
         #if self._mode == MyEnv.VALIDATION_MODE:
         #    action=0
+        action = self._actions[action]
+        
 
-        reward = 0
+        self.reward = 0
         for _ in range(self._frame_skip):
-            reward += self._ple.act(action)
+            self.reward += self._ple.act(action)
             if self.inTerminalState():
                 break
             
         self._screen = self._ple.getScreenGrayscale()
         cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
   
-        self._mode_score += reward
-        return np.sign(reward)
+        self._mode_score += self.reward
+        return np.sign(self.reward)
 
     def summarizePerformance(self, test_data_set, learning_algo):
         #print "test_data_set.observations.shape"
         #print test_data_set.observations()[0][0:1]
         n=20
         historics=[]
-        for i,observ in enumerate(test_data_set.observations()[0][0:n]):
-            if(i<n-1):
+        for i,observ in enumerate(test_data_set.observations()[0][0:n+1]):
+            if(i<n):
                 historics.append(np.expand_dims(observ,axis=0))
             if(i>0):
                 historics[i-1]=np.concatenate([historics[i-1],np.expand_dims(observ,axis=0)], axis=0)
@@ -97,7 +99,7 @@ class MyEnv(Environment):
         #print historics
         abs_states=learning_algo.encoder.predict(historics)
         print abs_states
-        actions=test_data_set.actions()[0:n]
+        actions=test_data_set.actions()[1:n+1] #instead of 0:n because history of 2 time steps considered
         print actions
         print test_data_set.rewards()[0:n]
         if self.inTerminalState() == False:
@@ -118,17 +120,116 @@ class MyEnv(Environment):
         #onehot_actions = np.zeros((n, 4))
         #onehot_actions[np.arange(n), actions] = 1
         
+        # Plot the trajectory
         fig = plt.figure()
         ax = fig.add_subplot(111,projection='3d')
         for i in xrange(n-1):
-            ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.jet(255*i/n))
-        #line = ax.contour(x, y ,z, cmap=cm.coolwarm)
-        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(actions/2.,axis=1),(1,3)), s=50, marker='o', edgecolors='none', depthshade=False)
-        #m.set_array(actions/2.)
+            ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
+
+        # Plot the colorbar for the trajectory
+        fig.subplots_adjust(right=0.7)
+        ax1 = fig.add_axes([0.725, 0.15, 0.025, 0.7])
+        # Set the colormap and norm to correspond to the data for which the colorbar will be used.
+        cmap = matplotlib.cm.cool
+        norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+
+        # ColorbarBase derives from ScalarMappable and puts a colorbar in a specified axes, so it has 
+        # everything needed for a standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks and labels.
+        cb1 = matplotlib.colorbar.ColorbarBase(ax1, cmap=cmap,
+                                norm=norm,
+                                orientation='vertical')
+        cb1.set_label('Beginning to end of trajectory')
+
+
+        # Plot the dots at each time step depending on the action taken
+        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(actions/2.,axis=1),(1,3)), s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
+        axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
+        zrange=axes_lims[2][1]-axes_lims[2][0]
+        
+        # Plot the legend for the dots
+        from matplotlib.patches import Circle
+        from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
+        box1 = TextArea(" Actions (right, left and none) : ", textprops=dict(color="k"))
+        
+        box2 = DrawingArea(60, 20, 0, 0)
+        el1 = Circle((10, 10), 5, fc="k", edgecolor="k")
+        el2 = Circle((30, 10), 5, fc="grey", edgecolor="k") 
+        el3 = Circle((50, 10), 5, fc="w", edgecolor="k") 
+        box2.add_artist(el1)
+        box2.add_artist(el2)
+        box2.add_artist(el3)
+        
+        box = HPacker(children=[box1, box2],
+                      align="center",
+                      pad=0, sep=5)
+        
+        anchored_box = AnchoredOffsetbox(loc=3,
+                                         child=box, pad=0.,
+                                         frameon=True,
+                                         bbox_to_anchor=(0., 1.02),
+                                         bbox_transform=ax.transAxes,
+                                         borderpad=0.,
+                                         )        
+        ax.add_artist(anchored_box)
+
+        plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
+
+
+        # Plot the Q_vals
+        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
+        print "actions,C"
+        print actions
+        print c
+        #c=np.max(c,axis=1)
+        m1=ax.scatter(x, y, z+zrange/20, c=c[:,0], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+        m2=ax.scatter(x, y, z+3*zrange/40, c=c[:,1], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+        m3=ax.scatter(x, y, z+zrange/10, c=c[:,2], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+        
+        #plt.colorbar(m3)
+        ax2 = fig.add_axes([0.85, 0.15, 0.025, 0.7])
+        cmap = matplotlib.cm.RdYlGn
+        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
+
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+        cb1.set_label('Estimated expected return')
+
+        plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        
+        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
+        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
+        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
+        print x
+        print np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
+        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
+        c=np.max(c,axis=1)
+        print c
+        
+        m=ax.scatter(x, y, z, c=c, cmap=plt.hot())
         #plt.colorbar(m)
-                
+        fig.subplots_adjust(right=0.8)
+        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
+        cmap = matplotlib.cm.hot
+        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
+
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+        cb1.set_label('Estimated expected return')
+
         #plt.show()
-        plt.savefig('fig'+str(learning_algo.update_counter)+'.pdf')
+        plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
 
 
     def inputDimensions(self):
@@ -144,6 +245,11 @@ class MyEnv(Environment):
         return [np.array(self._reduced_screen)/256.]
 
     def inTerminalState(self):
+        #if (self.reward!=0):
+        #    # If a reward has been observed, end the episode
+        #    print "end!!"
+        #    return True
+        #else:
         return self._ple.game_over()
                 
 
