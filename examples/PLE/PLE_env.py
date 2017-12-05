@@ -201,6 +201,8 @@ class MyEnv(Environment):
 
         plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
 
+
+        # fig_visuV
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         
@@ -211,9 +213,10 @@ class MyEnv(Environment):
         print np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
         c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
         c=np.max(c,axis=1)
+        print "c"
         print c
         
-        m=ax.scatter(x, y, z, c=c, cmap=plt.hot())
+        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
         #plt.colorbar(m)
         fig.subplots_adjust(right=0.8)
         ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
@@ -230,6 +233,45 @@ class MyEnv(Environment):
 
         #plt.show()
         plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
+
+
+        # fig_visuR
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        
+        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
+        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
+        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
+        print x
+        coords=np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
+        repeat3_coord=np.repeat(coords,3,axis=0)
+        identity_matrix = np.diag(np.ones(self.nActions()))
+        tile_identity_matrix=np.tile(identity_matrix,(5*5*5,1))
+        print tile_identity_matrix
+        c = learning_algo.R.predict([repeat3_coord,tile_identity_matrix])
+        c=np.max(np.reshape(c,(125,3)),axis=1)
+        print "c"
+        print c
+        mini=np.min(c)
+        maxi=np.max(c)
+        
+        m=ax.scatter(x, y, z, c=c, cmap=plt.hot())
+        #plt.colorbar(m)
+        fig.subplots_adjust(right=0.8)
+        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
+        cmap = matplotlib.cm.hot
+        norm = matplotlib.colors.Normalize(vmin=mini, vmax=maxi)
+
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+        cb1.set_label('Estimated expected return')
+
+        #plt.show()
+        plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
 
 
     def inputDimensions(self):

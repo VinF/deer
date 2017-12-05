@@ -248,13 +248,20 @@ class MyQNetwork(QNetwork):
         q_vals_d0=self.Q.predict([encoded_x])[0]
         #print "q_vals_d0"
         #print q_vals_d0
+        #tile3_encoded_x=np.array([enc for enc in encoded_x for i in range(self._n_actions)])
+        tile3_encoded_x=np.tile(encoded_x,(3,1))
+        print tile3_encoded_x
+        r_vals_d0=self.R.predict([tile3_encoded_x,identity_matrix])
         
-        next_x_predicted=self.full_transition.predict([np.array([state for state in state_val for i in range(self._n_actions)])]+[identity_matrix])
+        #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
+        tile3_state_val=np.tile(state_val,(3,1,1,1))
+        
+        next_x_predicted=self.full_transition.predict([tile3_state_val,identity_matrix])
         q_vals_d1=self.Q.predict([next_x_predicted])
         #print q_vals_d1
         #print (1-1/d)+(1-1/d)**2
         #print ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*np.array([np.max(vals) for vals in q_vals_d1])
-        return ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*np.array([np.max(vals) for vals in q_vals_d1])
+        return ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*(r_vals_d0+self._df*np.array([np.max(vals) for vals in q_vals_d1]))
 
     def chooseBestAction(self, state):
         """ Get the best action for a belief state
