@@ -105,8 +105,8 @@ class MyEnv(Environment):
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))
+                
         
-
         import matplotlib.pyplot as plt
         from mpl_toolkits.mplot3d import Axes3D
         import matplotlib.cm as cm
@@ -125,6 +125,30 @@ class MyEnv(Environment):
         ax = fig.add_subplot(111,projection='3d')
         for i in xrange(n-1):
             ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
+
+        # Plot the fitted one-step trajectory from time t=10
+        one_hot_a=np.zeros((1,3))
+        one_hot_a[0,actions[10:11]]=1
+        print "learning_algo.transition"
+        print [abs_states[10:11],one_hot_a]
+        predicted=learning_algo.transition.predict([abs_states[10:11],one_hot_a])
+        print predicted
+        predicted1=learning_algo.transition.predict([abs_states[10:11],np.array([[1,0,0]])])
+        predicted2=learning_algo.transition.predict([abs_states[10:11],np.array([[0,1,0]])])
+        predicted3=learning_algo.transition.predict([abs_states[10:11],np.array([[0,0,1]])])
+        print "predicted1,predicted2,predicted3"
+        print predicted1,predicted2,predicted3
+        i=10
+        print x[i:i+1]
+        print predicted[0,:1]
+        print np.concatenate([x[i:i+1],predicted[0,:1]])
+        print predicted[0,1:2]
+        print predicted[0,2:]
+        ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:]]), color="1")
+        ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:]]), color="0.5")
+        ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:]]), color="0")
+        #ax.plot(np.concatenate([x[i:i+1],predicted[0,:1]]), np.concatenate([y[i:i+1],predicted[0,1:2]]), np.concatenate([z[i:i+1],predicted[0,2:]]), color="g")
+        
 
         # Plot the colorbar for the trajectory
         fig.subplots_adjust(right=0.7)
