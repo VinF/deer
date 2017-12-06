@@ -129,21 +129,11 @@ class MyEnv(Environment):
         # Plot the fitted one-step trajectory from time t=10
         one_hot_a=np.zeros((1,3))
         one_hot_a[0,actions[10:11]]=1
-        print "learning_algo.transition"
-        print [abs_states[10:11],one_hot_a]
         predicted=learning_algo.transition.predict([abs_states[10:11],one_hot_a])
-        print predicted
         predicted1=learning_algo.transition.predict([abs_states[10:11],np.array([[1,0,0]])])
         predicted2=learning_algo.transition.predict([abs_states[10:11],np.array([[0,1,0]])])
         predicted3=learning_algo.transition.predict([abs_states[10:11],np.array([[0,0,1]])])
-        print "predicted1,predicted2,predicted3"
-        print predicted1,predicted2,predicted3
         i=10
-        print x[i:i+1]
-        print predicted[0,:1]
-        print np.concatenate([x[i:i+1],predicted[0,:1]])
-        print predicted[0,1:2]
-        print predicted[0,2:]
         ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:]]), color="1")
         ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:]]), color="0.5")
         ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:]]), color="0")
@@ -202,9 +192,9 @@ class MyEnv(Environment):
 
         # Plot the Q_vals
         c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
-        print "actions,C"
-        print actions
-        print c
+        #print "actions,C"
+        #print actions
+        #print c
         #c=np.max(c,axis=1)
         m1=ax.scatter(x, y, z+zrange/20, c=c[:,0], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
         m2=ax.scatter(x, y, z+3*zrange/40, c=c[:,1], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
@@ -233,12 +223,11 @@ class MyEnv(Environment):
         x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
         y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
         z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
-        print x
-        print np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
+
         c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
         c=np.max(c,axis=1)
-        print "c"
-        print c
+        #print "c"
+        #print c
         
         m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
         #plt.colorbar(m)
@@ -266,16 +255,16 @@ class MyEnv(Environment):
         x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
         y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
         z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
-        print x
+
         coords=np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
         repeat3_coord=np.repeat(coords,3,axis=0)
         identity_matrix = np.diag(np.ones(self.nActions()))
         tile_identity_matrix=np.tile(identity_matrix,(5*5*5,1))
-        print tile_identity_matrix
+
         c = learning_algo.R.predict([repeat3_coord,tile_identity_matrix])
         c=np.max(np.reshape(c,(125,3)),axis=1)
-        print "c"
-        print c
+        #print "c"
+        #print c
         mini=np.min(c)
         maxi=np.max(c)
         
