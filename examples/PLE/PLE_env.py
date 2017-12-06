@@ -286,6 +286,7 @@ class MyEnv(Environment):
         #plt.show()
         plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
 
+        matplotlib.pyplot.close("all") # avoids memory leaks
 
     def inputDimensions(self):
         return [(2, 48, 48)]

@@ -311,6 +311,18 @@ class MyQNetwork(QNetwork):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             K.set_value(next_param,K.get_value(param))
 
-        self._compile() # recompile to take into account new optimizer parameters that may have changed since
-                        # self._compile() was called in __init__. FIXME: this call should ideally be done elsewhere
-        
+    def setLearningRate(self, lr):
+        """ Setting the learning rate
+
+        Parameters
+        -----------
+        lr : float
+            The learning rate that has to bet set
+        """
+        self._lr = lr
+        # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
+        K.set_value(self.full_transition.optimizer.lr, self._lr/20.)
+        K.set_value(self.encoder.optimizer.lr, self._lr/20.)
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
+        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
+

@@ -40,6 +40,8 @@ class QNetwork(object):
 
     def setLearningRate(self, lr):
         """ Setting the learning rate
+        NB: The learning rate has usually to be set in the optimizer, hence this function should
+        be overridden. Otherwise, the learning rate change is likely not to be taken into account
 
         Parameters
         -----------
@@ -47,7 +49,6 @@ class QNetwork(object):
             The learning rate that has to bet set
         """
         self._lr = lr
-        self._compile()
 
     def setDiscountFactor(self, df):
         """ Setting the discount factor
