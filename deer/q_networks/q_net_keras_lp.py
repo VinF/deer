@@ -171,6 +171,7 @@ class MyQNetwork(QNetwork):
         if(self.update_counter%100==0):
             print "losses"
             print self.loss_T/100.,self.loss_disentangle_t/100.,self.lossR/100.,self.loss_disentangle_a/100.
+            self.loss_T=0
             self.loss1=0
             self.loss2=0
             self.loss_disentangle_t=0
@@ -262,7 +263,8 @@ class MyQNetwork(QNetwork):
         #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
         tile3_state_val=np.tile(state_val,(3,1,1,1))
         
-        next_x_predicted=self.full_transition.predict([tile3_state_val,identity_matrix])
+        #next_x_predicted=self.full_transition.predict([tile3_state_val,identity_matrix])
+        next_x_predicted=self.transition.predict([tile3_encoded_x,identity_matrix])
         q_vals_d1=self.Q.predict([next_x_predicted])
         #print q_vals_d1
         #print (1-1/d)+(1-1/d)**2
