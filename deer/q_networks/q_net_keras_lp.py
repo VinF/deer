@@ -59,6 +59,7 @@ class MyQNetwork(QNetwork):
         self._random_state = random_state
         self.update_counter = 0    
         self.d_loss=1.
+        self.loss_T=0
         self.loss1=0
         self.loss2=0
         self.loss_disentangle_t=0
@@ -75,9 +76,11 @@ class MyQNetwork(QNetwork):
         self.full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
         self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
 
+        self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)#full_transition_model(self.encoder,self.transition)
         self.full_transition = self.learn_and_plan.full_transition_model(self.encoder,self.transition)
         self.diff_s_s_ = self.learn_and_plan.diff_s_s_(self.encoder)
         self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
+        
                               
         
         layers=self.full_Q.layers
@@ -149,8 +152,11 @@ class MyQNetwork(QNetwork):
             print "ETs,Es_"
             print ETs,Es_
             
-        self.loss1+=self.full_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
-        self.loss2+=self.encoder.train_on_batch(next_states_val[0], ETs ) 
+        # Fit transition
+        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros(32))
+
+#        self.loss1+=self.full_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
+#        self.loss2+=self.encoder.train_on_batch(next_states_val[0], ETs ) 
 
         self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
 
@@ -164,7 +170,7 @@ class MyQNetwork(QNetwork):
         
         if(self.update_counter%100==0):
             print "losses"
-            print self.loss1/100.,self.loss2/100.,self.loss_disentangle_t/100.,self.lossR/100.,self.loss_disentangle_a/100.
+            print self.loss_T/100.,self.loss_disentangle_t/100.,self.lossR/100.,self.loss_disentangle_a/100.
             self.loss1=0
             self.loss2=0
             self.loss_disentangle_t=0
@@ -250,7 +256,7 @@ class MyQNetwork(QNetwork):
         #print q_vals_d0
         #tile3_encoded_x=np.array([enc for enc in encoded_x for i in range(self._n_actions)])
         tile3_encoded_x=np.tile(encoded_x,(3,1))
-        print tile3_encoded_x
+        #print tile3_encoded_x
         r_vals_d0=self.R.predict([tile3_encoded_x,identity_matrix])
         
         #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
@@ -294,6 +300,9 @@ class MyQNetwork(QNetwork):
         optimizer=RMSprop(lr=self._lr/20., rho=0.9, epsilon=1e-06)
         optimizer2=RMSprop(lr=self._lr/10., rho=0.9, epsilon=1e-06)#.Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, epsilon=1e-08)
 
+        self.diff_Tx_x_.compile(optimizer=optimizer,
+                  loss='mae')
+                  #metrics=['accuracy'])
         self.full_transition.compile(optimizer=optimizer,
                   loss='mae')
                   #metrics=['accuracy'])
@@ -321,6 +330,7 @@ class MyQNetwork(QNetwork):
         """
         self._lr = lr
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
+        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
         K.set_value(self.full_transition.optimizer.lr, self._lr/20.)
         K.set_value(self.encoder.optimizer.lr, self._lr/20.)
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)

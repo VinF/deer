@@ -93,6 +93,34 @@ class NN():
         
         return model
 
+    def diff_Tx_x_(self,encoder_model,transition_model):
+        """
+    
+        Parameters
+        -----------
+        s
+        a
+        s'
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
+    
+        """
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) , Input( shape=(2,48,48,) ) ] #s,s'
+        
+        enc_x = encoder_model(inputs[0]) #s --> x
+        enc_x_ = encoder_model(inputs[2]) #s --> x
+        
+        Tx= transition_model([enc_x,inputs[1]])
+        
+        x = Subtract()([Tx,enc_x_])
+        x = Dot(axes=-1, normalize=False)([x,x])
+        
+        model = Model(inputs=inputs, outputs=x )
+        
+        return model
+
     def full_transition_model(self,encoder_model,transition_model):
         """
     
