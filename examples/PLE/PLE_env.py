@@ -127,13 +127,13 @@ class MyEnv(Environment):
             ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
 
         # Plot the fitted one-step trajectory from time t=10
+        i=18
         one_hot_a=np.zeros((1,3))
-        one_hot_a[0,actions[10:11]]=1
-        predicted=learning_algo.transition.predict([abs_states[10:11],one_hot_a])
-        predicted1=learning_algo.transition.predict([abs_states[10:11],np.array([[1,0,0]])])
-        predicted2=learning_algo.transition.predict([abs_states[10:11],np.array([[0,1,0]])])
-        predicted3=learning_algo.transition.predict([abs_states[10:11],np.array([[0,0,1]])])
-        i=10
+        one_hot_a[0,actions[i:i+1]]=1
+        predicted=learning_algo.transition.predict([abs_states[i:i+1],one_hot_a])
+        predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0]])])
+        predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0]])])
+        predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1]])])
         ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:]]), color="1")
         ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:]]), color="0.5")
         ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:]]), color="0")
@@ -265,15 +265,15 @@ class MyEnv(Environment):
         c=np.max(np.reshape(c,(125,3)),axis=1)
         #print "c"
         #print c
-        mini=np.min(c)
-        maxi=np.max(c)
+        #mini=np.min(c)
+        #maxi=np.max(c)
         
-        m=ax.scatter(x, y, z, c=c, cmap=plt.hot())
+        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
         #plt.colorbar(m)
         fig.subplots_adjust(right=0.8)
         ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
         cmap = matplotlib.cm.hot
-        norm = matplotlib.colors.Normalize(vmin=mini, vmax=maxi)
+        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
 
         # ColorbarBase derives from ScalarMappable and puts a colorbar
         # in a specified axes, so it has everything needed for a
