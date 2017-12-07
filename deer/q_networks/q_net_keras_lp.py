@@ -58,10 +58,7 @@ class MyQNetwork(QNetwork):
         self._double_Q = double_Q
         self._random_state = random_state
         self.update_counter = 0    
-        self.d_loss=1.
         self.loss_T=0
-        self.loss1=0
-        self.loss2=0
         self.loss_disentangle_t=0
         self.loss_disentangle_a=0
         self.lossR=0
@@ -77,7 +74,6 @@ class MyQNetwork(QNetwork):
         self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
 
         self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)#full_transition_model(self.encoder,self.transition)
-        self.full_transition = self.learn_and_plan.full_transition_model(self.encoder,self.transition)
         self.diff_s_s_ = self.learn_and_plan.diff_s_s_(self.encoder)
         self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
         
@@ -135,9 +131,9 @@ class MyQNetwork(QNetwork):
         
         onehot_actions = np.zeros((self._batch_size, self._n_actions))
         onehot_actions[np.arange(self._batch_size), actions_val[:,0]] = 1
-        ETs=self.full_transition.predict([states_val[0],onehot_actions])
         Es_=self.encoder.predict([next_states_val[0]])
         Es=self.encoder.predict([states_val[0]])
+        ETs=self.transition.predict([Es,onehot_actions])
         
         
         X = np.concatenate((ETs, Es_))
@@ -154,9 +150,6 @@ class MyQNetwork(QNetwork):
             
         # Fit transition
         self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros(32))
-
-#        self.loss1+=self.full_transition.train_on_batch([states_val[0],onehot_actions] , Es_ ) 
-#        self.loss2+=self.encoder.train_on_batch(next_states_val[0], ETs ) 
 
         self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
 
@@ -263,7 +256,6 @@ class MyQNetwork(QNetwork):
         #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
         tile3_state_val=np.tile(state_val,(3,1,1,1))
         
-        #next_x_predicted=self.full_transition.predict([tile3_state_val,identity_matrix])
         next_x_predicted=self.transition.predict([tile3_encoded_x,identity_matrix])
         q_vals_d1=self.Q.predict([next_x_predicted])
         #print q_vals_d1
@@ -305,9 +297,6 @@ class MyQNetwork(QNetwork):
         self.diff_Tx_x_.compile(optimizer=optimizer,
                   loss='mae')
                   #metrics=['accuracy'])
-        self.full_transition.compile(optimizer=optimizer,
-                  loss='mae')
-                  #metrics=['accuracy'])
         self.encoder.compile(optimizer=optimizer,
                   loss='mae')
                   #metrics=['accuracy'])
@@ -333,7 +322,6 @@ class MyQNetwork(QNetwork):
         self._lr = lr
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
-        K.set_value(self.full_transition.optimizer.lr, self._lr/20.)
         K.set_value(self.encoder.optimizer.lr, self._lr/20.)
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
         K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)

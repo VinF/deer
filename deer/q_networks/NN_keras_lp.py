@@ -121,29 +121,6 @@ class NN():
         
         return model
 
-    def full_transition_model(self,encoder_model,transition_model):
-        """
-    
-        Parameters
-        -----------
-        s
-        a
-    
-        Returns
-        -------
-        model with output Tx (= model estimate of x')
-    
-        """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) ] #s,a
-        
-        enc_x = encoder_model(inputs[0]) #s --> x
-        
-        x = transition_model([enc_x]+inputs[1:])
-        
-        model = Model(inputs=inputs, outputs=x)
-        
-        return model
-
     def diff_s_s_(self,encoder_model):
         """
     
