@@ -149,7 +149,7 @@ class MyQNetwork(QNetwork):
             print ETs,Es_
             
         # Fit transition
-        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros(32))
+        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros((32,3)))
 
         self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
 

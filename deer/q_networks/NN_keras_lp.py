@@ -115,7 +115,7 @@ class NN():
         Tx= transition_model([enc_x,inputs[1]])
         
         x = Subtract()([Tx,enc_x_])
-        x = Dot(axes=-1, normalize=False)([x,x])
+#        x = Dot(axes=-1, normalize=False)([x,x])
         
         model = Model(inputs=inputs, outputs=x )
         
