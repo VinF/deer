@@ -127,7 +127,7 @@ class MyEnv(Environment):
             ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
 
         # Plot the fitted one-step trajectory from time t=10
-        i=18
+        i=16
         one_hot_a=np.zeros((1,3))
         one_hot_a[0,actions[i:i+1]]=1
         predicted=learning_algo.transition.predict([abs_states[i:i+1],one_hot_a])

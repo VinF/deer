@@ -68,6 +68,29 @@ class NN():
         
         return model
 
+    def encoder_diff_model(self,encoder_model):
+        """
+    
+        Parameters
+        -----------
+        s
+    
+        Returns
+        -------
+        model with output x (= encoding of s)
+    
+        """
+        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(2,48,48,) ) ]
+        # input_distr
+        
+        x1 = encoder_model(inputs[0])
+        x2 = encoder_model(inputs[1])
+        
+        x = Subtract()([x1,x2])
+        model = Model(inputs=inputs, outputs=x)
+        
+        return model
+
     def transition_model(self):
         """
     

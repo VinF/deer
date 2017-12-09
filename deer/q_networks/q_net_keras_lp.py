@@ -11,8 +11,15 @@ from keras import backend as K
 from ..base_classes import QNetwork
 from .NN_keras_lp import NN # Default Neural network used
 
-def mean_squared_error_1(y_true, y_pred):
-    return K.abs(y_pred - y_true)
+def mean_squared_error(y_true, y_pred):
+    return K.mean(K.square(y_pred - y_true), axis=-1) # tend to reduce the square of the diff between y_pred and y_true
+
+def mean_squared_error_div10(y_true, y_pred):
+    return K.mean(K.square(y_pred - y_true), axis=-1) # tend to reduce the square of the diff between y_pred and y_true
+
+def exp_dec_error(y_true, y_pred):
+    #return - K.sum(  K.sqrt( K.clip(y_pred,-1,1) +0.0001)  , axis=-1, keepdims=True ) # tend to increase y_pred
+    return K.exp( - K.sqrt( K.sum(K.square(y_pred), axis=-1, keepdims=True) + 0.0001 )  ) # tend to increase y_pred
 
 class MyQNetwork(QNetwork):
     """
@@ -60,25 +67,34 @@ class MyQNetwork(QNetwork):
         self.update_counter = 0    
         self.loss_T=0
         self.loss_disentangle_t=0
-        self.loss_disentangle_a=0
+        #self.loss_disentangle_a=0
         self.lossR=0
+        self.loss_disambiguate1=0
+        self.loss_disambiguate2=0
+
         
         self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
 
         self.encoder = self.learn_and_plan.encoder_model()
+        self.encoder_diff = self.learn_and_plan.encoder_diff_model(self.encoder)
+        
         self.Q = self.learn_and_plan.Q_model()
         self.R = self.learn_and_plan.R_model()
         self.transition = self.learn_and_plan.transition_model()
 
         self.full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
+        
+        # used to fit rewards
         self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
-
+        
+        # used to fit transitions
         self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)#full_transition_model(self.encoder,self.transition)
+
+        # constraint on consecutive t
         self.diff_s_s_ = self.learn_and_plan.diff_s_s_(self.encoder)
-        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
+#        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
         
-                              
-        
+                
         layers=self.full_Q.layers
         # Grab all the parameters together.
         self.params = [ param
@@ -134,8 +150,7 @@ class MyQNetwork(QNetwork):
         Es_=self.encoder.predict([next_states_val[0]])
         Es=self.encoder.predict([states_val[0]])
         ETs=self.transition.predict([Es,onehot_actions])
-        
-        
+                   
         X = np.concatenate((ETs, Es_))
         if(self.update_counter%100==0):
             print states_val[0][0]
@@ -151,25 +166,39 @@ class MyQNetwork(QNetwork):
         # Fit transition
         self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros((32,3)))
 
-        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
-
-        # Loss to have all s' following s,a with a to a distance 1 of s,a)
-        tiled_x=np.tile(Es,(self._n_actions,1))
-        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
-        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
-        self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(32*self._n_actions)) 
-
+        # Fit rewards
         self.lossR+=self.full_R.train_on_batch([states_val[0],onehot_actions], rewards_val) 
+
+#        # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
+#        # reduce the squared value of the abstract features
+#        #self.loss_disambiguate1+=self.encoder.train_on_batch([states_val[0]],np.zeros((32,3)))
+#        # increase the squared difference of the abstract features of two states
+#        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,3)))
+
+        #print self.loss_disambiguate1
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
+#
+#        # Loss to have all s' following s,a with a to a distance 1 of s,a)
+#        tiled_x=np.tile(Es,(self._n_actions,1))
+#        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
+#        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
+#        #self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(32*self._n_actions)) 
+
+
         
         if(self.update_counter%100==0):
             print "losses"
-            print self.loss_T/100.,self.loss_disentangle_t/100.,self.lossR/100.,self.loss_disentangle_a/100.
+            print "self.loss_T/100.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100."
+            print self.loss_T/100.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100.
             self.loss_T=0
-            self.loss1=0
-            self.loss2=0
-            self.loss_disentangle_t=0
-            self.loss_disentangle_a=0
             self.lossR=0
+
+            self.loss_disentangle_t=0
+            #self.loss_disentangle_a=0
+            
+            self.loss_disambiguate1=0
+            self.loss_disambiguate2=0
+
 
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
@@ -289,23 +318,25 @@ class MyQNetwork(QNetwork):
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
         self.full_Q.compile(optimizer=optimizer, loss='mse')
-        self.full_R.compile(optimizer=optimizer, loss='mse')
 
-        optimizer=RMSprop(lr=self._lr/20., rho=0.9, epsilon=1e-06)
-        optimizer2=RMSprop(lr=self._lr/10., rho=0.9, epsilon=1e-06)#.Adam(lr=0.0002, beta_1=0.5, beta_2=0.999, epsilon=1e-08)
+        optimizer=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
 
-        self.diff_Tx_x_.compile(optimizer=optimizer,
-                  loss='mae')
-                  #metrics=['accuracy'])
+        self.diff_Tx_x_.compile(optimizer=optimizer, loss='mse') # Fit transitions
+        self.full_R.compile(optimizer=optimizer, loss='mse') # Fit rewards
+
         self.encoder.compile(optimizer=optimizer,
-                  loss='mae')
+                  loss=mean_squared_error_div10)
+        self.encoder_diff.compile(optimizer=optimizer,
+                  loss=exp_dec_error)
                   #metrics=['accuracy'])
-        self.diff_s_s_.compile(optimizer=optimizer2,
-                  loss=mean_squared_error_1)
+
+        self.diff_s_s_.compile(optimizer=optimizer,
+                  loss='mse')
                   #metrics=['accuracy'])
-        self.diff_Tx.compile(optimizer=optimizer,
-                  loss=mean_squared_error_1)
-                  #metrics=['accuracy'])
+
+#        self.diff_Tx.compile(optimizer=optimizer,
+#                  loss=mean_squared_error)
+#                  #metrics=['accuracy'])
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
@@ -321,8 +352,13 @@ class MyQNetwork(QNetwork):
         """
         self._lr = lr
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
-        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
-        K.set_value(self.encoder.optimizer.lr, self._lr/20.)
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
-        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
+        K.set_value(self.full_Q.optimizer.lr, self._lr)
 
+        K.set_value(self.full_R.optimizer.lr, self._lr/10.)
+        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
+
+        K.set_value(self.encoder.optimizer.lr, self._lr/100.)
+        K.set_value(self.encoder_diff.optimizer.lr, self._lr/10.)
+
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
+#        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
