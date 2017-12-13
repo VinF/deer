@@ -116,6 +116,32 @@ class NN():
         
         return model
 
+    def transition_model2(self):
+        """
+    
+        Parameters
+        -----------
+        x
+        a
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
+    
+        """
+        inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
+
+        x = Concatenate()(inputs)#,axis=-1)
+        x = Dense(20, activation='relu')(x)
+        x = Dense(50, activation='relu')(x)
+        x = Dense(20, activation='relu')(x)
+        x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+        x = Add()([inputs[0],x])
+        
+        model = Model(inputs=inputs, outputs=x)
+        
+        return model
+
     def diff_Tx_x_(self,encoder_model,transition_model):
         """
     

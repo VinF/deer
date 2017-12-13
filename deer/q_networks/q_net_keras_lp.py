@@ -18,8 +18,14 @@ def mean_squared_error_div10(y_true, y_pred):
     return K.mean(K.square(y_pred - y_true), axis=-1) # tend to reduce the square of the diff between y_pred and y_true
 
 def exp_dec_error(y_true, y_pred):
-    #return - K.sum(  K.sqrt( K.clip(y_pred,-1,1) +0.0001)  , axis=-1, keepdims=True ) # tend to increase y_pred
+    #return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred
     return K.exp( - K.sqrt( K.sum(K.square(y_pred), axis=-1, keepdims=True) + 0.0001 )  ) # tend to increase y_pred
+
+def rms_from_squared_components(y_true, y_pred):
+    return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1
+
+def squared_error_from_squared_components(y_true, y_pred):
+    return - K.sum(  K.clip(y_pred,0.,1)  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1
 
 class MyQNetwork(QNetwork):
     """
@@ -66,6 +72,7 @@ class MyQNetwork(QNetwork):
         self._random_state = random_state
         self.update_counter = 0    
         self.loss_T=0
+        self.loss_T2=0
         self.loss_disentangle_t=0
         #self.loss_disentangle_a=0
         self.lossR=0
@@ -81,6 +88,7 @@ class MyQNetwork(QNetwork):
         self.Q = self.learn_and_plan.Q_model()
         self.R = self.learn_and_plan.R_model()
         self.transition = self.learn_and_plan.transition_model()
+        self.transition2 = self.learn_and_plan.transition_model2()
 
         self.full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
         
@@ -164,6 +172,8 @@ class MyQNetwork(QNetwork):
             print ETs,Es_
             
         # Fit transition
+        for i in range(10):
+            self.loss_T2+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
         self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],onehot_actions,next_states_val[0]], np.zeros((32,3)))
 
         # Fit rewards
@@ -176,7 +186,7 @@ class MyQNetwork(QNetwork):
 #        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,3)))
 
         #print self.loss_disambiguate1
-        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)*2) 
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)) #np.ones((32,3))*2) 
 #
 #        # Loss to have all s' following s,a with a to a distance 1 of s,a)
 #        tiled_x=np.tile(Es,(self._n_actions,1))
@@ -188,9 +198,10 @@ class MyQNetwork(QNetwork):
         
         if(self.update_counter%100==0):
             print "losses"
-            print "self.loss_T/100.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100."
-            print self.loss_T/100.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100.
+            print "self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100."
+            print self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate2/100.
             self.loss_T=0
+            self.loss_T2=0
             self.lossR=0
 
             self.loss_disentangle_t=0
@@ -285,7 +296,7 @@ class MyQNetwork(QNetwork):
         #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
         tile3_state_val=np.tile(state_val,(3,1,1,1))
         
-        next_x_predicted=self.transition.predict([tile3_encoded_x,identity_matrix])
+        next_x_predicted=self.transition2.predict([tile3_encoded_x,identity_matrix])
         q_vals_d1=self.Q.predict([next_x_predicted])
         #print q_vals_d1
         #print (1-1/d)+(1-1/d)**2
@@ -322,6 +333,7 @@ class MyQNetwork(QNetwork):
         optimizer=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
 
         self.diff_Tx_x_.compile(optimizer=optimizer, loss='mse') # Fit transitions
+        self.transition2.compile(optimizer=optimizer, loss='mse') # Fit accurate transitions without encoders
         self.full_R.compile(optimizer=optimizer, loss='mse') # Fit rewards
 
         self.encoder.compile(optimizer=optimizer,
@@ -331,7 +343,7 @@ class MyQNetwork(QNetwork):
                   #metrics=['accuracy'])
 
         self.diff_s_s_.compile(optimizer=optimizer,
-                  loss='mse')
+                  loss=squared_error_from_squared_components)#exp_dec_error)#'mse')
                   #metrics=['accuracy'])
 
 #        self.diff_Tx.compile(optimizer=optimizer,
@@ -356,8 +368,9 @@ class MyQNetwork(QNetwork):
 
         K.set_value(self.full_R.optimizer.lr, self._lr/10.)
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
-
-        K.set_value(self.encoder.optimizer.lr, self._lr/100.)
+        K.set_value(self.transition2.optimizer.lr, self._lr/10.)
+        
+        #K.set_value(self.encoder.optimizer.lr, self._lr/100.)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr/10.)
 
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
