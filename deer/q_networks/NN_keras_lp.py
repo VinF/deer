@@ -6,9 +6,8 @@ Neural network using Keras (called by q_net_keras)
 import numpy as np
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate
+from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization
 from keras import regularizers
-
 np.random.seed(102912)
 
 class NN():
@@ -107,8 +106,9 @@ class NN():
         inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
 
         x = Concatenate()(inputs)#,axis=-1)
-        x = Dense(20, activation='relu')(x)
-        x = Dense(20, activation='relu')(x)
+        x = Dense(15, activation='tanh')(x)
+        x = Dense(30, activation='tanh')(x)
+        x = Dense(15, activation='tanh')(x)
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([inputs[0],x])
         
@@ -132,9 +132,12 @@ class NN():
         inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
 
         x = Concatenate()(inputs)#,axis=-1)
-        x = Dense(20, activation='relu')(x)
-        x = Dense(50, activation='relu')(x)
-        x = Dense(20, activation='relu')(x)
+        x = Dense(20, activation='tanh')(x)
+        x = BatchNormalization()(x)
+        x = Dense(50, activation='tanh')(x)
+        x = BatchNormalization()(x)
+        x = Dense(20, activation='tanh')(x)
+        x = BatchNormalization()(x)
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([inputs[0],x])
         
