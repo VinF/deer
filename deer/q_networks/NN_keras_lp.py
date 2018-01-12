@@ -45,22 +45,75 @@ class NN():
         model with output x (= encoding of s)
     
         """
-        inputs = [ Input( shape=(2,48,48,) ) ]
-        # input_distr
+        layers=[]
+        outs_conv=[]
+        inputs=[]
+
+        for i, dim in enumerate(self._input_dimensions):
+            # - observation[i] is a FRAME
+            if len(dim) == 3:
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
+                x = Conv2D(16, (4, 4), padding='same', activation='relu')(input)
+                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
+                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                x = Conv2D(8, (4, 4), padding='same', activation='relu')(x)
+                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                
+                out = Flatten()(x)
+                
+            # - observation[i] is a VECTOR
+            elif len(dim) == 2:
+                if dim[0] > 3:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+                    reshaped=Reshape((dim[0],dim[1],1), input_shape=(dim[0],dim[1]))(input) 
+                    x = Conv2D(16, (2, 1), activation='relu', border_mode='valid')(reshaped)#Conv on the history
+                    x = Conv2D(16, (2, 2), activation='relu', border_mode='valid')(x)       #Conv on the history & features
+
+                    out = Flatten()(x)
+                else:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+                    out = Flatten()(input)
+
+            # - observation[i] is a SCALAR -
+            else:
+                if dim[0] > 3:
+                    # this returns a tensor
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+                    reshaped=Reshape((1,dim[0],1), input_shape=(dim[0],))(input)  
+                    x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(reshaped)  #Conv on the history
+                    x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(x)         #Conv on the history
+                    
+                    out = Flatten()(x)
+                                        
+                else:
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+                    out=input
+                    
+            outs_conv.append(out)
+
+        if (self._action_as_input==True):
+            if ( isinstance(self._n_actions,int)):
+                print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
+            else:
+                input = Input(shape=(len(self._n_actions),))
+                inputs.append(input)
+                outs_conv.append(input)
         
-        x = inputs[0]
-        x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-        x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-        x = Conv2D(8, (4, 4), padding='same', activation='relu')(x)
-        x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+        if len(outs_conv)>1:
+            x = merge(outs_conv, mode='concat')
+        else:
+            x= outs_conv [0]
         
-        x = Flatten()(x)
-        
+        # we stack a deep fully-connected network on top
         x = Dense(20, activation='relu')(x)
         x = Dense(10, activation='relu')(x)
-
+        
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         
         model = Model(inputs=inputs, outputs=x)
@@ -79,11 +132,25 @@ class NN():
         model with output x (= encoding of s)
     
         """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(2,48,48,) ) ]
-        # input_distr
+        inputs=[]
         
-        x1 = encoder_model(inputs[0])
-        x2 = encoder_model(inputs[1])
+        for j in range(2):
+            for i, dim in enumerate(self._input_dimensions):
+                if len(dim) == 3:
+                    input = Input(shape=(dim[0],dim[1],dim[2]))
+                    inputs.append(input)
+            
+                elif len(dim) == 2:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+            
+                else:
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+        
+        half = len(inputs)/2
+        x1 = encoder_model(inputs[:half])
+        x2 = encoder_model(inputs[half:])
         
         x = Subtract()([x1,x2])
         model = Model(inputs=inputs, outputs=x)
@@ -159,12 +226,29 @@ class NN():
         model with output Tx (= model estimate of x')
     
         """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) , Input( shape=(2,48,48,) ) ] #s,s'
-        
-        enc_x = encoder_model(inputs[0]) #s --> x
-        enc_x_ = encoder_model(inputs[2]) #s --> x
-        
-        Tx= transition_model([enc_x,inputs[1]])
+        inputs=[]
+        for j in range(2):
+            for i, dim in enumerate(self._input_dimensions):
+                if len(dim) == 3:
+                    input = Input(shape=(dim[0],dim[1],dim[2]))
+                    inputs.append(input)
+            
+                elif len(dim) == 2:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+            
+                else:
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+
+        half = len(inputs)/2
+        enc_x = encoder_model(inputs[:half]) #s --> x
+        enc_x_ = encoder_model(inputs[half:]) #s --> x
+
+        input = Input(shape=(self._n_actions,))
+        inputs.append(input)
+                
+        Tx= transition_model([enc_x,inputs[-1]])
         
         x = Subtract()([Tx,enc_x_])
 #        x = Dot(axes=-1, normalize=False)([x,x])
@@ -187,10 +271,25 @@ class NN():
         model with output Tx (= model estimate of x')
     
         """
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(2,48,48,) ) ] #s,s'
+        inputs=[]
         
-        enc_x = encoder_model(inputs[0]) #s --> x
-        enc_x_ = encoder_model(inputs[1]) #s --> x
+        for j in range(2):
+            for i, dim in enumerate(self._input_dimensions):
+                if len(dim) == 3:
+                    input = Input(shape=(dim[0],dim[1],dim[2]))
+                    inputs.append(input)
+            
+                elif len(dim) == 2:
+                    input = Input(shape=(dim[0],dim[1]))
+                    inputs.append(input)
+            
+                else:
+                    input = Input(shape=(dim[0],))
+                    inputs.append(input)
+        
+        half = len(inputs)/2
+        enc_x = encoder_model(inputs[:half]) #s --> x #FIXME
+        enc_x_ = encoder_model(inputs[half:]) #s --> x
         
         x = Subtract()([enc_x,enc_x_])
         x = Dot(axes=-1, normalize=False)([x,x])
@@ -198,6 +297,51 @@ class NN():
         model = Model(inputs=inputs, outputs=x )
         
         return model
+
+#    def diff_sa_sa(self,encoder_model,transition_model):
+#        """
+#    
+#        Parameters
+#        -----------
+#        s
+#        a
+#        rand_a
+#    
+#        Returns
+#        -------
+#        model with output Tx (= model estimate of x')
+#    
+#        """
+#        inputs=[]
+#        
+#        for i, dim in enumerate(self._input_dimensions):
+#            if len(dim) == 3:
+#                input = Input(shape=(dim[0],dim[1],dim[2]))
+#                inputs.append(input)
+#
+#            elif len(dim) == 2:
+#                input = Input(shape=(dim[0],dim[1]))
+#                inputs.append(input)
+#
+#            else:
+#                input = Input(shape=(dim[0],))
+#                inputs.append(input)
+#        
+#        input = Input(shape=(self._n_actions,))
+#        inputs.append(input)
+#        input = Input(shape=(self._n_actions,))
+#        inputs.append(input)
+#        
+#        enc_x = encoder_model(inputs[:-2]) #s --> x
+#        Tx= transition_model([enc_x,inputs[-2]])
+#        rand_Tx= transition_model([enc_x,inputs[-1]])
+#                
+#        x = Subtract()([Tx,rand_Tx])
+#        x = Dot(axes=-1, normalize=False)([x,x])
+#        
+#        model = Model(inputs=inputs, outputs=x )
+#        
+#        return model
 
     def diff_Tx(self,transition_model):
         """
@@ -271,11 +415,27 @@ class NN():
         r
         """
         
-        inputs = [ Input( shape=(2,48,48,) ), Input( shape=(self._n_actions,) ) ] #s,a
+        inputs=[]
         
-        enc_x = encoder_model(inputs[0]) #s --> x
+        for i, dim in enumerate(self._input_dimensions):
+            if len(dim) == 3:
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
+
+            elif len(dim) == 2:
+                input = Input(shape=(dim[0],dim[1]))
+                inputs.append(input)
+
+            else:
+                input = Input(shape=(dim[0],))
+                inputs.append(input)
+        
+        input = Input(shape=(self._n_actions,))
+        inputs.append(input)
+        
+        enc_x = encoder_model(inputs[:-1]) #s --> x
                 
-        out = R_model([enc_x]+inputs[1:])
+        out = R_model([enc_x]+inputs[-1:])
                 
         model = Model(inputs=inputs, outputs=out)
         
@@ -324,14 +484,21 @@ class NN():
         -------
         model with output Tx (= model estimate of x')
         """
-        layers=[]
-        outs_conv=[]
         inputs=[]
         
-        #if len(dim) == 3:
         for i, dim in enumerate(self._input_dimensions):
-            input = Input(shape=(dim[0],dim[1],dim[2]))
-            inputs.append(input)
+            if len(dim) == 3:
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
+
+            elif len(dim) == 2:
+                input = Input(shape=(dim[0],dim[1]))
+                inputs.append(input)
+
+            else:
+                input = Input(shape=(dim[0],))
+                inputs.append(input)
+        
         
         input = Input(shape=(self.internal_dim,))
         inputs.append(input)
