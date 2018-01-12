@@ -104,7 +104,7 @@ class MyQNetwork(QNetwork):
 #        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
 
         # used to disentangle actions
-        self.diff_sa_sa = self.learn_and_plan.diff_sa_sa(self.encoder,self.transition)        
+        #self.diff_sa_sa = self.learn_and_plan.diff_sa_sa(self.encoder,self.transition)
                 
         layers=self.full_Q.layers
         # Grab all the parameters together.
@@ -413,8 +413,8 @@ class MyQNetwork(QNetwork):
                   loss=loss_diff_s_s_)#exp_dec_error)#'mse')
                   #metrics=['accuracy'])
 
-        self.diff_sa_sa.compile(optimizer=optimizer7,
-                  loss=loss_diff_s_s_)
+#        self.diff_sa_sa.compile(optimizer=optimizer7,
+#                  loss=loss_diff_s_s_)
 
 #        self.diff_Tx.compile(optimizer=optimizer,
 #                  loss=mean_squared_error)
@@ -446,5 +446,5 @@ class MyQNetwork(QNetwork):
         K.set_value(self.encoder_diff.optimizer.lr, self._lr/10.)
 
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
-        K.set_value(self.diff_sa_sa.optimizer.lr, self._lr/10.)
+#        K.set_value(self.diff_sa_sa.optimizer.lr, self._lr/10.)
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
