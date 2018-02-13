@@ -128,12 +128,12 @@ class MyEnv(Environment):
 
         # Plot the fitted one-step trajectory from time t=10
         for i in range(19):
-            predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0]])])
-            predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0]])])
-            predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1]])])
-            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:]]), color="1", alpha=0.5)
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:]]), color="0.5", alpha=0.5)
-            ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:]]), color="0", alpha=0.5)
+            predicted1=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[1,0,0]])])
+            predicted2=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[0,1,0]])])
+            predicted3=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[0,0,1]])])
+            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="1", alpha=0.5) #white
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.5", alpha=0.5) #grey
+            ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:3]]), color="0", alpha=0.5) #black
 
 #        for xx in [-2,-1.,0, 1., 2.]:
 #            for yy in [-2,-1.,0, 1., 2.]:
@@ -171,12 +171,12 @@ class MyEnv(Environment):
         # Plot the legend for the dots
         from matplotlib.patches import Circle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" Actions (right, left and none) : ", textprops=dict(color="k"))
+        box1 = TextArea(" Actions (none, left and right) : ", textprops=dict(color="k"))
         
         box2 = DrawingArea(60, 20, 0, 0)
-        el1 = Circle((10, 10), 5, fc="k", edgecolor="k")
-        el2 = Circle((30, 10), 5, fc="grey", edgecolor="k") 
         el3 = Circle((50, 10), 5, fc="w", edgecolor="k") 
+        el2 = Circle((30, 10), 5, fc="grey", edgecolor="k") 
+        el1 = Circle((10, 10), 5, fc="k", edgecolor="k")
         box2.add_artist(el1)
         box2.add_artist(el2)
         box2.add_artist(el3)

@@ -54,11 +54,11 @@ class NN():
             if len(dim) == 3:
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
-                x = Conv2D(16, (4, 4), padding='same', activation='relu')(input)
+                x = Conv2D(8, (4, 4), padding='same', activation='tanh')(input)
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                x = Conv2D(16, (4, 4), padding='same', activation='relu')(x)
+                x = Conv2D(8, (4, 4), padding='same', activation='tanh')(x)
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                x = Conv2D(8, (4, 4), padding='same', activation='relu')(x)
+                x = Conv2D(8, (4, 4), padding='same', activation='tanh')(x)
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                 
                 out = Flatten()(x)
@@ -173,9 +173,9 @@ class NN():
         inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
 
         x = Concatenate()(inputs)#,axis=-1)
-        x = Dense(15, activation='tanh')(x)
-        x = Dense(30, activation='tanh')(x)
-        x = Dense(15, activation='tanh')(x)
+        x = Dense(5, activation='tanh')(x) #5,15
+        #x = Dense(10, activation='tanh')(x) # ,30
+        x = Dense(5, activation='tanh')(x) #5,15
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([inputs[0],x])
         
@@ -199,11 +199,11 @@ class NN():
         inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
 
         x = Concatenate()(inputs)#,axis=-1)
-        x = Dense(20, activation='tanh')(x)
+        x = Dense(10, activation='tanh')(x)
         x = BatchNormalization()(x)
         x = Dense(50, activation='tanh')(x)
         x = BatchNormalization()(x)
-        x = Dense(20, activation='tanh')(x)
+        x = Dense(10, activation='tanh')(x)
         x = BatchNormalization()(x)
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([inputs[0],x])

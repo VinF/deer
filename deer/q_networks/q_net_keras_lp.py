@@ -12,11 +12,10 @@ from ..base_classes import QNetwork
 from .NN_keras_lp import NN # Default Neural network used
 
 def mean_squared_error(y_true, y_pred):
-    return K.mean(K.square(y_pred - y_true), axis=-1) # tend to reduce the square of the diff between y_pred and y_true
+    return K.mean(K.square(y_pred - y_true), axis=-1)   # = mse error
 
 def exp_dec_error(y_true, y_pred):
-    #return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred
-    return K.exp( - 2*K.sqrt( K.sum(K.square(y_pred), axis=-1, keepdims=True) + 0.0001 )  ) # tend to increase y_pred
+    return K.exp( - 2.*K.sqrt( K.clip(K.sum(K.square(y_pred), axis=-1, keepdims=True),0.000001,10) )  ) # tend to increase y_pred
 
 def rms_from_squared_components(y_true, y_pred):
     return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1
@@ -76,6 +75,7 @@ class MyQNetwork(QNetwork):
         self.loss_disentangle_t=0
         self.loss_disentangle_a=0
         self.lossR=0
+        self.loss_Q=0
         self.loss_disambiguate1=0
         self.loss_disambiguate2=0
 
@@ -176,17 +176,39 @@ class MyQNetwork(QNetwork):
             print ETs,Es_
             
         # Fit transition
-        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],next_states_val[0],onehot_actions], np.zeros((32,3)))
+        for i in range(10):
+            self.loss_T2+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
+        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],next_states_val[0],onehot_actions], np.zeros((32,self.learn_and_plan.internal_dim)))
 
         # Fit rewards
         self.lossR+=self.full_R.train_on_batch([states_val[0],onehot_actions], rewards_val) 
 
         # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
         # reduce the squared value of the abstract features
-        self.loss_disambiguate1+=self.encoder.train_on_batch([states_val[0]],np.zeros((32,3)))
+        self.loss_disambiguate1+=self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))
 #        # Increase the entropy in the abstract features of two states
-        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,3)))
-
+        rolled=np.roll(states_val[0],1,axis=0)
+        #print "states_val[0]"
+        #print states_val[0]
+        #print "rolled"
+        #print rolled
+        for i in range(32):
+            j=0
+            l=0
+            while((states_val[0][i]==rolled[i+j-l]).all()):
+                if(i+j==31):
+                    l=32
+                if(j==31):
+                    break
+                j=j+1
+            rolled[i]=rolled[i+j-l]
+        #print "rolled"
+        #print rolled
+        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((32,self.learn_and_plan.internal_dim)))
+        #print self.loss_disambiguate2
+        #print "states_val[0]"
+        #print states_val[0]
+        #print rolled
         #print self.loss_disambiguate1
         #self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)) #np.ones((32,3))*2) 
 
@@ -203,24 +225,33 @@ class MyQNetwork(QNetwork):
 
         
         if(self.update_counter%100==0):
-#            print "self.transition"
-#            print [ K.get_value(param)
-#                    for layer in self.transition.layers
-#                    for param in layer.trainable_weights ]
-#            print self.transition.layers
-#            print "losses"
-            print "self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
-            print self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
+            print "self.loss_Q"
+            print self.loss_Q
+            print "self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
+            print self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
+            print K.get_value(self.encoder.optimizer.lr)
+            print K.get_value(self.encoder_diff.optimizer.lr)
             self.loss_T=0
             self.loss_T2=0
             self.lossR=0
+            self.loss_Q=0
 
             self.loss_disentangle_t=0
             self.loss_disentangle_a=0
             
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
+            
+            print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
+            print self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))
+            print self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))
 
+            print "self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,self.learn_and_plan.internal_dim)))"
+            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((32,self.learn_and_plan.internal_dim)))
+            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((32,self.learn_and_plan.internal_dim)))
+
+            print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
+            print self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))
 
 
         if self.update_counter % self._freeze_interval == 0:
@@ -258,7 +289,8 @@ class MyQNetwork(QNetwork):
         loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         #print "self.q_vals.optimizer.lr"
         #print K.eval(self.q_vals.optimizer.lr)
-        
+        self.loss_Q+=loss
+
         if(self.update_counter%100==0):
             print self.update_counter
         
@@ -440,9 +472,9 @@ class MyQNetwork(QNetwork):
         K.set_value(self.full_R.optimizer.lr, self._lr/10.)
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
         
-        K.set_value(self.transition2.optimizer.lr, self._lr/10.)
+        K.set_value(self.transition2.optimizer.lr, self._lr/20.)
 
-        K.set_value(self.encoder.optimizer.lr, self._lr/100.)
+        K.set_value(self.encoder.optimizer.lr, self._lr/50.)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr/10.)
 
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
