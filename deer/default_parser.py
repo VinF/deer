@@ -91,7 +91,10 @@ def process_args(args, defaults):
                         help=('If fixed seed (default: %(default)s)'))
     parser.add_argument('--no-deterministic', dest='deterministic', action='store_false',
                         help=('If no fixed seed'))
-    parser.set_defaults(deterministic=True)
+    parser.set_defaults(deterministic=defaults.DETERMINISTIC)
+    parser.add_argument('--param1', dest="param1") # Additional parameter depending on the environment
+    parser.add_argument('--param2', dest="param2") # Additional parameter depending on the environment
+    parser.add_argument('--param3', dest="param3") # Additional parameter depending on the environment
 
     parameters = parser.parse_args(args)
 

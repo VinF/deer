@@ -19,33 +19,44 @@ np.set_printoptions(threshold=np.nan)
 import copy
 
 from deer.base_classes import Environment
-from plot_MG_operation import plot_op
+#from plot_MG_operation import plot_op
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0
     TEST_MODE = 1
 
-    def __init__(self, rng):
+    def __init__(self, rng, reduce_qty_data=None, length_history=None, start_history=None):
         """ Initialize environment
 
         Arguments:
             rng - the numpy random number generator
         """
+        reduce_qty_data=int(reduce_qty_data) if reduce_qty_data is not None else int(1)
+        length_history=int(length_history) if length_history is not None else int(12)
+        start_history=int(start_history) if start_history is not None else int(0)
+        print "reduce_qty_data, length_history, start_history"
+        print reduce_qty_data, length_history, start_history
         # Defining the type of environment
         self._dist_equinox=0
         self._pred=0
+        self._reduce_qty_data=reduce_qty_data   # Factor by which to artificially reduce the data available (for training+validation)
+                                                # Choices are 1,2,4,8,16
+                                                
+        self._length_history=length_history     # Length for the truncature of the history to build the pseudo-state
+
+        self._start_history=start_history       # Choice between data that is replicated (choices are in [0,...,self._reduce_qty_data[ )
         
         inc_sizing=1.
         
         if (self._dist_equinox==1 and self._pred==1):
             self._last_ponctual_observation = [0. ,[0.,0.],0., [0.,0.]]
-            self._input_dimensions = [(1,), (12,2), (1,),(1,2)]
+            self._input_dimensions = [(1,), (self._length_history,2), (1,),(1,2)]
         elif (self._dist_equinox==1 and self._pred==0):
             self._last_ponctual_observation = [0. ,[0.,0.],0.]
-            self._input_dimensions = [(1,), (12,2), (1,)]
+            self._input_dimensions = [(1,), (self._length_history,2), (1,)]
         elif (self._dist_equinox==0 and self._pred==0):
             self._last_ponctual_observation = [0. ,[0.,0.]]
-            self._input_dimensions = [(1,), (12,2)]
+            self._input_dimensions = [(1,), (self._length_history,2)]
 
         self._rng = rng
 
@@ -75,6 +86,33 @@ class MyEnv(Environment):
         self.production_train=self.production_train_norm*12000./1000.*inc_sizing
         self.production_valid=self.production_valid_norm*12000./1000.*inc_sizing
         self.production_test=self.production_test_norm*12000/1000*inc_sizing
+
+        print "self.production_train brefore"
+        print self.production_train
+        
+        ###
+        ### Artificially reducing the variety of the training and validation time series
+        ###
+        # We create the largest 4 consecutive blocs of days  (seasons)
+        # so that the number of days is divisible by self._reduce_qty_data
+        # Then we within each season, we reduce the qty of days that are different
+        if(self._reduce_qty_data==2):
+            nd_one_seas=90*24
+        elif(self._reduce_qty_data==4 or self._reduce_qty_data==8):
+            nd_one_seas=88*24
+        elif(self._reduce_qty_data==16):
+            nd_one_seas=80*24
+        
+        if(self._reduce_qty_data!=1):
+            for season in range(4):
+                self.production_train[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_train[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
+                self.production_valid[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_valid[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
+                                
+                self.production_train_norm[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_train_norm[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
+                self.production_valid_norm[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_valid_norm[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
+            
+        print "self.production_train after"
+        print self.production_train
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)
@@ -126,20 +164,20 @@ class MyEnv(Environment):
         if (self._dist_equinox==1 and self._pred==1):
             return [
                         0., 
-                        [[0. ,0.] for i in range(12)],
+                        [[0. ,0.] for i in range(self._length_history)],
                         0.,
                         [0.,0.]
                     ]
         elif (self._dist_equinox==1 and self._pred==0):
             return [
                         0., 
-                        [[0. ,0.] for i in range(12)],
+                        [[0. ,0.] for i in range(self._length_history)],
                         0.
                     ]
         else: #elif (self._dist_equinox==0, self._pred==0):
             return [
                         0., 
-                        [[0. ,0.] for i in range(12)],
+                        [[0. ,0.] for i in range(self._length_history)],
                     ]
         
     def act(self, action):
@@ -237,14 +275,14 @@ class MyEnv(Environment):
         consumption=np.array(observations[1][:,0])*(self.max_consumption-self.min_consumption)+self.min_consumption
         production=np.array(observations[1][:,1])*(self.max_production-self.min_production)+self.min_production
 
-        i=0
-        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter_.png")
-
-        i=180*24
-        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_summer_.png")
-
-        i=360*24
-        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter2_.png")
+#        i=0
+#        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter_.png")
+#
+#        i=180*24
+#        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_summer_.png")
+#
+#        i=360*24
+#        plot_op(actions[0+i:100+i],consumption[0+i:100+i],production[0+i:100+i],rewards[0+i:100+i],battery_level[0+i:100+i],"plot_winter2_.png")
 
         
 def main():
