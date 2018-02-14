@@ -160,8 +160,10 @@ class MyQNetwork(QNetwork):
         onehot_actions[np.arange(self._batch_size), actions_val[:,0]] = 1
         #onehot_actions_rand = np.zeros((self._batch_size, self._n_actions))
         #onehot_actions_rand[np.arange(self._batch_size), np.random.randint(0,2,(32))] = 1
-        Es_=self.encoder.predict([next_states_val[0]])
-        Es=self.encoder.predict([states_val[0]])
+        states_val=list(states_val)
+        next_states_val=list(next_states_val)
+        Es_=self.encoder.predict(next_states_val)
+        Es=self.encoder.predict(states_val)
         ETs=self.transition.predict([Es,onehot_actions])
                    
         if(self.update_counter%100==0):
@@ -176,59 +178,67 @@ class MyQNetwork(QNetwork):
             print ETs,Es_
             
         # Fit transition
-        for i in range(10):
-            self.loss_T2+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
-        self.loss_T+=self.diff_Tx_x_.train_on_batch([states_val[0],next_states_val[0],onehot_actions], np.zeros((32,self.learn_and_plan.internal_dim)))
+#        for i in range(10):
+#            l=self.transition2.train_on_batch([Es,onehot_actions], Es_)
+#            print l
+#            self.loss_T2+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
 
+        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions], np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
+        self.loss_T+=l
+        
+
+    
         # Fit rewards
-        self.lossR+=self.full_R.train_on_batch([states_val[0],onehot_actions], rewards_val) 
-
+        self.lossR+=self.full_R.train_on_batch(states_val+[onehot_actions], rewards_val) 
+    
         # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
         # reduce the squared value of the abstract features
-        self.loss_disambiguate1+=self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))
-#        # Increase the entropy in the abstract features of two states
+        self.loss_disambiguate1+=self.encoder.train_on_batch(states_val,np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
+        
+        # Increase the entropy in the abstract features of two states
+        # This is done only when states_val is made up of only one observation --> FIXME
         rolled=np.roll(states_val[0],1,axis=0)
         #print "states_val[0]"
         #print states_val[0]
         #print "rolled"
         #print rolled
-        for i in range(32):
+        for i in range(self._batch_size):
             j=0
             l=0
             while((states_val[0][i]==rolled[i+j-l]).all()):
                 if(i+j==31):
-                    l=32
+                    l=self._batch_size
                 if(j==31):
                     break
                 j=j+1
             rolled[i]=rolled[i+j-l]
         #print "rolled"
         #print rolled
-        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((32,self.learn_and_plan.internal_dim)))
+        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
         #print self.loss_disambiguate2
         #print "states_val[0]"
         #print states_val[0]
         #print rolled
         #print self.loss_disambiguate1
-        #self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(32)) #np.ones((32,3))*2) 
+        #self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(self._batch_size)) #np.ones((self._batch_size,3))*2) 
 
         # Disentangle actions
-        #self.loss_disentangle_a+=self.diff_sa_sa.train_on_batch([states_val[0],onehot_actions,onehot_actions_rand], np.ones(32))
+        #self.loss_disentangle_a+=self.diff_sa_sa.train_on_batch([states_val[0],onehot_actions,onehot_actions_rand], np.ones(self._batch_size))
 
 #
 #        # Loss to have all s' following s,a with a to a distance 1 of s,a)
 #        tiled_x=np.tile(Es,(self._n_actions,1))
 #        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
 #        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
-#        #self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(32*self._n_actions)) 
+#        #self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(self._batch_size*self._n_actions)) 
 
 
         
         if(self.update_counter%100==0):
             print "self.loss_Q"
             print self.loss_Q
-            print "self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
-            print self.loss_T/100.,self.loss_T2/1000.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
+            print "self.loss_T/100.,self.loss_T2/100.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
+            print self.loss_T/100.,self.loss_T2/100.,self.lossR/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
             print K.get_value(self.encoder.optimizer.lr)
             print K.get_value(self.encoder_diff.optimizer.lr)
             self.loss_T=0
@@ -270,7 +280,7 @@ class MyQNetwork(QNetwork):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.full_Q.predict([states_val[0],np.zeros((32,self.learn_and_plan.internal_dim))])
+        q_vals=self.full_Q.predict([states_val[0],np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])
 
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
@@ -284,8 +294,9 @@ class MyQNetwork(QNetwork):
         # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
         #if (self.update_counter<10000):
-        noise_to_be_robust=np.random.normal(size=(32,self.learn_and_plan.internal_dim))*0.#25
+        noise_to_be_robust=np.random.normal(size=(self._batch_size,self.learn_and_plan.internal_dim))*0.#25
 
+        loss=0
         loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         #print "self.q_vals.optimizer.lr"
         #print K.eval(self.q_vals.optimizer.lr)
@@ -357,7 +368,7 @@ class MyQNetwork(QNetwork):
         -------
         The q values for the provided belief state
         """ 
-        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((32,self.learn_and_plan.internal_dim))])[0]
+        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
 
     def qValues_planning(self, state_val, d=2.):
         """ Get the q values for one belief state with a planning depth d
@@ -469,14 +480,14 @@ class MyQNetwork(QNetwork):
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
         K.set_value(self.full_Q.optimizer.lr, self._lr)
 
-        K.set_value(self.full_R.optimizer.lr, self._lr/10.)
-        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr/10.)
+        K.set_value(self.full_R.optimizer.lr, self._lr)
+        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr)
         
-        K.set_value(self.transition2.optimizer.lr, self._lr/20.)
+        K.set_value(self.transition2.optimizer.lr, self._lr/2.)
 
-        K.set_value(self.encoder.optimizer.lr, self._lr/50.)
-        K.set_value(self.encoder_diff.optimizer.lr, self._lr/10.)
+        K.set_value(self.encoder.optimizer.lr, self._lr/5.)
+        K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.)
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr)
 #        K.set_value(self.diff_sa_sa.optimizer.lr, self._lr/10.)
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)

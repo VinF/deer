@@ -6,7 +6,7 @@ Neural network using Keras (called by q_net_keras)
 import numpy as np
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization
+from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge
 from keras import regularizers
 np.random.seed(102912)
 
