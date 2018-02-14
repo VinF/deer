@@ -125,8 +125,8 @@ class MyEnv(Environment):
         for i in range(n-1):
             predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0]])])
             predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1]])])
-            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="1", alpha=0.5)
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.5", alpha=0.5)
+            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.5)
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.5)
 
 #        for xx in [-2,-1.,0, 1., 2.]:
 #            for yy in [-2,-1.,0, 1., 2.]:
@@ -157,18 +157,18 @@ class MyEnv(Environment):
 
 
         # Plot the dots at each time step depending on the action taken
-        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3)), s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
+        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
         
         # Plot the legend for the dots
-        from matplotlib.patches import Circle
+        from matplotlib.patches import Circle, Rectangle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" Actions (action 0, action 1) : ", textprops=dict(color="k"))
+        box1 = TextArea(" State (action 0, action 1) : ", textprops=dict(color="k"))
         
         box2 = DrawingArea(60, 20, 0, 0)
-        el1 = Circle((10, 10), 5, fc="1", edgecolor="k")
-        el2 = Circle((30, 10), 5, fc="0.5", edgecolor="k") 
+        el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k")
+        el2 = Circle((30, 10), 5, fc="0.25", edgecolor="k") 
         #el3 = Circle((50, 10), 5, fc="0", edgecolor="k") 
         box2.add_artist(el1)
         box2.add_artist(el2)
@@ -181,10 +181,31 @@ class MyEnv(Environment):
         anchored_box = AnchoredOffsetbox(loc=3,
                                          child=box, pad=0.,
                                          frameon=True,
-                                         bbox_to_anchor=(0., 1.02),
+                                         bbox_to_anchor=(0., 1.07),
                                          bbox_transform=ax.transAxes,
                                          borderpad=0.,
                                          )        
+        ax.add_artist(anchored_box)
+
+        # Plot the legend for transition estimates
+        box1b = TextArea(" Estimated transitions (action 0, action 1): ", textprops=dict(color="k"))
+        box2b = DrawingArea(60, 20, 0, 0)
+        el1b = Rectangle((5, 10), 15,2, fc="0.75")
+        el2b = Rectangle((25, 10), 15,2, fc="0.25") 
+        box2b.add_artist(el1b)
+        box2b.add_artist(el2b)
+
+        boxb = HPacker(children=[box1b, box2b],
+                      align="center",
+                      pad=0, sep=5)
+        
+        anchored_box = AnchoredOffsetbox(loc=3,
+                                         child=boxb, pad=0.,
+                                         frameon=True,
+                                         bbox_to_anchor=(0., 0.98),
+                                         bbox_transform=ax.transAxes,
+                                         borderpad=0.,
+                                         )
         ax.add_artist(anchored_box)
 
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
@@ -242,6 +263,7 @@ class MyEnv(Environment):
         # and labels.
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
+
 
         #plt.show()
         plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')

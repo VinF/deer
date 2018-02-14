@@ -160,14 +160,14 @@ class MyEnv(Environment):
 
         # Plot the dots at each time step depending on the action taken
         #line3 = ax.scatter(all_possib_abs_states[:,0], all_possib_abs_states[:,1] ,all_possib_abs_states[:,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
-        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=1.)
+        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.5, depthshade=True)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
         
         # Plot the legend for the dots
-        from matplotlib.patches import Circle
+        from matplotlib.patches import Circle, Rectangle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" Actions (action 0, action 1) : ", textprops=dict(color="k"))
+        box1 = TextArea(" State (action 0, action 1): ", textprops=dict(color="k"))
         
         box2 = DrawingArea(60, 20, 0, 0)
         el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k")
@@ -176,7 +176,8 @@ class MyEnv(Environment):
         box2.add_artist(el1)
         box2.add_artist(el2)
         #box2.add_artist(el3)
-        
+
+
         box = HPacker(children=[box1, box2],
                       align="center",
                       pad=0, sep=5)
@@ -184,11 +185,42 @@ class MyEnv(Environment):
         anchored_box = AnchoredOffsetbox(loc=3,
                                          child=box, pad=0.,
                                          frameon=True,
-                                         bbox_to_anchor=(0., 1.02),
+                                         bbox_to_anchor=(0., 1.07),
+                                         bbox_transform=ax.transAxes,
+                                         borderpad=0.,
+                                         )
+        ax.add_artist(anchored_box)
+
+
+        # Plot the legend for transition estimates
+#        #Create custom artists
+#        simArtist = plt.Line2D((0,1),(0,0), color='0.75')
+#        anyArtist = plt.Line2D((0,1),(0,0), color='0.25')
+#        
+#        #Create legend from custom artist/label lists
+#        ax.legend([simArtist,anyArtist],
+#                  ['est. tr. action 0', 'est. tr. action 1'])
+        box1b = TextArea(" Estimated transitions (action 0, action 1): ", textprops=dict(color="k"))
+        box2b = DrawingArea(60, 20, 0, 0)
+        el1b = Rectangle((5, 10), 15,2, fc="0.75")
+        el2b = Rectangle((25, 10), 15,2, fc="0.25") 
+        box2b.add_artist(el1b)
+        box2b.add_artist(el2b)
+
+        boxb = HPacker(children=[box1b, box2b],
+                      align="center",
+                      pad=0, sep=5)
+        
+        anchored_box = AnchoredOffsetbox(loc=3,
+                                         child=boxb, pad=0.,
+                                         frameon=True,
+                                         bbox_to_anchor=(0., 0.98),
                                          bbox_transform=ax.transAxes,
                                          borderpad=0.,
                                          )        
         ax.add_artist(anchored_box)
+
+        
 
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
