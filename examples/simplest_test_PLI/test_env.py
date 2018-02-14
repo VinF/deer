@@ -208,6 +208,9 @@ class MyEnv(Environment):
                                          )
         ax.add_artist(anchored_box)
 
+        ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
 
