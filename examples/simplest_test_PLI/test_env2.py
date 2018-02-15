@@ -24,8 +24,8 @@ class MyEnv(Environment):
         self._mode_episode_count = 0
 
         self._actions = [0,1]
-        self._height=8
-        self._width=5 #preferably an odd number so that it's symmetrical
+        self._height=18
+        self._width=11 #preferably an odd number so that it's symmetrical
 
                 
     def reset(self, mode):
@@ -127,8 +127,8 @@ class MyEnv(Environment):
         for i in range(n-1):
             predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0]])])
             predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1]])])
-            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.5)
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.5)
+            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.75)
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.75)
 
 #        for xx in [-2,-1.,0, 1., 2.]:
 #            for yy in [-2,-1.,0, 1., 2.]:
@@ -160,18 +160,18 @@ class MyEnv(Environment):
 
         # Plot the dots at each time step depending on the action taken
         #line3 = ax.scatter(all_possib_abs_states[:,0], all_possib_abs_states[:,1] ,all_possib_abs_states[:,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
-        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.5, depthshade=True)
+        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.75, depthshade=True)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
         
         # Plot the legend for the dots
         from matplotlib.patches import Circle, Rectangle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" State (action 0, action 1): ", textprops=dict(color="k"))
+        box1 = TextArea(" State representation (action 0, action 1): ", textprops=dict(color="k"))
         
         box2 = DrawingArea(60, 20, 0, 0)
-        el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k")
-        el2 = Circle((30, 10), 5, fc="0.25", edgecolor="k") 
+        el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k", alpha=0.75)
+        el2 = Circle((30, 10), 5, fc="0.25", edgecolor="k", alpha=0.75) 
         #el3 = Circle((50, 10), 5, fc="0", edgecolor="k") 
         box2.add_artist(el1)
         box2.add_artist(el2)
@@ -202,8 +202,8 @@ class MyEnv(Environment):
 #                  ['est. tr. action 0', 'est. tr. action 1'])
         box1b = TextArea(" Estimated transitions (action 0, action 1): ", textprops=dict(color="k"))
         box2b = DrawingArea(60, 20, 0, 0)
-        el1b = Rectangle((5, 10), 15,2, fc="0.75")
-        el2b = Rectangle((25, 10), 15,2, fc="0.25") 
+        el1b = Rectangle((5, 10), 15,2, fc="0.75", alpha=0.75)
+        el2b = Rectangle((25, 10), 15,2, fc="0.25", alpha=0.75) 
         box2b.add_artist(el1b)
         box2b.add_artist(el2b)
 

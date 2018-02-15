@@ -23,7 +23,7 @@ class MyEnv(Environment):
         self._mode_episode_count = 0
 
         self._actions = [0,1]
-        self._length_chain=10
+        self._length_chain=11
 
                 
     def reset(self, mode):
@@ -50,8 +50,8 @@ class MyEnv(Environment):
         if( self.state[-3]==1 and action==0):        
             self.reward = 1
 
-#        print self.state, action
-        
+        # self.state[-2] is the end state
+        # at self.state[-1] the env is reset
         if (self.state[-2]==1):
                     self.state[-2]=0
                     self.state[-1]=1
@@ -125,8 +125,8 @@ class MyEnv(Environment):
         for i in range(n-1):
             predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0]])])
             predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1]])])
-            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.5)
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.5)
+            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.75)
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.75)
 
 #        for xx in [-2,-1.,0, 1., 2.]:
 #            for yy in [-2,-1.,0, 1., 2.]:
@@ -164,11 +164,11 @@ class MyEnv(Environment):
         # Plot the legend for the dots
         from matplotlib.patches import Circle, Rectangle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" State (action 0, action 1) : ", textprops=dict(color="k"))
+        box1 = TextArea(" State representation (action 0, action 1) : ", textprops=dict(color="k"))
         
         box2 = DrawingArea(60, 20, 0, 0)
-        el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k")
-        el2 = Circle((30, 10), 5, fc="0.25", edgecolor="k") 
+        el1 = Circle((10, 10), 5, fc="0.75", edgecolor="k", alpha=0.75)
+        el2 = Circle((30, 10), 5, fc="0.25", edgecolor="k", alpha=0.75) 
         #el3 = Circle((50, 10), 5, fc="0", edgecolor="k") 
         box2.add_artist(el1)
         box2.add_artist(el2)
@@ -190,8 +190,8 @@ class MyEnv(Environment):
         # Plot the legend for transition estimates
         box1b = TextArea(" Estimated transitions (action 0, action 1): ", textprops=dict(color="k"))
         box2b = DrawingArea(60, 20, 0, 0)
-        el1b = Rectangle((5, 10), 15,2, fc="0.75")
-        el2b = Rectangle((25, 10), 15,2, fc="0.25") 
+        el1b = Rectangle((5, 10), 15,2, fc="0.75", alpha=0.75)
+        el2b = Rectangle((25, 10), 15,2, fc="0.25", alpha=0.75) 
         box2b.add_artist(el1b)
         box2b.add_artist(el2b)
 
@@ -237,7 +237,7 @@ class MyEnv(Environment):
         cb1.set_label('Estimated expected return')
 
         plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
-
+        #plt.show()
 
         # fig_visuV
         fig = plt.figure()
