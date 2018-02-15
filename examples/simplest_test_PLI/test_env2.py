@@ -25,7 +25,7 @@ class MyEnv(Environment):
 
         self._actions = [0,1]
         self._height=18
-        self._width=11 #preferably an odd number so that it's symmetrical
+        self._width=7 #preferably an odd number so that it's symmetrical
 
                 
     def reset(self, mode):
@@ -40,7 +40,7 @@ class MyEnv(Environment):
             self._mode = -1
         
         self.y=self._height-1
-        self.x=self._width/2
+        self.x=self._width//2
                 
         return np.array([[0,0,0,1,0,1,0]]) #[0,0,1]+[0,1,0]
         
@@ -55,8 +55,10 @@ class MyEnv(Environment):
 
         self.y = self.y-1
               
-        if(self.y==0 and self.x==self._width/2):
+        if(self.y==0 and self.x==self._width//2):
             self.reward = 1
+        elif(self.y==0):
+            self.reward = -1
         else:
             self.reward = 0
 
@@ -193,13 +195,6 @@ class MyEnv(Environment):
 
 
         # Plot the legend for transition estimates
-#        #Create custom artists
-#        simArtist = plt.Line2D((0,1),(0,0), color='0.75')
-#        anyArtist = plt.Line2D((0,1),(0,0), color='0.25')
-#        
-#        #Create legend from custom artist/label lists
-#        ax.legend([simArtist,anyArtist],
-#                  ['est. tr. action 0', 'est. tr. action 1'])
         box1b = TextArea(" Estimated transitions (action 0, action 1): ", textprops=dict(color="k"))
         box2b = DrawingArea(60, 20, 0, 0)
         el1b = Rectangle((5, 10), 15,2, fc="0.75", alpha=0.75)

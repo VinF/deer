@@ -38,7 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.002
+    LEARNING_RATE = 0.0001
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
@@ -48,7 +48,7 @@ class Defaults:
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
-    EPSILON_MIN = .1
+    EPSILON_MIN = .3
     EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000

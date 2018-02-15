@@ -128,12 +128,12 @@ class MyEnv(Environment):
 
         # Plot the fitted one-step trajectory from time t=10
         for i in range(19):
-            predicted1=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[1,0,0]])])
-            predicted2=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[0,1,0]])])
-            predicted3=learning_algo.transition2.predict([abs_states[i:i+1],np.array([[0,0,1]])])
-            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="1", alpha=0.5) #white
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.5", alpha=0.5) #grey
-            ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:3]]), color="0", alpha=0.5) #black
+            predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0]])])
+            predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0]])])
+            predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1]])])
+            ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.75) #white
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.5", alpha=0.75) #grey
+            ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:3]]), color="0.25", alpha=0.75) #black
 
 #        for xx in [-2,-1.,0, 1., 2.]:
 #            for yy in [-2,-1.,0, 1., 2.]:
@@ -164,19 +164,21 @@ class MyEnv(Environment):
 
 
         # Plot the dots at each time step depending on the action taken
-        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(actions/2.,axis=1),(1,3)), s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
+        print np.tile(np.expand_dims(actions,axis=1),(1,3))
+        print np.tile(np.expand_dims(0.75-actions/4.,axis=1),(1,3))
+        line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(0.75-actions/4.,axis=1),(1,3)), s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
         
         # Plot the legend for the dots
-        from matplotlib.patches import Circle
+        from matplotlib.patches import Circle, Rectangle
         from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, DrawingArea, HPacker
-        box1 = TextArea(" Actions (none, left and right) : ", textprops=dict(color="k"))
+        box1 = TextArea(" State representation (action 0, 1 or 2) : ", textprops=dict(color="k")) #none, left and right
         
         box2 = DrawingArea(60, 20, 0, 0)
-        el3 = Circle((50, 10), 5, fc="w", edgecolor="k") 
-        el2 = Circle((30, 10), 5, fc="grey", edgecolor="k") 
-        el1 = Circle((10, 10), 5, fc="k", edgecolor="k")
+        el1 = Circle((10, 10), 5, fc="0.75", alpha=0.75, edgecolor="k")
+        el2 = Circle((30, 10), 5, fc="0.5", alpha=0.75, edgecolor="k") 
+        el3 = Circle((50, 10), 5, fc="0.25", alpha=0.75, edgecolor="k") 
         box2.add_artist(el1)
         box2.add_artist(el2)
         box2.add_artist(el3)
@@ -188,12 +190,38 @@ class MyEnv(Environment):
         anchored_box = AnchoredOffsetbox(loc=3,
                                          child=box, pad=0.,
                                          frameon=True,
-                                         bbox_to_anchor=(0., 1.02),
+                                         bbox_to_anchor=(0., 1.07),
                                          bbox_transform=ax.transAxes,
                                          borderpad=0.,
                                          )        
         ax.add_artist(anchored_box)
 
+        # Plot the legend for transition estimates
+        box1b = TextArea(" Estimated transitions (action 0, 1 or 2): ", textprops=dict(color="k"))
+        box2b = DrawingArea(70, 20, 0, 0)
+        el1b = Rectangle((5, 10), 15,2, fc="0.75", alpha=0.75)
+        el2b = Rectangle((25, 10), 15,2, fc="0.5", alpha=0.75) 
+        el3b = Rectangle((45, 10), 15,2, fc="0.25", alpha=0.75) 
+        box2b.add_artist(el1b)
+        box2b.add_artist(el2b)
+        box2b.add_artist(el3b)
+
+        boxb = HPacker(children=[box1b, box2b],
+                      align="center",
+                      pad=0, sep=5)
+        
+        anchored_box = AnchoredOffsetbox(loc=3,
+                                         child=boxb, pad=0.,
+                                         frameon=True,
+                                         bbox_to_anchor=(0., 0.98),
+                                         bbox_transform=ax.transAxes,
+                                         borderpad=0.,
+                                         )        
+        ax.add_artist(anchored_box)
+
+        ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
 
