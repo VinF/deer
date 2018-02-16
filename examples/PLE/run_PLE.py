@@ -72,7 +72,7 @@ if __name__ == "__main__":
     
     # --- Instantiate environment ---
     env = PLE_env(rng, game=game, frame_skip=parameters.frame_skip,
-            ple_options={"display_screen": True, "force_fps":True, "fps":30})
+            ple_options={"display_screen": True, "force_fps":True, "fps":20})
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(

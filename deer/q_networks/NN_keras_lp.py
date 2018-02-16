@@ -175,6 +175,7 @@ class NN():
         x = Concatenate()(inputs)#,axis=-1)
         #x = Dense(5, activation='tanh')(x) #5,15
         x = Dense(10, activation='tanh')(x) # ,30
+        x = Dense(10, activation='tanh')(x) # ,30
         #x = Dense(5, activation='tanh')(x) #5,15
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         x = Add()([inputs[0],x])

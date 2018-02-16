@@ -88,7 +88,7 @@ class MyEnv(Environment):
     def summarizePerformance(self, test_data_set, learning_algo):
         #print "test_data_set.observations.shape"
         #print test_data_set.observations()[0][0:1]
-        n=20
+        n=14
         historics=[]
         for i,observ in enumerate(test_data_set.observations()[0][0:n+1]):
             if(i<n):
@@ -127,7 +127,7 @@ class MyEnv(Environment):
             ax.plot(x[i:i+2], y[i:i+2], z[i:i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
 
         # Plot the fitted one-step trajectory from time t=10
-        for i in range(19):
+        for i in range(n-1):
             predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0]])])
             predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0]])])
             predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1]])])

@@ -378,12 +378,12 @@ class MyQNetwork(QNetwork):
         for i in range(d+1): #TO DO: improve planning algorithm
             Qd=self.qValues_planning_abstr(encoded_x, d=i)
             QD_plan+=Qd
-            print "Qd,i"
-            print Qd,i
+            #print "Qd,i"
+            #print Qd,i
         QD_plan=QD_plan/(d+1)
         
-        print "QD_plan"
-        print QD_plan
+        #print "QD_plan"
+        #print QD_plan
 
         return QD_plan
 

@@ -24,7 +24,7 @@ class MyEnv(Environment):
         self._mode_episode_count = 0
 
         self._actions = [0,1]
-        self._height=18
+        self._height=15
         self._width=7 #preferably an odd number so that it's symmetrical
 
                 
