@@ -198,28 +198,19 @@ class MyQNetwork(QNetwork):
         # Increase the entropy in the abstract features of two states
         # This is done only when states_val is made up of only one observation --> FIXME
         rolled=np.roll(states_val[0],1,axis=0)
-        #print "states_val[0]"
-        #print states_val[0]
-        #print "rolled"
-        #print rolled
-        for i in range(self._batch_size):
-            j=0
-            l=0
-            while((states_val[0][i]==rolled[i+j-l]).all()):
-                if(i+j==31):
-                    l=self._batch_size
-                if(j==31):
-                    break
-                j=j+1
-            rolled[i]=rolled[i+j-l]
-        #print "rolled"
-        #print rolled
+#        for i in range(self._batch_size):
+#            j=0
+#            l=0
+#            while((states_val[0][i]==rolled[i+j-l]).all()):
+#                if(i+j==31):
+#                    l=self._batch_size
+#                if(j==31):
+#                    break
+#                j=j+1
+#            rolled[i]=rolled[i+j-l]
         self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
-        #print self.loss_disambiguate2
-        #print "states_val[0]"
-        #print states_val[0]
-        #print rolled
-        #print self.loss_disambiguate1
+
+
         #self.loss_disentangle_t+=self.diff_s_s_.train_on_batch([states_val[0],next_states_val[0]], np.ones(self._batch_size)) #np.ones((self._batch_size,3))*2) 
 
         # Disentangle actions
