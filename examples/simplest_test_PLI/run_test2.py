@@ -24,7 +24,7 @@ class Defaults:
     # ----------------------
     STEPS_PER_EPOCH = 500
     EPOCHS = 500
-    STEPS_PER_TEST = 20
+    STEPS_PER_TEST = 100
     PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------

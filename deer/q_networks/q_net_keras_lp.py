@@ -370,7 +370,7 @@ class MyQNetwork(QNetwork):
         """ 
         return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
 
-    def qValues_planning(self, state_val, d=2.):
+    def qValues_planning(self, state_val, d=2):
         """ Get the q values for one belief state with a planning depth d
 
         Arguments
@@ -382,31 +382,42 @@ class MyQNetwork(QNetwork):
         -------
         The q values with planning depth d for the provided belief state
         """ 
-        identity_matrix = np.diag(np.ones(self._n_actions))
-        
         encoded_x = self.encoder.predict([np.expand_dims(state,axis=0) for state in state_val])
+        QD_plan=0
+        for i in range(d+1): #TO DO: improve planning algorithm
+            Qd=self.qValues_planning_abstr(encoded_x, d=i)
+            QD_plan+=Qd
+            print "Qd,i"
+            print Qd,i
+        QD_plan=QD_plan/(d+1)
+        
+        print "QD_plan"
+        print QD_plan
 
-        q_vals_d0=self.Q.predict([encoded_x])[0]
-        #print "q_vals_d0"
-        #print q_vals_d0
-        #tile3_encoded_x=np.array([enc for enc in encoded_x for i in range(self._n_actions)])
-        tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1))
-        #print tile3_encoded_x
-        r_vals_d0=np.array(self.R.predict([tile3_encoded_x,identity_matrix])).reshape((self._n_actions))
+        return QD_plan
+
+    def qValues_planning_abstr(self, state_abstr_val, d):
+        """ 
+        """ 
+        #print "qValues_planning_abstr d"
+        #print d
+        n=len(state_abstr_val)
+        identity_matrix = np.diag(np.ones(self._n_actions))
+        if (d==0):
+            #print self.Q.predict([state_abstr_val])
+            return self.Q.predict([state_abstr_val])
+        else:
+            tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1))
+            repeat_identity=np.repeat(identity_matrix,len(state_abstr_val),axis=0)
+            #print tile3_encoded_x
+            #print repeat_identity
+            r_vals_d0=np.array(self.R.predict([tile3_encoded_x,repeat_identity]))
+            #print r_vals_d0
+            r_vals_d0=r_vals_d0.flatten()
+            next_x_predicted=self.transition.predict([tile3_encoded_x,repeat_identity])
+            return r_vals_d0+self._df*np.amax(self.qValues_planning_abstr(next_x_predicted,d=d-1).reshape(len(state_abstr_val)*self._n_actions,self._n_actions),axis=1).flatten()
         
-        #tile3_state_val=np.array([state for state in state_val for i in range(self._n_actions)])
-        #tile3_state_val=np.tile(state_val,(3,1,1,1))
-        
-        next_x_predicted=self.transition2.predict([tile3_encoded_x,identity_matrix])
-        q_vals_d1=self.Q.predict([next_x_predicted])
-        #print q_vals_d1
-        #print [np.max(vals) for vals in q_vals_d1]
-        #print r_vals_d0
-        #print (1-1/d)+(1-1/d)**2
-        #print "r_vals_d0+self._df*np.array([np.max(vals) for vals in q_vals_d1])"
-        #print r_vals_d0+self._df*np.array([np.max(vals) for vals in q_vals_d1])
-        #print ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*np.array([np.max(vals) for vals in q_vals_d1])
-        return ((1-1/d)+(1-1/d)**2)*np.array(q_vals_d0)+((1-1/d)**2)*(r_vals_d0+self._df*np.array([np.max(vals) for vals in q_vals_d1]))
+
 
     def chooseBestAction(self, state):
         """ Get the best action for a belief state
