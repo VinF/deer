@@ -12,7 +12,7 @@ from ..base_classes import QNetwork
 from .NN_keras_lp import NN # Default Neural network used
 
 def mean_squared_error(y_true, y_pred):
-    return K.mean(K.square(y_pred - y_true), axis=-1)   # = mse error
+    return K.clip(K.mean(K.square(y_pred - y_true), axis=-1)-1,0.,100.)   # = mse error
 
 def exp_dec_error(y_true, y_pred):
     return K.exp( - 2.*K.sqrt( K.clip(K.sum(K.square(y_pred), axis=-1, keepdims=True),0.000001,10) )  ) # tend to increase y_pred
@@ -487,7 +487,7 @@ class MyQNetwork(QNetwork):
         
         K.set_value(self.transition2.optimizer.lr, self._lr/2.)
 
-        K.set_value(self.encoder.optimizer.lr, self._lr/5.)
+        K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr)

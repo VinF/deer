@@ -132,16 +132,13 @@ class MyEnv(Environment):
             ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.75)
             ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.75)
 
-#        for xx in [-2,-1.,0, 1., 2.]:
-#            for yy in [-2,-1.,0, 1., 2.]:
-#                for zz in [-2,-1.,0, 1., 2.]:
-#                    predicted1=learning_algo.transition2.predict([np.array([[xx,yy,zz]]),np.array([[1,0,0]])])
-#                    predicted2=learning_algo.transition2.predict([np.array([[xx,yy,zz]]),np.array([[0,1,0]])])
-#                    predicted3=learning_algo.transition2.predict([np.array([[xx,yy,zz]]),np.array([[0,0,1]])])
+#        for xx in np.arange(self._width)-self._width//2:
+#            for yy in np.arange(self._width)-self._width//2:
+#                for zz in np.arange(self._width)-self._width//2:
+#                    predicted1=learning_algo.transition.predict([np.array([[xx,yy,zz]]),np.array([[1,0]])])
+#                    predicted2=learning_algo.transition.predict([np.array([[xx,yy,zz]]),np.array([[0,1]])])
 #                    ax.plot(np.concatenate([np.array([xx]),predicted1[0,:1]]), np.concatenate([np.array([yy]),predicted1[0,1:2]]), np.concatenate([np.array([zz]),predicted1[0,2:]]), color="1", alpha=0.5)
 #                    ax.plot(np.concatenate([np.array([xx]),predicted2[0,:1]]), np.concatenate([np.array([yy]),predicted2[0,1:2]]), np.concatenate([np.array([zz]),predicted2[0,2:]]), color="0.5", alpha=0.5)
-#                    ax.plot(np.concatenate([np.array([xx]),predicted3[0,:1]]), np.concatenate([np.array([yy]),predicted3[0,1:2]]), np.concatenate([np.array([zz]),predicted3[0,2:]]), color="0", alpha=0.5)
-                    #ax.plot(np.concatenate([x[i:i+1],predicted[0,:1]]), np.concatenate([y[i:i+1],predicted[0,1:2]]), np.concatenate([z[i:i+1],predicted[0,2:]]), color="g")
         
 
         # Plot the colorbar for the trajectory
@@ -161,7 +158,7 @@ class MyEnv(Environment):
 
 
         # Plot the dots at each time step depending on the action taken
-        #line3 = ax.scatter(all_possib_abs_states[:,0], all_possib_abs_states[:,1] ,all_possib_abs_states[:,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
+        line3 = ax.scatter(all_possib_abs_states[:,0], all_possib_abs_states[:,1] ,all_possib_abs_states[:,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
         line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.75, depthshade=True)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
@@ -245,6 +242,7 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
+        plt.show()
         plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
 
 

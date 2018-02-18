@@ -39,7 +39,7 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
     LEARNING_RATE = 0.0001
-    LEARNING_RATE_DECAY = 0.99
+    LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
     DISCOUNT_MAX = 0.99
@@ -48,13 +48,13 @@ class Defaults:
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
-    EPSILON_MIN = .3
+    EPSILON_MIN = .8
     EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     FREEZE_INTERVAL = 1000
-    DETERMINISTIC = True
+    DETERMINISTIC = False
 
 
 

@@ -62,7 +62,7 @@ class MyEnv(Environment):
         self._screen = self._ple.getScreenGrayscale()
         cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
         
-        return [2 * [48 * [48 * [0]]]]
+        return [1 * [48 * [48 * [0]]]]
         
         
     def act(self, action):
@@ -90,16 +90,18 @@ class MyEnv(Environment):
         #print test_data_set.observations()[0][0:1]
         n=14
         historics=[]
-        for i,observ in enumerate(test_data_set.observations()[0][0:n+1]):
-            if(i<n):
-                historics.append(np.expand_dims(observ,axis=0))
-            if(i>0):
-                historics[i-1]=np.concatenate([historics[i-1],np.expand_dims(observ,axis=0)], axis=0)
+        for i,observ in enumerate(test_data_set.observations()[0][0:n]):
+            historics.append(np.expand_dims(observ,axis=0))
+#        for i,observ in enumerate(test_data_set.observations()[0][0:n+1]):
+#            if(i<n):
+#                historics.append(np.expand_dims(observ,axis=0))
+#            if(i>0):
+#                historics[i-1]=np.concatenate([historics[i-1],np.expand_dims(observ,axis=0)], axis=0)
         historics=np.array(historics)
         #print historics
         abs_states=learning_algo.encoder.predict(historics)
         print abs_states
-        actions=test_data_set.actions()[1:n+1] #instead of 0:n because history of 2 time steps considered
+        actions=test_data_set.actions()[0:n] #instead of 0:n because history of 2 time steps considered
         print actions
         print test_data_set.rewards()[0:n]
         if self.inTerminalState() == False:
@@ -324,7 +326,7 @@ class MyEnv(Environment):
         matplotlib.pyplot.close("all") # avoids memory leaks
 
     def inputDimensions(self):
-        return [(2, 48, 48)]
+        return [(1, 48, 48)]
 
     def observationType(self, subject):
         return np.float32
