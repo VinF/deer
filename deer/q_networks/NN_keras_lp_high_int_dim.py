@@ -178,9 +178,6 @@ class NN():
         if (self._high_int_dim==True):
             x1=Flatten()(x1)
             x2=Flatten()(x2)
-            x = Subtract()([x1,x2])   #([Tx,enc_x_])
-        else:
-            x = Subtract()([Tx,enc_x_])
         x = Subtract()([x1,x2])
         model = Model(inputs=inputs, outputs=x)
         
