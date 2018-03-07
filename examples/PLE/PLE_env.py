@@ -14,11 +14,14 @@ matplotlib.use('qt5agg')
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
+import sys
+sys.path.insert(0, 'all_frames')
+import plot_all_frames
 
 class MyEnv(Environment):
     VALIDATION_MODE = 0
 
-    def __init__(self, rng, game=None, frame_skip=2, 
+    def __init__(self, rng, game=None, frame_skip=2, width=64, height=64,
             ple_options={"display_screen": True, "force_fps":True, "fps":15}):
 
         self._mode = -1
@@ -27,6 +30,8 @@ class MyEnv(Environment):
 
         self._frame_skip = frame_skip if frame_skip >= 1 else 1
         self._random_state = rng
+        self.width=width
+        self.height=height
        
         if game is None:
             raise ValueError("Game must be provided")
@@ -37,7 +42,7 @@ class MyEnv(Environment):
 
         w, h = self._ple.getScreenDims()
         self._screen = np.empty((h, w), dtype=np.uint8)
-        self._reduced_screen = np.empty((48, 48), dtype=np.uint8)
+        self._reduced_screen = np.empty((32, 32), dtype=np.uint8)
         self._actions = self._ple.getActionSet()
 
                 
@@ -49,7 +54,7 @@ class MyEnv(Environment):
                 self._mode_episode_count = 0
                 # fix the seed for every new validation. It potentially removes one source of variance and
                 # it allows to show some illustration of the learning for the same setting in validation
-                self._ple.game.rng = np.random.RandomState(23) # 23:left, center, right, ...
+                #self._ple.game.rng = np.random.RandomState(23) # 23:left, center, right, ...
             else:
                 self._mode_episode_count += 1
         elif self._mode != -1: # and thus mode == -1
@@ -60,9 +65,9 @@ class MyEnv(Environment):
         #for _ in range(self._ple.rng.randint(15)):
         #    self._ple.act(self._ple.NOOP)
         self._screen = self._ple.getScreenGrayscale()
-        cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (32, 32), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
         
-        return [1 * [48 * [48 * [0]]]]
+        return [1 * [32 * [32 * [0]]]]
         
         
     def act(self, action):
@@ -80,17 +85,31 @@ class MyEnv(Environment):
                 break
             
         self._screen = self._ple.getScreenGrayscale()
-        cv2.resize(self._screen, (48, 48), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
+        cv2.resize(self._screen, (32, 32), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
   
         self._mode_score += self.reward
         return np.sign(self.reward)
 
     def summarizePerformance(self, test_data_set, learning_algo):
+        all_possib_inp=np.expand_dims(np.array(plot_all_frames.get_all_possib_inp(self.width,self.height)),axis=1)/256.
+        #print "all_possib_inp[0]"
+        print "all_possib_inp.shape"
+        print all_possib_inp.shape
+        #print all_possib_inp[0]
+        #print all_possib_inp[224]
+        #print all_possib_inp[225]
+        #print "all_possib_inp[449]"
+        #print all_possib_inp[449]
+        #print all_possib_inp[450]
+        all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp)
+        print "np.array(all_possib_abs_states).shape"
+        print np.array(all_possib_abs_states).shape
+        #print all_possib_abs_states[0,0]
         #print "test_data_set.observations.shape"
         #print test_data_set.observations()[0][0:1]
         n=14
         historics=[]
-        for i,observ in enumerate(test_data_set.observations()[0][0:n]):
+        for i,observ in enumerate(test_data_set.observations()[0][1:n]):
             historics.append(np.expand_dims(observ,axis=0))
 #        for i,observ in enumerate(test_data_set.observations()[0][0:n+1]):
 #            if(i<n):
@@ -98,12 +117,14 @@ class MyEnv(Environment):
 #            if(i>0):
 #                historics[i-1]=np.concatenate([historics[i-1],np.expand_dims(observ,axis=0)], axis=0)
         historics=np.array(historics)
-        #print historics
+        #print "historics[0]"
+        #print historics.shape
+        #print historics[0]
         abs_states=learning_algo.encoder.predict(historics)
         print abs_states
-        actions=test_data_set.actions()[0:n] #instead of 0:n because history of 2 time steps considered
+        actions=test_data_set.actions()[1:n] #instead of 0:n because history of 2 time steps considered
         print actions
-        print test_data_set.rewards()[0:n]
+        print test_data_set.rewards()[1:n]
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))
@@ -166,6 +187,10 @@ class MyEnv(Environment):
 
 
         # Plot the dots at each time step depending on the action taken
+        self._nx_block=3
+        length_block=15*8
+        for i in range(self._nx_block):
+            line3 = ax.scatter(all_possib_abs_states[i*length_block:(i+1)*length_block,0], all_possib_abs_states[i*length_block:(i+1)*length_block,1] ,all_possib_abs_states[i*length_block:(i+1)*length_block,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.2)
         print np.tile(np.expand_dims(actions,axis=1),(1,3))
         print np.tile(np.expand_dims(0.75-actions/4.,axis=1),(1,3))
         line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(0.9-actions/3.,axis=1),(1,3)), s=50, marker='o', edgecolors='k', depthshade=True, alpha=0.75)
@@ -224,109 +249,110 @@ class MyEnv(Environment):
         ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        #plt.show()
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
 
-        # Plot the Q_vals
-        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
-        #print "actions,C"
-        #print actions
-        #print c
-        #c=np.max(c,axis=1)
-        m1=ax.scatter(x, y, z+zrange/20, c=c[:,0], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
-        m2=ax.scatter(x, y, z+3*zrange/40, c=c[:,1], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
-        m3=ax.scatter(x, y, z+zrange/10, c=c[:,2], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
-        
-        #plt.colorbar(m3)
-        ax2 = fig.add_axes([0.85, 0.15, 0.025, 0.7])
-        cmap = matplotlib.cm.RdYlGn
-        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
-
-        # ColorbarBase derives from ScalarMappable and puts a colorbar
-        # in a specified axes, so it has everything needed for a
-        # standalone colorbar.  There are many more kwargs, but the
-        # following gives a basic continuous colorbar with ticks
-        # and labels.
-        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
-        cb1.set_label('Estimated expected return')
-
-        plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
-
-
-        # fig_visuV
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        
-        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
-        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
-        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
-
-        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
-        c=np.max(c,axis=1)
-        #print "c"
-        #print c
-        
-        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
-        #plt.colorbar(m)
-        fig.subplots_adjust(right=0.8)
-        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
-        cmap = matplotlib.cm.hot
-        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
-
-        # ColorbarBase derives from ScalarMappable and puts a colorbar
-        # in a specified axes, so it has everything needed for a
-        # standalone colorbar.  There are many more kwargs, but the
-        # following gives a basic continuous colorbar with ticks
-        # and labels.
-        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
-        cb1.set_label('Estimated expected return')
-
-        #plt.show()
-        plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
-
-
-        # fig_visuR
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        
-        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
-        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
-        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
-
-        coords=np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
-        repeat3_coord=np.repeat(coords,3,axis=0)
-        identity_matrix = np.diag(np.ones(self.nActions()))
-        tile_identity_matrix=np.tile(identity_matrix,(5*5*5,1))
-
-        c = learning_algo.R.predict([repeat3_coord,tile_identity_matrix])
-        c=np.max(np.reshape(c,(125,3)),axis=1)
-        #print "c"
-        #print c
-        #mini=np.min(c)
-        #maxi=np.max(c)
-        
-        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
-        #plt.colorbar(m)
-        fig.subplots_adjust(right=0.8)
-        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
-        cmap = matplotlib.cm.hot
-        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
-
-        # ColorbarBase derives from ScalarMappable and puts a colorbar
-        # in a specified axes, so it has everything needed for a
-        # standalone colorbar.  There are many more kwargs, but the
-        # following gives a basic continuous colorbar with ticks
-        # and labels.
-        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
-        cb1.set_label('Estimated expected return')
-
-        #plt.show()
-        plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
+#        # Plot the Q_vals
+#        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
+#        #print "actions,C"
+#        #print actions
+#        #print c
+#        #c=np.max(c,axis=1)
+#        m1=ax.scatter(x, y, z+zrange/20, c=c[:,0], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+#        m2=ax.scatter(x, y, z+3*zrange/40, c=c[:,1], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+#        m3=ax.scatter(x, y, z+zrange/10, c=c[:,2], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
+#        
+#        #plt.colorbar(m3)
+#        ax2 = fig.add_axes([0.85, 0.15, 0.025, 0.7])
+#        cmap = matplotlib.cm.RdYlGn
+#        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
+#
+#        # ColorbarBase derives from ScalarMappable and puts a colorbar
+#        # in a specified axes, so it has everything needed for a
+#        # standalone colorbar.  There are many more kwargs, but the
+#        # following gives a basic continuous colorbar with ticks
+#        # and labels.
+#        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+#        cb1.set_label('Estimated expected return')
+#
+#        plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
+#
+#
+#        # fig_visuV
+#        fig = plt.figure()
+#        ax = fig.add_subplot(111, projection='3d')
+#        
+#        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
+#        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
+#        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
+#
+#        c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
+#        c=np.max(c,axis=1)
+#        #print "c"
+#        #print c
+#        
+#        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
+#        #plt.colorbar(m)
+#        fig.subplots_adjust(right=0.8)
+#        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
+#        cmap = matplotlib.cm.hot
+#        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
+#
+#        # ColorbarBase derives from ScalarMappable and puts a colorbar
+#        # in a specified axes, so it has everything needed for a
+#        # standalone colorbar.  There are many more kwargs, but the
+#        # following gives a basic continuous colorbar with ticks
+#        # and labels.
+#        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+#        cb1.set_label('Estimated expected return')
+#
+#        #plt.show()
+#        plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
+#
+#
+#        # fig_visuR
+#        fig = plt.figure()
+#        ax = fig.add_subplot(111, projection='3d')
+#        
+#        x = np.array([i for i in range(5) for jk in range(25)])/4.*(axes_lims[0][1]-axes_lims[0][0])+axes_lims[0][0]
+#        y = np.array([j for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[1][1]-axes_lims[1][0])+axes_lims[1][0]
+#        z = np.array([k for i in range(5) for j in range(5) for k in range(5)])/4.*(axes_lims[2][1]-axes_lims[2][0])+axes_lims[2][0]
+#
+#        coords=np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1)
+#        repeat3_coord=np.repeat(coords,3,axis=0)
+#        identity_matrix = np.diag(np.ones(self.nActions()))
+#        tile_identity_matrix=np.tile(identity_matrix,(5*5*5,1))
+#
+#        c = learning_algo.R.predict([repeat3_coord,tile_identity_matrix])
+#        c=np.max(np.reshape(c,(125,3)),axis=1)
+#        #print "c"
+#        #print c
+#        #mini=np.min(c)
+#        #maxi=np.max(c)
+#        
+#        m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
+#        #plt.colorbar(m)
+#        fig.subplots_adjust(right=0.8)
+#        ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
+#        cmap = matplotlib.cm.hot
+#        norm = matplotlib.colors.Normalize(vmin=-1, vmax=1)
+#
+#        # ColorbarBase derives from ScalarMappable and puts a colorbar
+#        # in a specified axes, so it has everything needed for a
+#        # standalone colorbar.  There are many more kwargs, but the
+#        # following gives a basic continuous colorbar with ticks
+#        # and labels.
+#        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
+#        cb1.set_label('Estimated expected return')
+#
+#        #plt.show()
+#        plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
 
         matplotlib.pyplot.close("all") # avoids memory leaks
 
     def inputDimensions(self):
-        return [(1, 48, 48)]
+        return [(1, 32, 32)]
 
     def observationType(self, subject):
         return np.float32

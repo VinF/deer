@@ -26,6 +26,12 @@ class MyEnv(Environment):
         self._actions = [0,1]
         self._height=15
         self._width=7 #preferably an odd number so that it's symmetrical
+        self._nx_block=3 #number of different x positions of the falling blocks
+        if(self._nx_block==1):
+            self._x_block=self._width//2
+        else:
+            rand=np.random.randint(self._nx_block) # random selection of the pos for falling block
+            self._x_block=rand*((self._width-1)//(self._nx_block-1)) # traduction in a number in [0,self._width] of rand
 
                 
     def reset(self, mode):
@@ -41,6 +47,11 @@ class MyEnv(Environment):
         
         self.y=self._height-1
         self.x=self._width//2
+        if(self._nx_block==1):
+            self._x_block=self._width//2
+        else:
+            rand=np.random.randint(self._nx_block) # random selection of the pos for falling block
+            self._x_block=rand*((self._width-1)//(self._nx_block-1)) # traduction in a number in [0,self._width] of rand
                 
         return np.array([[0,0,0,1,0,1,0]]) #[0,0,1]+[0,1,0]
         
@@ -55,7 +66,7 @@ class MyEnv(Environment):
 
         self.y = self.y-1
               
-        if(self.y==0 and self.x==self._width//2):
+        if(self.y==0 and self.x==self._x_block):
             self.reward = 1
         elif(self.y==0):
             self.reward = -1
@@ -72,9 +83,20 @@ class MyEnv(Environment):
         possib_y = np.zeros((self._height-1, self._height))
         possib_y[np.arange(self._height-1), 1+np.arange(self._height-1)] = 1
         possib_x=np.diag(np.ones(self._width))
-        rep_x=np.repeat(possib_x,self._height-1,axis=0)
-        rep_y=np.tile(possib_y,(self._width,1))
-        all_possib_inp=np.expand_dims(np.concatenate((rep_y,rep_x),axis=1),axis=1)
+        rep_x=np.tile(np.repeat(possib_x,self._height-1,axis=0),(self._nx_block,1))
+        rep_y=np.tile(np.tile(possib_y,(self._width,1)),(self._nx_block,1))
+        if(self._nx_block==1):
+            possib_x_block=np.zeros((1,self._width))
+            possib_x_block[0,self._width//2]=1
+        else:
+            possib_x_block=[]
+            for i in range(self._nx_block):
+                one_hot_x_block=np.zeros((self._width))
+                j=i*((self._width-1)//(self._nx_block-1))
+                one_hot_x_block[j]=1
+                possib_x_block.append(one_hot_x_block)
+        rep_x_block=np.repeat(np.array(possib_x_block),(self._height-1)*self._width,axis=0)
+        all_possib_inp=np.expand_dims(np.concatenate((rep_y,rep_x,rep_x_block),axis=1),axis=1)
         all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp)
         print "learning_algo.encoder.predict(all_possib_inp)"
         print all_possib_abs_states
@@ -158,7 +180,9 @@ class MyEnv(Environment):
 
 
         # Plot the dots at each time step depending on the action taken
-        line3 = ax.scatter(all_possib_abs_states[:,0], all_possib_abs_states[:,1] ,all_possib_abs_states[:,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
+        length_block=(self._height-1)*self._width
+        for i in range(self._nx_block):
+            line3 = ax.scatter(all_possib_abs_states[i*length_block:(i+1)*length_block,0], all_possib_abs_states[i*length_block:(i+1)*length_block,1] ,all_possib_abs_states[i*length_block:(i+1)*length_block,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.2)
         line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.75, depthshade=True)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
@@ -217,6 +241,7 @@ class MyEnv(Environment):
         ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
+        #plt.show()
         plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
 
@@ -242,7 +267,6 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
-        plt.show()
         plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
 
 
@@ -319,7 +343,7 @@ class MyEnv(Environment):
         matplotlib.pyplot.close("all") # avoids memory leaks
 
     def inputDimensions(self):
-        return [(1,self._height+self._width)]
+        return [(1,self._height+self._width+self._width)]
 
     def observationType(self, subject):
         return np.float32
@@ -332,7 +356,9 @@ class MyEnv(Environment):
         one_hot_x[self.x]=1
         one_hot_y=np.zeros(self._height)
         one_hot_y[self.y]=1
-        return [np.array(list(one_hot_y)+list(one_hot_x))]
+        one_hot_x_block=np.zeros(self._width)
+        one_hot_x_block[self._x_block]=1
+        return [np.array(list(one_hot_y)+list(one_hot_x)+list(one_hot_x_block))]
 
     def inTerminalState(self):
         if (self.y==0):

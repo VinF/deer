@@ -54,12 +54,13 @@ class NN():
             if len(dim) == 3:
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
-                x = Conv2D(4, (4, 4), padding='same', activation='tanh')(input)
+                x=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
+                x = Conv2D(4, (2, 2), padding='same', activation='tanh')(x)
+                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                x = Conv2D(8, (4, 4), padding='same', activation='tanh')(x)
-                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                x = Conv2D(8, (4, 4), padding='same', activation='tanh')(x)
-                x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                #x = Conv2D(16, (4, 4), padding='same', activation='tanh')(x)
+                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                 
                 out = Flatten()(x)
                 
@@ -111,8 +112,9 @@ class NN():
             x= outs_conv [0]
         
         # we stack a deep fully-connected network on top
+        x = Dense(200, activation='tanh')(x)
+        x = Dense(100, activation='tanh')(x)
         x = Dense(50, activation='tanh')(x)
-        x = Dense(20, activation='tanh')(x)
         x = Dense(10, activation='tanh')(x)
         
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
@@ -175,7 +177,8 @@ class NN():
 
         x = Concatenate()(inputs)#,axis=-1)
         x = Dense(10, activation='tanh')(x) #5,15
-#        x = Dense(30, activation='tanh')(x) # ,30
+        x = Dense(30, activation='tanh')(x) # ,30
+        x = Dense(30, activation='tanh')(x) # ,30
         x = Dense(10, activation='tanh')(x) # ,30
         #x = Dense(5, activation='tanh')(x) #5,15
         x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
@@ -253,7 +256,6 @@ class NN():
         Tx= transition_model([enc_x,inputs[-1]])
         
         x = Subtract()([Tx,enc_x_])
-#        x = Dot(axes=-1, normalize=False)([x,x])
         
         model = Model(inputs=inputs, outputs=x )
         
@@ -300,50 +302,50 @@ class NN():
         
         return model
 
-#    def diff_sa_sa(self,encoder_model,transition_model):
-#        """
-#    
-#        Parameters
-#        -----------
-#        s
-#        a
-#        rand_a
-#    
-#        Returns
-#        -------
-#        model with output Tx (= model estimate of x')
-#    
-#        """
-#        inputs=[]
-#        
-#        for i, dim in enumerate(self._input_dimensions):
-#            if len(dim) == 3:
-#                input = Input(shape=(dim[0],dim[1],dim[2]))
-#                inputs.append(input)
-#
-#            elif len(dim) == 2:
-#                input = Input(shape=(dim[0],dim[1]))
-#                inputs.append(input)
-#
-#            else:
-#                input = Input(shape=(dim[0],))
-#                inputs.append(input)
-#        
-#        input = Input(shape=(self._n_actions,))
-#        inputs.append(input)
-#        input = Input(shape=(self._n_actions,))
-#        inputs.append(input)
-#        
-#        enc_x = encoder_model(inputs[:-2]) #s --> x
-#        Tx= transition_model([enc_x,inputs[-2]])
-#        rand_Tx= transition_model([enc_x,inputs[-1]])
-#                
-#        x = Subtract()([Tx,rand_Tx])
-#        x = Dot(axes=-1, normalize=False)([x,x])
-#        
-#        model = Model(inputs=inputs, outputs=x )
-#        
-#        return model
+    def diff_sa_sa(self,encoder_model,transition_model):
+        """
+    
+        Parameters
+        -----------
+        s
+        a
+        rand_a
+    
+        Returns
+        -------
+        model with output Tx (= model estimate of x')
+    
+        """
+        inputs=[]
+        
+        for i, dim in enumerate(self._input_dimensions):
+            if len(dim) == 3:
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
+
+            elif len(dim) == 2:
+                input = Input(shape=(dim[0],dim[1]))
+                inputs.append(input)
+
+            else:
+                input = Input(shape=(dim[0],))
+                inputs.append(input)
+        
+        input = Input(shape=(self._n_actions,))
+        inputs.append(input)
+        input = Input(shape=(self._n_actions,))
+        inputs.append(input)
+        
+        enc_x = encoder_model(inputs[:-2]) #s --> x
+        Tx= transition_model([enc_x,inputs[-2]])
+        rand_Tx= transition_model([enc_x,inputs[-1]])
+                
+        x = Subtract()([Tx,rand_Tx])
+        x = Dot(axes=-1, normalize=False)([x,x])
+        
+        model = Model(inputs=inputs, outputs=x )
+        
+        return model
 
     def diff_Tx(self,transition_model):
         """
@@ -392,9 +394,10 @@ class NN():
         
         inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
         
-        x = Concatenate()(inputs[:1]+inputs[1:])#,axis=-1)
-        x = Dense(20, activation='relu')(inputs[0])
-        #x = Dense(10, activation='relu')(inputs[0])
+        x = Concatenate()(inputs)#,axis=-1)
+        x = Dense(10, activation='tanh')(x)
+        x = Dense(20, activation='tanh')(x)
+        x = Dense(10, activation='tanh')(x)
         
         out = Dense(1)(x)
                 
@@ -457,8 +460,9 @@ class NN():
         #x = Add()([x,inputs[-1]]) #????
         
         # we stack a deep fully-connected network on top
-        x = Dense(50, activation='relu')(inputs[0])
-        x = Dense(20, activation='relu')(x)
+        x = Dense(20, activation='tanh')(inputs[0])
+        x = Dense(50, activation='tanh')(x)
+        x = Dense(20, activation='tanh')(x)
         
         #if (self._action_as_input==False):
         #    if ( isinstance(self._n_actions,int)):
@@ -500,12 +504,10 @@ class NN():
             else:
                 input = Input(shape=(dim[0],))
                 inputs.append(input)
-        
-        
+                
+        out = encoder_model(inputs)
         input = Input(shape=(self.internal_dim,))
         inputs.append(input)
-
-        out = encoder_model(inputs[:-1])
                 
         x=Add()([out,inputs[-1]]) # adding noise in the abstract state space
         

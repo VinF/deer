@@ -38,7 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0001
+    LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
@@ -48,7 +48,7 @@ class Defaults:
     MOMENTUM = 0
     CLIP_DELTA = 1.0
     EPSILON_START = 1.0
-    EPSILON_MIN = .8
+    EPSILON_MIN = 1.0
     EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
@@ -60,7 +60,9 @@ class Defaults:
 
 
 if __name__ == "__main__":
-    game = Catcher(width=64, height=64) 
+    width=64
+    height=64
+    game = Catcher(width=width, height=height) 
     logging.basicConfig(level=logging.INFO)
     
     # --- Parse parameters ---
@@ -71,7 +73,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = PLE_env(rng, game=game, frame_skip=parameters.frame_skip,
+    env = PLE_env(rng, game=game, frame_skip=parameters.frame_skip,width=width, height=height,
             ple_options={"display_screen": True, "force_fps":True, "fps":20})
     
     # --- Instantiate qnetwork ---
