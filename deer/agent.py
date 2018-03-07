@@ -86,6 +86,8 @@ class NeuralAgent(object):
             self._test_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.)
         else:
             self._test_policy = test_policy
+        self.gathering_data=True    # Whether the agent is gathering data or not
+        self.sticky_action=1        # Number of times the agent is forced to take the same action as part of one actual time step
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -311,24 +313,27 @@ class NeuralAgent(object):
                 self._state[i][1:] = initState[i][1:]
         
         self._Vs_on_last_episode = []
+        is_terminal=False
+        reward=0
         while maxSteps > 0:
             maxSteps -= 1
-
-            obs = self._environment.observe()
-
-            for i in range(len(obs)):
-                self._state[i][0:-1] = self._state[i][1:]
-                self._state[i][-1] = obs[i]
-
-            V, action, reward = self._step()
-            
-            self._Vs_on_last_episode.append(V)
-            if self._mode != -1:
-                self._total_mode_reward += reward
-
-            is_terminal = self._environment.inTerminalState()
+            if(self.gathering_data==True or self._mode!=-1):
+                obs = self._environment.observe()
                 
-            self._addSample(obs, action, reward, is_terminal)
+                for i in range(len(obs)):
+                    self._state[i][0:-1] = self._state[i][1:]
+                    self._state[i][-1] = obs[i]
+                
+                V, action, reward = self._step()
+                
+                self._Vs_on_last_episode.append(V)
+                if self._mode != -1:
+                    self._total_mode_reward += reward
+                
+                is_terminal = self._environment.inTerminalState()
+                    
+                self._addSample(obs, action, reward, is_terminal)
+            
             for c in self._controllers: c.onActionTaken(self)
             
             if is_terminal:
@@ -359,8 +364,10 @@ class NeuralAgent(object):
             Estimated value function of current state.
         """
 
-        action, V = self._chooseAction()        
-        reward = self._environment.act(action)
+        action, V = self._chooseAction()
+        reward=0
+        for i in range(self.sticky_action):
+            reward += self._environment.act(action)
 
         return V, action, reward
 
@@ -448,6 +455,7 @@ class DataSet(object):
             self._random_state = random_state
 
         self.n_elems  = 0
+        self.sticky_action=1        # Number of times the agent is forced to take the same action as part of one actual time step
 
     def actions(self):
         """Get all actions currently in the replay memory, ordered by time where they were taken."""
@@ -521,7 +529,7 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        if (self._max_history_size - 1 >= self.n_elems):
+        if (self._max_history_size - self.sticky_action >= self.n_elems):
             raise SliceError(
                 "Not enough elements in the dataset to create a "
                 "complete state. {} elements in dataset; requires {}"
@@ -536,10 +544,10 @@ class DataSet(object):
             rndValidIndices = np.zeros(size, dtype='int32')
             if (self._only_full_history):
                 for i in range(size): # TODO: multithread this loop?
-                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size)
+                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action-1)
             else:
                 for i in range(size): # TODO: multithread this loop?
-                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=1)
+                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action)
                 
 
         actions   = np.vstack( self._actions.getSliceBySeq(rndValidIndices) )
@@ -549,11 +557,11 @@ class DataSet(object):
         states = np.zeros(len(self._batch_dimensions), dtype='object')
         next_states = np.zeros_like(states)
         # We calculate the first terminal index backward in time and set it 
-        # at maximum to the value self._max_history_size
+        # at maximum to the value self._max_history_size+self.sticky_action-1
         first_terminals=[]
         for rndValidIndex in rndValidIndices:
             first_terminal=1
-            while first_terminal<self._max_history_size:
+            while first_terminal<self._max_history_size+self.sticky_action-1:
                 if (self._terminals[rndValidIndex-first_terminal]==True or first_terminal>rndValidIndex):
                     break 
                 first_terminal+=1
@@ -563,7 +571,7 @@ class DataSet(object):
             states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(size):
-                slice=self._observations[input].getSlice(rndValidIndices[i]+1-min(self._batch_dimensions[input][0],first_terminals[i]), rndValidIndices[i]+1)
+                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action+2-min(self._batch_dimensions[input][0],first_terminals[i]+self.sticky_action-1), rndValidIndices[i]-self.sticky_action+2)
                 if (len(slice)==len(states[input][i])):
                     states[input][i] = slice
                 else:
