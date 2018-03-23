@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.q_networks.q_net_keras_lp_nstep import MyQNetwork
 from test_env4 import MyEnv as test_env
 import deer.experiment.base_controllers as bc
 
@@ -22,7 +22,7 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 5000
+    STEPS_PER_EPOCH = 2000
     EPOCHS = 50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
@@ -80,7 +80,8 @@ if __name__ == "__main__":
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
-        rng)
+        rng,
+        high_int_dim=False)
     
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
 
@@ -133,7 +134,7 @@ if __name__ == "__main__":
         periodicity=1,
         reset_every='none'))
 
-    agent.run(10, 200)
+    agent.run(10, 200)  #(5, 50)
     print("end gathering data")
 
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.

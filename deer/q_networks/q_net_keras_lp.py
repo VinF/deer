@@ -81,7 +81,7 @@ class MyQNetwork(QNetwork):
         self.loss_disambiguate2=0
 
         
-        self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=True)
+        self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=False)
 
         self.encoder = self.learn_and_plan.encoder_model()
         self.encoder_diff = self.learn_and_plan.encoder_diff_model(self.encoder)
@@ -91,7 +91,9 @@ class MyQNetwork(QNetwork):
         self.transition = self.learn_and_plan.transition_model()
         self.transition2 = self.learn_and_plan.transition_model2()
 
-        self.full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
+        self.full_Qs=[]
+        for i in range(1):
+            self.full_Qs.append(self.learn_and_plan.full_Q_model(self.encoder,self.Q,i,self._df))
         
         # used to fit rewards
         self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
@@ -107,7 +109,7 @@ class MyQNetwork(QNetwork):
         # used to disentangle actions
         self.diff_sa_sa = self.learn_and_plan.diff_sa_sa(self.encoder,self.transition)
                 
-        layers=self.full_Q.layers
+        layers=self.full_Qs[0].layers
         # Grab all the parameters together.
         self.params = [ param
                     for layer in layers 
@@ -115,7 +117,7 @@ class MyQNetwork(QNetwork):
 
         self._compile()
 
-        self.next_full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q)
+        self.next_full_Q = self.learn_and_plan.full_Q_model(self.encoder,self.Q) # FIXME
         self.next_full_Q.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.full_Q
 
         layers=self.next_full_Q.layers
@@ -173,14 +175,14 @@ class MyQNetwork(QNetwork):
             print "len(states_val)"
             print len(states_val)
             print next_states_val[0][0]
-            print actions_val, rewards_val, terminals_val
-            print "Es,ETs,Es_"
+            print actions_val[0], rewards_val[0], terminals_val[0]
+            print "Es[0],ETs[0],Es_[0]"
             if(Es.ndim==4):
-                print np.transpose(Es, (0, 3, 1, 2)),np.transpose(ETs, (0, 3, 1, 2)),np.transpose(Es_, (0, 3, 1, 2))    # data_format='channels_last' --> 'channels_first'
+                print np.transpose(Es, (0, 3, 1, 2))[0],np.transpose(ETs, (0, 3, 1, 2))[0],np.transpose(Es_, (0, 3, 1, 2))[0]    # data_format='channels_last' --> 'channels_first'
             else:
-                print Es,ETs,Es_
-            print "R"
-            print R
+                print Es[0],ETs[0],Es_[0]
+            print "R[0]"
+            print R[0]
             
         # Fit transition
 #        for i in range(10):
@@ -188,7 +190,7 @@ class MyQNetwork(QNetwork):
 #            print l
 #            self.loss_T2+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
 
-        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions], np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))
+        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))
         self.loss_T+=l
         
 
@@ -263,10 +265,12 @@ class MyQNetwork(QNetwork):
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        next_q_vals = self.next_full_Q.predict([next_states_val[0],np.zeros_like(Es)]) #np.zeros((32,self.learn_and_plan.internal_dim))])
+        #next_q_vals = self.next_full_Q.predict([next_states_val[0],np.zeros_like(Es)]) #np.zeros((32,self.learn_and_plan.internal_dim))])
+        next_q_vals = self.next_full_Q.predict([next_states_val[0]])
         
         if(self._double_Q==True):
-            next_q_vals_current_qnet=self.full_Q.predict(next_states_val.tolist())
+            #next_q_vals_current_qnet=self.full_Qs[0].predict(next_states_val+[np.zeros_like(Es)])
+            next_q_vals_current_qnet=self.full_Qs[0].predict(next_states_val)
             argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
             max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
         else:
@@ -276,8 +280,9 @@ class MyQNetwork(QNetwork):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.full_Q.predict([states_val[0],np.zeros_like(Es)]) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])
-
+        #q_vals=self.full_Q.predict([states_val[0],np.zeros_like(Es)]) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])
+        q_vals=self.full_Qs[0].predict([states_val[0]])
+        
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
         diff = - q_val + target 
@@ -293,7 +298,8 @@ class MyQNetwork(QNetwork):
         noise_to_be_robust=np.zeros_like(Es) #np.random.normal(size=(self._batch_size,self.learn_and_plan.internal_dim))*0.#25
 
         loss=0
-        loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
+        #loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
+        loss=self.full_Qs[0].train_on_batch([states_val[0]] , q_vals ) 
         #print "self.q_vals.optimizer.lr"
         #print K.eval(self.q_vals.optimizer.lr)
         self.loss_Q+=loss
@@ -364,9 +370,10 @@ class MyQNetwork(QNetwork):
         -------
         The q values for the provided belief state
         """ 
-        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
+        #return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
+        return self.full_Qs[0].predict([np.expand_dims(state,axis=0) for state in state_val])[0]
 
-    def qValues_planning(self, state_val, d=2):
+    def qValues_planning(self, state_val, d=5):
         """ Get the q values for one belief state with a planning depth d
 
         Arguments
@@ -379,43 +386,116 @@ class MyQNetwork(QNetwork):
         The q values with planning depth d for the provided belief state
         """ 
         encoded_x = self.encoder.predict([np.expand_dims(state,axis=0) for state in state_val])
+        print encoded_x[0]
+
+        ## DEBUG PURPOSES
+        identity_matrix = np.diag(np.ones(self._n_actions))
+        if(encoded_x.ndim==2):
+            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1))
+        elif(encoded_x.ndim==4):
+            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1,1,1))
+        else:
+            print ("error")
+
+        repeat_identity=np.repeat(identity_matrix,len(encoded_x),axis=0)
+        #print tile3_encoded_x
+        #print repeat_identity
+        r_vals_d0=np.array(self.R.predict([tile3_encoded_x,repeat_identity]))
+        #print "r_vals_d0"
+        #print r_vals_d0
+        r_vals_d0=r_vals_d0.flatten()
+        print "r_vals_d0"
+        print r_vals_d0
+        next_x_predicted=self.transition.predict([tile3_encoded_x,repeat_identity])
+        print "next_x_predicted"
+        print next_x_predicted
+        next_x_predicted=self.transition.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
+        print "next_x_predicted action 0 t2"
+        print next_x_predicted
+        next_x_predicted=self.transition.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
+        print "next_x_predicted action 0 t3"
+        print next_x_predicted
+        next_x_predicted=self.transition.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
+        print "next_x_predicted action 0 t4"
+        print next_x_predicted
+        ## END DEBUG PURPOSES
+
         QD_plan=0
         for i in range(d+1): #TO DO: improve planning algorithm
-            Qd=self.qValues_planning_abstr(encoded_x, d=i)
+            Qd=self.qValues_planning_abstr(encoded_x, d=i, branching_factor=2)
+            print Qd
             QD_plan+=Qd
-            #print "Qd,i"
-            #print Qd,i
+            print "Qd,i"
+            print Qd,i
         QD_plan=QD_plan/(d+1)
         
-        #print "QD_plan"
-        #print QD_plan
+        print "QD_plan"
+        print QD_plan
 
         return QD_plan
 
-    def qValues_planning_abstr(self, state_abstr_val, d):
+    def qValues_planning_abstr(self, state_abstr_val, d, branching_factor=None):
         """ 
-        """ 
+        """
+        if(branching_factor==None or branching_factor>self._n_actions):
+            branching_factor=self._n_actions
         #print "qValues_planning_abstr d"
         #print d
         n=len(state_abstr_val)
         identity_matrix = np.diag(np.ones(self._n_actions))
-        if (d==0):
-            #print self.Q.predict([state_abstr_val])
-            return self.Q.predict([state_abstr_val])
+        
+        if (n==1):
+            this_branching_factor=self._n_actions
         else:
-            tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1))
-            repeat_identity=np.repeat(identity_matrix,len(state_abstr_val),axis=0)
+            this_branching_factor=branching_factor
+                         
+        if (d==0):
+            if(this_branching_factor<self._n_actions):
+                return np.partition(Q.predict([state_abstr_val]), -this_branching_factor)[:,-this_branching_factor:]
+            else:
+                return Q.predict([state_abstr_val]) # no change in the order of the actions
+        else:
+            if(this_branching_factor==self._n_actions):
+                # All actions are considered in the tree
+                repeat_identity=np.repeat(identity_matrix,len(state_abstr_val),axis=0)
+                if(state_abstr_val.ndim==2):
+                    tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1))
+                elif(state_abstr_val.ndim==4):
+                    tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1,1,1))
+                else:
+                    print ("error")
+            else:
+                # A subset of the actions are considered in the tree
+                estim_Q_values=self.Q.predict([state_abstr_val])
+                #print estim_Q_values
+                ind = np.argpartition(estim_Q_values, -this_branching_factor)[:,-this_branching_factor:]
+                #print ind
+                #print identity_matrix[ind]
+                #repeat_identity=np.repeat(identity_matrix[ind],len(state_abstr_val),axis=0)
+                repeat_identity=identity_matrix[ind].reshape(n*this_branching_factor,self._n_actions)
+                #print repeat_identity
+                #if(state_abstr_val.ndim==2):
+                #    tile3_encoded_x=np.tile(state_abstr_val,(this_branching_factor,1))
+                #elif(state_abstr_val.ndim==4):
+                #    tile3_encoded_x=np.tile(state_abstr_val,(this_branching_factor,1,1,1))
+                #else:
+                #    print ("error")
+                tile3_encoded_x=np.repeat(state_abstr_val,this_branching_factor,axis=0)
+                #print "tile3_encoded_x"
+                #print tile3_encoded_x
+            
             #print tile3_encoded_x
             #print repeat_identity
             r_vals_d0=np.array(self.R.predict([tile3_encoded_x,repeat_identity]))
+            #print "r_vals_d0"
             #print r_vals_d0
             r_vals_d0=r_vals_d0.flatten()
             next_x_predicted=self.transition.predict([tile3_encoded_x,repeat_identity])
-            return r_vals_d0+self._df*np.amax(self.qValues_planning_abstr(next_x_predicted,d=d-1).reshape(len(state_abstr_val)*self._n_actions,self._n_actions),axis=1).flatten()
+            return r_vals_d0+self._df*np.amax(self.qValues_planning_abstr(next_x_predicted,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor),axis=1).flatten()
         
 
 
-    def chooseBestAction(self, state):
+    def chooseBestAction(self, state, *args, **kwargs):
         """ Get the best action for a belief state
 
         Arguments
@@ -439,7 +519,7 @@ class MyQNetwork(QNetwork):
         else:
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
-        self.full_Q.compile(optimizer=optimizer, loss='mse')
+        self.full_Qs[0].compile(optimizer=optimizer, loss='mse')
 
         optimizer1=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # Different optimizers for each network; otherwise not possible to modify each
         optimizer2=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # separately (e.g. lr)
@@ -480,12 +560,12 @@ class MyQNetwork(QNetwork):
         Parameters
         -----------
         lr : float
-            The learning rate that has to bet set
+            The learning rate that has to be set
         """
         self._lr = lr
         print "modif lr"
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
-        K.set_value(self.full_Q.optimizer.lr, self._lr*2)
+        K.set_value(self.full_Qs[0].optimizer.lr, self._lr*2)
 
         K.set_value(self.full_R.optimizer.lr, self._lr)
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr)

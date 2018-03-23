@@ -26,7 +26,7 @@ class NN():
     high_int_dim : Boolean
         Whether the abstract state should be high dimensional in the form of frames/vectors or whether it should be low-dimensional
     """
-    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False, high_int_dim=True):
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False, high_int_dim=False):
         self._input_dimensions=input_dimensions
         self._batch_size=batch_size
         self._random_state=random_state
@@ -62,17 +62,25 @@ class NN():
                 input = Input(shape=(dim[0],dim[1],dim[2]))
                 inputs.append(input)
                 x=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
-                #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
-                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                #x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
-                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
-                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                #x = Conv2D(16, (4, 4), padding='same', activation='tanh')(x)
-                #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                
+                if(dim[1]>8 and dim[2]>8):
+                    self._pooling_encoder=6
+                    #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
+                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                    x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
+                    x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+                    x = MaxPooling2D(pool_size=(3, 3), strides=None, padding='same')(x)
+                    #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
+                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                    #x = Conv2D(16, (4, 4), padding='same', activation='tanh')(x)
+                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                else:
+                    self._pooling_encoder=1
+                    x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
+                    x = MaxPooling2D(pool_size=(self._pooling_encoder, self._pooling_encoder), strides=None, padding='same')(x)
+                    
                 if(self._high_int_dim==True):
-                    x = Conv2D(dim[0], (3, 3), padding='same', activation='tanh')(x)
+                    x = Conv2D(dim[0], (1, 1), padding='same')(x)
                     out = x
                 else:
                     out = Flatten()(x)
@@ -198,22 +206,22 @@ class NN():
         """
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(dim[1],dim[2],dim[0])), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
             print inputs[0]._keras_shape
             print inputs[1]._keras_shape
             
             layers_action=inputs[1]
-            layers_action=RepeatVector(dim[1]*dim[2])(layers_action)#K.repeat_elements(layers_action,rep=dim[1]*dim[2],axis=1)
-            layers_action=Reshape((self._n_actions,dim[1],dim[2]))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,dim[1],dim[2]))(layers_action)    #data_format='channels_last'
+            layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[1]*dim[2],axis=1)
+            layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
+            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
             
-            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
-            x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
-            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x) # Try to keep locality as much as possible --> FIXME
+            x = Conv2D(64, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x)
             #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-            x = Conv2D(dim[0], (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(dim[0], (1, 1), padding='same', activation='tanh')(x)
             x = Add()([inputs[0],x])
         else:
             inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ]     # x
@@ -259,7 +267,7 @@ class NN():
         
         return model
 
-    def diff_Tx_x_(self,encoder_model,transition_model):
+    def diff_Tx_x_(self,encoder_model,transition_model,plan_depth=0):
         """
     
         Parameters
@@ -292,20 +300,20 @@ class NN():
         enc_x = encoder_model(inputs[:half]) #s --> x
         enc_x_ = encoder_model(inputs[half:]) #s --> x
 
-        input = Input(shape=(self._n_actions,))
-        inputs.append(input)
+        Tx= enc_x
+        for d in range(plan_depth+1):
+            inputs.append(Input(shape=(self._n_actions,)))
+            Tx= transition_model([Tx,inputs[-1]])
                 
-        Tx= transition_model([enc_x,inputs[-1]])
         print "Tx._keras_shape"
         print Tx._keras_shape
         print enc_x_._keras_shape
+        
+        x = Subtract()([Tx,enc_x_])
 
-        if (self._high_int_dim==True):
-            #Tx=Flatten()(Tx)
-            #enc_x_=Flatten()(enc_x_)
-            x = Subtract()([Tx,enc_x_])   #([Tx,enc_x_])
-        else:
-            x = Subtract()([Tx,enc_x_])
+        input = Input(shape=(1,)) # 1-terminals (0 if transition is terminal)
+        inputs.append(input)
+        x = Multiply()([x,inputs[-1]])# set to 0 if terminal because we don't care about fitting that transition
         
         model = Model(inputs=inputs, outputs=x )
         
@@ -456,15 +464,21 @@ class NN():
         
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(dim[1],dim[2],dim[0])), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
             
             layers_action=inputs[1]
-            layers_action=RepeatVector(dim[1]*dim[2])(layers_action)
-            layers_action=Reshape((self._n_actions,dim[1],dim[2]))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,dim[1],dim[2]))(layers_action)    #data_format='channels_last'
+            layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)
+            print layers_action._keras_shape
+            layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
+            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            print layers_action._keras_shape
+
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
-            x = Conv2D(4, (2, 2), padding='same', activation='tanh')(x)
+            x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+            x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
             #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
             x = Conv2D(dim[0], (3, 3), padding='same', activation='tanh')(x)
             x = Flatten()(x)            
@@ -473,8 +487,8 @@ class NN():
             x = Concatenate()(inputs)#,axis=-1)
             x = Dense(10, activation='tanh')(x)
        
+        x = Dense(50, activation='tanh')(x)
         x = Dense(20, activation='tanh')(x)
-        x = Dense(10, activation='tanh')(x)
         
         out = Dense(1)(x)
                 
@@ -482,7 +496,7 @@ class NN():
         
         return model
 
-    def full_R_model(self,encoder_model,R_model):
+    def full_R_model(self,encoder_model,R_model,plan_depth=0,transition_model=None):
         """
         Maps internal state to immediate rewards
 
@@ -490,7 +504,6 @@ class NN():
         -----------
         s
         a
-        (noise in abstract state space) : FIXME
     
         Returns
         -------
@@ -512,12 +525,17 @@ class NN():
                 input = Input(shape=(dim[0],))
                 inputs.append(input)
         
+        enc_x = encoder_model(inputs[:]) #s --> x
+        
+        Tx= enc_x
+        for d in range(plan_depth):
+            inputs.append(Input(shape=(self._n_actions,)))
+            Tx= transition_model([Tx,inputs[-1]])
+
         input = Input(shape=(self._n_actions,))
         inputs.append(input)
         
-        enc_x = encoder_model(inputs[:-1]) #s --> x
-                
-        out = R_model([enc_x]+inputs[-1:])
+        out = R_model([Tx]+inputs[-1:])
 
         model = Model(inputs=inputs, outputs=out)
         
@@ -532,15 +550,17 @@ class NN():
                 print "dim Q mod"
                 print dim
                 if len(dim) == 3:
-                    input = Input(shape=(dim[1],dim[2],dim[0])) #data_format is already 'channels_last'
+                    input = Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])) #data_format is already 'channels_last'
                     inputs.append(input)
                     #reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)
                     x = input     #data_format is already 'channels_last'
                     print x._keras_shape
             
-                    x = Conv2D(4, (2, 2), padding='same', activation='tanh')(x)
                     x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
-                    x = Conv2D(1, (2, 2), padding='same', activation='tanh')(x)
+                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+                    x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+                    x = Conv2D(1, (3, 3), padding='same', activation='tanh')(x)
                     out = (x)
                 else:
                     print ("FIXME")
@@ -594,7 +614,7 @@ class NN():
         return model
 
 
-    def full_Q_model(self, encoder_model, Q_model):
+    def full_Q_model(self, encoder_model, Q_model, plan_depth=0, transition_model=None, R_model=None, discount_model=None):
         """
         Build a network consistent with each type of inputs
 
@@ -623,20 +643,41 @@ class NN():
                 inputs.append(input)
         
         out = encoder_model(inputs)
-        print out._keras_shape
 
-        if(self._high_int_dim==True):
-            input = Input(shape=(dim[1],dim[2],dim[0]))
-            inputs.append(input)
-        else:
-            input = Input(shape=(self.internal_dim,))
-            inputs.append(input)
+        disc_plan = None
+        disc_rewards=[]
+        for d in range(plan_depth):
+            inputs.append(Input(shape=(self._n_actions,)))
+            print inputs[-1:]
+            reward=R_model([out]+inputs[-1:])
+            if(disc_plan == None):
+                disc_rewards.append(reward)
+            else:
+                disc_rewards.append(Multiply()([disc_plan,reward]))
+            discount=discount_model([out]+inputs[-1:])
+            if(disc_plan == None):
+                disc_plan=discount
+            else:
+                disc_plan=Multiply()([disc_plan,discount]) #disc_model([out]+inputs[-1:])
 
-        x=Add()([out,inputs[-1]]) # adding noise in the abstract state space
+            out=transition_model([out]+inputs[-1:])
+
+        #if(self._high_int_dim==True):
+        #    input = Input(shape=(dim[1],dim[2],dim[0]))
+        #    inputs.append(input)
+        #else:
+        #    input = Input(shape=(self.internal_dim,))
+        #    inputs.append(input)
+        #
+        #x=Add()([out,inputs[-1]]) # adding noise in the abstract state space
         
-        out = Q_model(out)
+        if(plan_depth==0):
+            Q_estim=Q_model(out)
+        else:
+            Q_estim = Multiply()([disc_plan,Q_model(out)])
+            Q_estim = Add()([Q_estim]+disc_rewards)
 
-        model = Model(inputs=inputs, outputs=out)
+        model = Model(inputs=inputs, outputs=Q_estim)
         
         return model
 

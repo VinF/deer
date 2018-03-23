@@ -14,11 +14,11 @@ class EpsilonGreedyPolicy(Policy):
         Policy.__init__(self, q_network, n_actions, random_state)
         self._epsilon = epsilon
 
-    def action(self, state):
+    def action(self, state, mode=None):
         if self.random_state.rand() < self._epsilon:
             action, V = self.randomAction()
         else:
-            action, V = self.bestAction(state)
+            action, V = self.bestAction(state, mode)
 
         return action, V
 

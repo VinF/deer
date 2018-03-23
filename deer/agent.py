@@ -195,8 +195,13 @@ class NeuralAgent(object):
             return
 
         try:
-            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
-            loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
+            if hasattr(self._network, 'nstep'):
+                observations, actions, rewards, terminals, rndValidIndices = self._dataset.randomBatch_nstep(self._batch_size, self._network.nstep, self._exp_priority)
+                loss, loss_ind = self._network.train(observations, actions, rewards, terminals)
+            else:
+                states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
+                loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
+
             self._training_loss_averages.append(loss)
             if (self._exp_priority):
                 self._dataset.updatePriorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
@@ -382,7 +387,7 @@ class NeuralAgent(object):
         
         if self._mode != -1:
             # Act according to the test policy if not in training mode
-            action, V = self._test_policy.action(self._state)
+            action, V = self._test_policy.action(self._state, mode=self._mode)
         else:
             if self._dataset.n_elems > self._replay_start_size:
                 # follow the train policy
@@ -495,14 +500,17 @@ class DataSet(object):
             self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
     def randomBatch(self, size, use_priority):
-        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
-        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
+        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly
+        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
         each subject s.
         
         Parameters
         -----------
         size : int
             Number of transitions to return.
+        use_priority : Boolean
+            Whether to use prioritized replay or not
+
         Returns
         -------
         states : ndarray
@@ -522,6 +530,7 @@ class DataSet(object):
         terminals : ndarray
             An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
             to terminal states and False otherwise
+
         Throws
         -------
             SliceError
@@ -529,7 +538,7 @@ class DataSet(object):
                 trajectories are too short).
         """
 
-        if (self._max_history_size - self.sticky_action >= self.n_elems):
+        if (self._max_history_size + self.sticky_action - 1 >= self.n_elems):
             raise SliceError(
                 "Not enough elements in the dataset to create a "
                 "complete state. {} elements in dataset; requires {}"
@@ -571,7 +580,7 @@ class DataSet(object):
             states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
             for i in range(size):
-                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action+2-min(self._batch_dimensions[input][0],first_terminals[i]+self.sticky_action-1), rndValidIndices[i]-self.sticky_action+2)
+                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action+2-min(self._batch_dimensions[input][0],first_terminals[i]+self.sticky_action-1), rndValidIndices[i]+1)
                 if (len(slice)==len(states[input][i])):
                     states[input][i] = slice
                 else:
@@ -593,6 +602,109 @@ class DataSet(object):
             return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
         else:
             return states, actions, rewards, next_states, terminals, rndValidIndices
+
+    def randomBatch_nstep(self, size, nstep, use_priority):
+        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly
+        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
+        each subject s.
+        
+        Parameters
+        -----------
+        size : int
+            Batch size
+        nstep : int
+            Number of transitions to be considered for each element
+        use_priority : Boolean
+            Whether to use prioritized replay or not
+
+        Returns
+        -------
+        states : ndarray
+            An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
+            size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in
+            the data with the only constraint that they are complete regarding the histories for each observed
+            subject.
+        actions : ndarray
+            An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after
+            having observed states[:][i].
+        rewards : ndarray
+            An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for
+            taking actions[i-1].
+        next_states : ndarray
+            Same structure than states, but next_states[s][i] is guaranteed to be the information
+            concerning the state following the one described by states[s][i] for each subject s.
+        terminals : ndarray
+            An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
+            to terminal states and False otherwise
+
+        Throws
+        -------
+            SliceError
+                If a batch of this size could not be built based on current data set (not enough data or all
+                trajectories are too short).
+        """
+
+        if (self._max_history_size + self.sticky_action - 1 >= self.n_elems):
+            raise SliceError(
+                "Not enough elements in the dataset to create a "
+                "complete state. {} elements in dataset; requires {}"
+                .format(self.n_elems, self._max_history_size))
+
+        if (self._use_priority):
+            #FIXME : take into account the case where self._only_full_history is false
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
+            if (rndValidIndices.size == 0):
+                raise SliceError("Could not find a state with full histories")
+        else:
+            rndValidIndices = np.zeros(size, dtype='int32')
+            if (self._only_full_history):
+                for i in range(size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action*nstep-1)
+            else:
+                for i in range(size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action*nstep)
+                
+
+        actions=np.zeros((size,(nstep)*self.sticky_action), dtype=int)
+        rewards=np.zeros((size,(nstep)*self.sticky_action))
+        terminals=np.zeros((size,(nstep)*self.sticky_action))
+        for i in range(size):
+            actions[i] = self._actions.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+            rewards[i] = self._rewards.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+            terminals[i] = self._terminals.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+        
+        observations = np.zeros(len(self._batch_dimensions), dtype='object')
+        # We calculate the first terminal index backward in time and set it 
+        # at maximum to the value self._max_history_size+self.sticky_action-1
+        first_terminals=[]
+        for rndValidIndex in rndValidIndices:
+            first_terminal=1
+            while first_terminal<self._max_history_size+self.sticky_action*nstep-1:
+                if (self._terminals[rndValidIndex-first_terminal]==True or first_terminal>rndValidIndex):
+                    break 
+                first_terminal+=1
+            first_terminals.append(first_terminal)
+            
+        batch_dimensions=copy.deepcopy(self._batch_dimensions)
+        for input in range(len(self._batch_dimensions)):
+            batch_dimensions[input]=tuple( x + y for x, y in zip(self._batch_dimensions[input],(self.sticky_action*(nstep+1)-1,0,0)) )
+            observations[input] = np.zeros((size,) + batch_dimensions[input], dtype=self._observations[input].dtype)
+            for i in range(size):
+                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action*nstep+2-min(self._batch_dimensions[input][0],first_terminals[i]-self.sticky_action*nstep+1), rndValidIndices[i]+self.sticky_action+1)
+                if (len(slice)==len(observations[input][i])):
+                    observations[input][i] = slice
+                else:
+                    for j in range(len(slice)):
+                        observations[input][i][-j-1]=slice[-j-1]
+                 # If transition leads to terminal, we don't care about next state
+                if terminals[i][-1]:#rndValidIndices[i] >= self.n_elems - 1 or terminals[i]:
+                    observations[input][rndValidIndices[i]:rndValidIndices[i]+self.sticky_action+1] = 0
+        
+        if (self._use_priority):
+            return observations, actions, rewards, terminals, [rndValidIndices, rndValidIndices_tree]
+        else:
+            return observations, actions, rewards, terminals, rndValidIndices
+
 
     def _randomValidStateIndex(self, minimum_without_terminal):
         """ Returns the index corresponding to a timestep that is valid

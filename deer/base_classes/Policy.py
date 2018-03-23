@@ -19,10 +19,10 @@ class Policy(object):
 
         pass
 
-    def bestAction(self, state):
+    def bestAction(self, state, mode=None):
         """ Returns the best Action for the given state. This is an additional encapsulation for q-network.
         """
-        action,V = self.q_network.chooseBestAction(state)
+        action,V = self.q_network.chooseBestAction(state, mode)
         return action, V
 
     def randomAction(self):
