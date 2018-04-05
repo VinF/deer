@@ -17,17 +17,19 @@ import copy
 class MyEnv(Environment):
     VALIDATION_MODE = 0
 
-    def __init__(self):
+    def __init__(self, rng, **kwargs):
 
         self._mode = -1
         self._mode_score = 0.0
         self._mode_episode_count = 0
 
         self._actions = [0,1]
-        self._height=15
-        self._width=7 #preferably an odd number so that it's symmetrical
+        self._height=10#15
+        self._width=10 #preferably an odd number so that it's symmetrical
         self._width_paddle=1
-        self._nx_block=3 #number of different x positions of the falling blocks
+        self._nx_block=2 #number of different x positions of the falling blocks
+        self._higher_dim_obs=kwargs["higher_dim_obs"]
+
         if(self._nx_block==1):
             self._x_block=self._width//2
         else:
@@ -68,7 +70,7 @@ class MyEnv(Environment):
 
         self.y = self.y-1
               
-        if(self.y==0 and self.x>self._x_block-self._width_paddle and self.x<=self._x_block):
+        if(self.y==0 and self.x>self._x_block-1-self._width_paddle and self.x<=self._x_block+1):
             self.reward = 1
         elif(self.y==0):
             self.reward = -1
@@ -86,9 +88,7 @@ class MyEnv(Environment):
         for x_b in range(self._nx_block):#[1]:#range(self._nx_block):
             for y_b in range(self._height):
                 for x_p in range(self._width-self._width_paddle+1):
-                    state=np.zeros((self._height,self._width))
-                    state[y_b,x_b*((self._width-1)//(self._nx_block-1))]=0.5
-                    state[0,x_p-self._width_paddle+1:x_p+1]=1.                    
+                    state=self.get_observation(y_b,x_b*((self._width-1)//(self._nx_block-1)),x_p)
                     all_possib_inp.append(state)
 
         all_possib_inp=np.expand_dims(all_possib_inp,axis=1)
@@ -97,8 +97,8 @@ class MyEnv(Environment):
         print all_possib_inp[self._height*(self._width-self._width_paddle+1)-1]
         print all_possib_inp[self._height*(self._width-self._width_paddle+1)]
         print all_possib_inp[2*self._height*(self._width-self._width_paddle+1)-1]
-        print all_possib_inp[2*self._height*(self._width-self._width_paddle+1)]
-        print all_possib_inp[3*self._height*(self._width-self._width_paddle+1)-1]
+        #print all_possib_inp[2*self._height*(self._width-self._width_paddle+1)]
+        #print all_possib_inp[3*self._height*(self._width-self._width_paddle+1)-1]
         print "all_possib_inp.shape"
         print all_possib_inp.shape
         #print all_possib_inp[self._height*self._width]
@@ -351,7 +351,11 @@ class MyEnv(Environment):
         matplotlib.pyplot.close("all") # avoids memory leaks
 
     def inputDimensions(self):
-        return [(1,self._height,self._width)]
+        if(self._higher_dim_obs==True):
+            return [(1,(self._height+2)*3,(self._width+2)*3)]
+        else:
+            return [(1,self._height,self._width)]
+        
 
     def observationType(self, subject):
         return np.float32
@@ -360,10 +364,34 @@ class MyEnv(Environment):
         return len(self._actions)
 
     def observe(self):
-        obs=np.zeros((self._height,self._width))
-        obs[self.y,self._x_block]=0.5
-        obs[0,self.x-self._width_paddle+1:self.x+1]=1
+        obs=self.get_observation(self.y,self._x_block,self.x)
         return [obs]
+
+    def get_observation(self,y,x_block,x):
+        obs=np.zeros((self._height,self._width))
+        obs[y,x_block]=0.5
+        obs[0,x-self._width_paddle+1:x+1]=1
+        
+        if(self._higher_dim_obs==True):
+            y_t=(1+y)*3
+            x_block_t=(1+x_block)*3
+            x_t=(1+x)*3
+            obs=np.zeros(( (self._height+2)*3 , (self._width+2)*3 ))
+            ball=np.array([[0,0,0.6,0.8,0.6,0,0],
+                            [0.,0.6,0.9,1,0.9,0.6,0],
+                            [0.,0.85,1,1,1,0.85,0.],
+                            [0,0.6,0.9,1,0.9,0.6,0],
+                            [0,0,0.6,0.85,0.6,0,0]])
+            paddle=np.array([[0.5,0.95,1,1,1,0.95,0.5],
+                            [0.9,1,1,1,1,1,0.9],
+                            [0.,0.,0,0,0,0.,0.]])
+            
+            obs[y_t-2:y_t+3,x_block_t-3:x_block_t+4]=ball
+            obs[3:6,x_t-3:x_t+4]=paddle
+            plt.imshow(np.flip(obs,axis=0), cmap='gray_r')
+            plt.show()
+
+        return obs
 
     def inTerminalState(self):
         if (self.y==0):

@@ -22,7 +22,7 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 2000
+    STEPS_PER_EPOCH = 5000
     EPOCHS = 50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
@@ -36,7 +36,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.0002 #0.0001 for high_int_dim, 0.00002 for low_int_dim
     LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env()
+    env = test_env(rng, higher_dim_obs=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -134,8 +134,30 @@ if __name__ == "__main__":
         periodicity=1,
         reset_every='none'))
 
-    agent.run(10, 200)  #(5, 50)
+    agent.run(10, 100)  #(5, 50)
     print("end gathering data")
+    #print "agent.DataSet.self._terminals"
+    #print "agent._dataset.terminals()"
+    #print agent._dataset.terminals()
+    #print agent._dataset._terminals._data[0:2000]
+    #print agent._dataset._actions._data[0:2000]
+#    r=agent._dataset._rewards._data[0:2000]
+#    print "r before"
+#    print r
+#    #print agent._dataset._observations[0]._data[0:10]
+#    ind=np.argwhere(r>0)
+#    print "agent._dataset._observations[0]._data[ind[0]]"
+#    print agent._dataset._observations[0]._data[ind[0]]
+#    print ind
+#    agent._dataset._rewards._data=np.delete(agent._dataset._rewards._data,ind)
+#    agent._dataset._terminals._data=np.delete(agent._dataset._terminals._data,ind)
+#    agent._dataset._actions._data=np.delete(agent._dataset._actions._data,ind)
+#    agent._dataset._observations[0]._data=np.delete(agent._dataset._observations[0]._data,ind,axis=0)
+#    r=agent._dataset._rewards._data[0:2000]
+#    print "r after"
+#    print r
+#    print "agent._dataset._observations[0]._data[ind[0]] after"
+#    print agent._dataset._observations[0]._data[ind[0]]
 
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman

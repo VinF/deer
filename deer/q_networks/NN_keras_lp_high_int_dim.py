@@ -6,7 +6,7 @@ Neural network using Keras (called by q_net_keras)
 import numpy as np
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge, RepeatVector
+from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge, RepeatVector, AveragePooling2D
 from keras import regularizers
 np.random.seed(102912)
 
@@ -34,9 +34,11 @@ class NN():
         self._action_as_input=action_as_input
         self._high_int_dim=high_int_dim
         if(high_int_dim==True):            
-            self.internal_dim=input_dimensions[0][-2]*input_dimensions[0][-1] # In the case where the observation is a frame (or an history of frames)
+#            self.internal_dim=input_dimensions[0][-2]*input_dimensions[0][-1] # In the case where the observation is a frame (or an history of frames)
+            self.n_channels_internal_dim=2#dim[0]
         else:
-            self.internal_dim=3
+            self.internal_dim=3 #2 for laby
+                                #3 for catcher
 
     def encoder_model(self):
         """
@@ -66,21 +68,22 @@ class NN():
                     self._pooling_encoder=6
                     #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
                     #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
-                    x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
-                    x = MaxPooling2D(pool_size=(3, 3), strides=None, padding='same')(x)
-                    #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
+                    x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
+                    x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
+                    x = AveragePooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
+                    x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
+                    x = AveragePooling2D(pool_size=(3, 3), strides=None, padding='same')(x)
+                    #x = Conv2D(4, (2, 2), padding='same', activation='tanh')(x)
                     #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                     #x = Conv2D(16, (4, 4), padding='same', activation='tanh')(x)
                     #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                 else:
                     self._pooling_encoder=1
-                    x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
-                    x = MaxPooling2D(pool_size=(self._pooling_encoder, self._pooling_encoder), strides=None, padding='same')(x)
+                    #x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
+                    #x = MaxPooling2D(pool_size=(self._pooling_encoder, self._pooling_encoder), strides=None, padding='same')(x)
                     
                 if(self._high_int_dim==True):
-                    x = Conv2D(dim[0], (1, 1), padding='same')(x)
+                    x = Conv2D(self.n_channels_internal_dim, (1, 1), padding='same')(x)
                     out = x
                 else:
                     out = Flatten()(x)
@@ -206,22 +209,24 @@ class NN():
         """
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
             print inputs[0]._keras_shape
             print inputs[1]._keras_shape
             
             layers_action=inputs[1]
             layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[1]*dim[2],axis=1)
             layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
             
             x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x) # Try to keep locality as much as possible --> FIXME
+            x = Conv2D(32, (2, 2), padding='same', activation='tanh')(x)
             x = Conv2D(64, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(32, (2, 2), padding='same', activation='tanh')(x)
             x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x)
             #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-            x = Conv2D(dim[0], (1, 1), padding='same', activation='tanh')(x)
+            x = Conv2D(self.n_channels_internal_dim, (1, 1), padding='same')(x)
             x = Add()([inputs[0],x])
         else:
             inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ]     # x
@@ -269,7 +274,8 @@ class NN():
 
     def diff_Tx_x_(self,encoder_model,transition_model,plan_depth=0):
         """
-    
+        Used to fit the transitions
+        
         Parameters
         -----------
         s
@@ -321,7 +327,8 @@ class NN():
 
     def diff_s_s_(self,encoder_model):
         """
-    
+        Used to force some state representation to be sufficiently different
+        
         Parameters
         -----------
         s
@@ -464,24 +471,27 @@ class NN():
         
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
             
             layers_action=inputs[1]
             layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)
             print layers_action._keras_shape
             layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(dim[0]+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             print layers_action._keras_shape
 
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
-            x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
-            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
+            x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
             x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-            x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+            x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
             #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-            x = Conv2D(dim[0], (3, 3), padding='same', activation='tanh')(x)
-            x = Flatten()(x)            
+            x = Conv2D(4, (1, 1), padding='same', activation='tanh')(x)
+
+            # we stack a deep fully-connected network on top
+            x = Flatten()(x)
+            x = Dense(200, activation='tanh')(x)
         else:
             inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ] #x
             x = Concatenate()(inputs)#,axis=-1)
@@ -550,17 +560,17 @@ class NN():
                 print "dim Q mod"
                 print dim
                 if len(dim) == 3:
-                    input = Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),dim[0])) #data_format is already 'channels_last'
+                    input = Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)) #data_format is already 'channels_last'
                     inputs.append(input)
                     #reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)
                     x = input     #data_format is already 'channels_last'
                     print x._keras_shape
             
-                    x = Conv2D(8, (3, 3), padding='same', activation='tanh')(x)
-                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
+                    x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
+                    x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
                     x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    x = Conv2D(16, (3, 3), padding='same', activation='tanh')(x)
-                    x = Conv2D(1, (3, 3), padding='same', activation='tanh')(x)
+                    x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
+                    x = Conv2D(4, (1, 1), padding='same', activation='tanh')(x)
                     out = (x)
                 else:
                     print ("FIXME")
