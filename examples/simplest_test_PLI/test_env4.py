@@ -497,9 +497,9 @@ class MyEnv(Environment):
 
 
     def inTerminalState(self):
-#        if((self._pos_agent[0]<=1 and self._cur_action==0) ):#((self._pos_agent==[4,1] and self._cur_action==1) or (self._pos_agent==[5,2] and (self._cur_action==1 or self._cur_action==2)) or (self._pos_agent==[6,3] and self._cur_action==2))):
-#        #(self._pos_agent[1]>=self._size_maze-2 and self._cur_action==1) ):
-#            return True
+        if((self._pos_agent[0]<=1 and self._cur_action==0) ):#((self._pos_agent==[4,1] and self._cur_action==1) or (self._pos_agent==[5,2] and (self._cur_action==1 or self._cur_action==2)) or (self._pos_agent==[6,3] and self._cur_action==2))):
+        #(self._pos_agent[1]>=self._size_maze-2 and self._cur_action==1) ):
+            return True
         return False
         #if (self._pos_agent==self._pos_goal):
         #    return True

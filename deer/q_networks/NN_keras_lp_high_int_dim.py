@@ -37,7 +37,7 @@ class NN():
 #            self.internal_dim=input_dimensions[0][-2]*input_dimensions[0][-1] # In the case where the observation is a frame (or an history of frames)
             self.n_channels_internal_dim=2#dim[0]
         else:
-            self.internal_dim=3 #2 for laby
+            self.internal_dim=2 #2 for laby
                                 #3 for catcher
 
     def encoder_model(self):
