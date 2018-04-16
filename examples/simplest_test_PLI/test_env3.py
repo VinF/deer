@@ -29,6 +29,7 @@ class MyEnv(Environment):
         self._width_paddle=1
         self._nx_block=2 #number of different x positions of the falling blocks
         self._higher_dim_obs=kwargs["higher_dim_obs"]
+        self._reverse=kwargs["reverse"]
 
         if(self._nx_block==1):
             self._x_block=self._width//2
@@ -109,8 +110,8 @@ class MyEnv(Environment):
         print "learning_algo.encoder.predict(all_possib_inp)"
         print all_possib_abs_states
         
-        print "print test_data_set.observations()"
-        print test_data_set.observations()
+        #print "print test_data_set.observations()"
+        #print test_data_set.observations()
         n=self._height-1
         historics=[]
         for i,observ in enumerate(test_data_set.observations()[0][0:n]):
@@ -150,6 +151,10 @@ class MyEnv(Environment):
         
         fig = plt.figure()
         ax = fig.add_subplot(111,projection='3d')
+        ax.set_xlabel(r'$X_1$')
+        ax.set_ylabel(r'$X_2$')
+        ax.set_zlabel(r'$X_3$')
+
         for j in range(3):
             # Plot the trajectory
             for i in xrange(n-1):
@@ -274,8 +279,10 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
-        plt.show()
-        plt.savefig('fig_w_V'+str(learning_algo.update_counter)+'.pdf')
+        #plt.show()
+        for ii in xrange(-15,345,30):
+            ax.view_init(elev=20., azim=ii)
+            plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
 
         # fig_visuV
@@ -388,8 +395,10 @@ class MyEnv(Environment):
             
             obs[y_t-2:y_t+3,x_block_t-3:x_block_t+4]=ball
             obs[3:6,x_t-3:x_t+4]=paddle
-            plt.imshow(np.flip(obs,axis=0), cmap='gray_r')
-            plt.show()
+            if(self._reverse==True):
+                obs=1-obs
+            #plt.imshow(np.flip(obs,axis=0), cmap='gray_r')
+            #plt.show()
 
         return obs
 

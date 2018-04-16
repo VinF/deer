@@ -36,7 +36,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0002 #0.0001 for high_int_dim, 0.00002 for low_int_dim
+    LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
@@ -81,7 +81,8 @@ if __name__ == "__main__":
         parameters.batch_size,
         parameters.update_rule,
         rng,
-        high_int_dim=False)
+        high_int_dim=False,
+        internal_dim=2)
     
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
 

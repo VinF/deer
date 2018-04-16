@@ -26,19 +26,18 @@ class NN():
     high_int_dim : Boolean
         Whether the abstract state should be high dimensional in the form of frames/vectors or whether it should be low-dimensional
     """
-    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False, high_int_dim=False):
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False, **kwargs):
         self._input_dimensions=input_dimensions
         self._batch_size=batch_size
         self._random_state=random_state
         self._n_actions=n_actions
         self._action_as_input=action_as_input
-        self._high_int_dim=high_int_dim
-        if(high_int_dim==True):            
-#            self.internal_dim=input_dimensions[0][-2]*input_dimensions[0][-1] # In the case where the observation is a frame (or an history of frames)
-            self.n_channels_internal_dim=2#dim[0]
+        self._high_int_dim=kwargs["high_int_dim"]
+        if(self._high_int_dim==True):
+            self.n_channels_internal_dim=kwargs["internal_dim"] #dim[0]
         else:
-            self.internal_dim=2 #2 for laby
-                                #3 for catcher
+            self.internal_dim=kwargs["internal_dim"]    #2 for laby
+                                                        #3 for catcher
 
     def encoder_model(self):
         """
@@ -325,15 +324,15 @@ class NN():
         
         return model
 
-    def diff_s_s_(self,encoder_model):
+    def force_features(self,encoder_model,transition_model,plan_depth=0):
         """
-        Used to force some state representation to be sufficiently different
+        Used to force some transitions'directions
         
         Parameters
         -----------
         s
         a
-        random z
+        s'
     
         Returns
         -------
@@ -341,34 +340,117 @@ class NN():
     
         """
         inputs=[]
+        for i, dim in enumerate(self._input_dimensions):
+            if len(dim) == 3:
+                input = Input(shape=(dim[0],dim[1],dim[2]))
+                inputs.append(input)
         
-        for j in range(2):
-            for i, dim in enumerate(self._input_dimensions):
-                if len(dim) == 3:
-                    input = Input(shape=(dim[0],dim[1],dim[2]))
-                    inputs.append(input)
+            elif len(dim) == 2:
+                input = Input(shape=(dim[0],dim[1]))
+                inputs.append(input)
+        
+            else:
+                input = Input(shape=(dim[0],))
+                inputs.append(input)
+
+        enc_x = encoder_model(inputs[:]) #s --> x
+        
+        Tx= enc_x
+        for d in range(plan_depth+1):
+            inputs.append(Input(shape=(self._n_actions,)))
+            Tx= transition_model([Tx,inputs[-1]])
+        
+        print "Tx._keras_shape"
+        print Tx._keras_shape
+        
+#        input = Input(shape=(self.internal_dim,self._n_actions))
+#        inputs.append(input)
+#        
+#        #if(high_int_dim==True):
+#        #    Tx_tiled=K.tile(Tx,(self._n_actions,1,1,1))
+#        #else:
+#        #    Tx_tiled=K.tile(Tx,(self._n_actions,1))
+#        
+#        for i in range self._n_actions:            
+#            #constants = np.zeros((self._n_actions))
+#            #k_constants = K.variable(constants)
+#            #fixed_input = Input(tensor=k_constants)
+#            Tx= transition_model([Tx,constants])
+#        Tx_tiled=Dot(axes=(-1))([Tx,fixed_input])
+#
+#        print "Tx_tiled._keras_shape"
+#        print Tx_tiled._keras_shape
             
-                elif len(dim) == 2:
-                    input = Input(shape=(dim[0],dim[1]))
-                    inputs.append(input)
-            
-                else:
-                    input = Input(shape=(dim[0],))
-                    inputs.append(input)
+        diff_features = Subtract()([Tx,enc_x]) # Modification of the features after (sequence of) action(s)
+
+        #print "K.eval(diff_features)"
+        #print diff_features.output
+        #inputs.append(Input(shape=(self.internal_dim,)))
+        #cos_proxi=Dot(axes=(-1),normalize=True)([diff_features,inputs[-1]]) # Cosine proximity between diff_features and target_modif_features
         
-        half = len(inputs)/2
-        enc_x = encoder_model(inputs[:half]) #s --> x #FIXME
-        enc_x_ = encoder_model(inputs[half:]) #s --> x
+        #constants = np.ones((self.internal_dim,))#((self._batch_size*self._n_actions,self.internal_dim,))
+        #k_constants = K.variable(constants)
+        #fixed_input = Input(tensor=k_constants)
+        #inputs.append(fixed_input)
+        #print "fixed_input._keras_shape"
+        #print fixed_input._keras_shape
+        #cos_proxi_add1=Subtract()([fixed_input,cos_proxi])
         
-        if (self._high_int_dim==True):
-            x = Subtract()([Flatten()(enc_x),Flatten()(enc_x_)])
-        else:
-            x = Subtract()([enc_x,enc_x_])
-        x = Dot(axes=-1, normalize=False)([x,x])
+        #print "cos_proxi.output"
+        #print cos_proxi.output
+        #print "cos_proxi._keras_shape"
+        #print cos_proxi._keras_shape
         
-        model = Model(inputs=inputs, outputs=x )
+        model = Model(inputs=inputs, outputs=diff_features )
         
         return model
+
+
+#    def diff_s_s_(self,encoder_model):
+#        """
+#        Used to force some state representation to be sufficiently different
+#        
+#        Parameters
+#        -----------
+#        s
+#        a
+#        random z
+#    
+#        Returns
+#        -------
+#        model with output Tx (= model estimate of x')
+#    
+#        """
+#        inputs=[]
+#        
+#        for j in range(2):
+#            for i, dim in enumerate(self._input_dimensions):
+#                if len(dim) == 3:
+#                    input = Input(shape=(dim[0],dim[1],dim[2]))
+#                    inputs.append(input)
+#            
+#                elif len(dim) == 2:
+#                    input = Input(shape=(dim[0],dim[1]))
+#                    inputs.append(input)
+#            
+#                else:
+#                    input = Input(shape=(dim[0],))
+#                    inputs.append(input)
+#        
+#        half = len(inputs)/2
+#        enc_x = encoder_model(inputs[:half]) #s --> x #FIXME
+#        enc_x_ = encoder_model(inputs[half:]) #s --> x
+#        
+#        if (self._high_int_dim==True):
+#            enc_x=Flatten()(enc_x)
+#            enc_x_=Flatten()(enc_x_)
+#        x = Subtract()([enc_x,enc_x_])
+#
+#        #x = Dot(axes=-1, normalize=False)([x,x])
+#        
+#        model = Model(inputs=inputs, outputs=x )
+#        
+#        return model
 
     def diff_sa_sa(self,encoder_model,transition_model):
         """
@@ -416,9 +498,9 @@ class NN():
             x = Subtract()([Tx,rand_Tx])
         print "x._keras_shape"
         print x._keras_shape
-        x = Dot(axes=-1, normalize=False)([x,x])
-        print "x._keras_shape"
-        print x._keras_shape
+        #x = Dot(axes=-1, normalize=False)([x,x])
+        #print "x._keras_shape"
+        #print x._keras_shape
         
         model = Model(inputs=inputs, outputs=x )
         

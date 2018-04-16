@@ -22,6 +22,11 @@ def mean_squared_error(y_true, y_pred):
 def exp_dec_error(y_true, y_pred):
     return K.exp( - 5.*K.sqrt( K.clip(K.sum(K.square(y_pred), axis=-1, keepdims=True),0.000001,10) )  ) # tend to increase y_pred
 
+def cosine_proximity2(y_true, y_pred):
+    y_true = K.l2_normalize(y_true[:,0:2], axis=-1)
+    y_pred = K.l2_normalize(y_pred[:,0:2], axis=-1)
+    return -K.sum(y_true * y_pred, axis=-1)
+
 #def rms_from_squared_components(y_true, y_pred):
 #    return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1
 #
@@ -75,7 +80,9 @@ class MyQNetwork(QNetwork):
         self._double_Q = double_Q
         self._random_state = random_state
         self.update_counter = 0    
-        self._high_int_dim = kwargs["high_int_dim"]
+        self._high_int_dim = kwargs.get('high_int_dim',False)
+        self._internal_dim = kwargs.get('internal_dim',2)
+        self.loss_interpret=0
         self.loss_T2=0
         self.loss_disentangle_t=0
         self.loss_disentangle_a=0
@@ -88,7 +95,7 @@ class MyQNetwork(QNetwork):
         self.lossR=np.zeros((self.nstep))
 
         
-        self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim)
+        self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim, internal_dim=self._internal_dim)
 
         self.encoder = self.learn_and_plan.encoder_model()
         self.encoder_diff = self.learn_and_plan.encoder_diff_model(self.encoder)
@@ -118,8 +125,12 @@ class MyQNetwork(QNetwork):
         for i in range(self.nstep):
             self.diff_Tx_x_s.append(self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition,i))#full_transition_model(self.encoder,self.transition)
         
+        # used to force features variations
+        if(self._high_int_dim==False):
+            self.force_features=self.learn_and_plan.force_features(self.encoder,self.transition)
+        
         # constraint on consecutive t
-        self.diff_s_s_ = self.learn_and_plan.diff_s_s_(self.encoder)
+        self.diff_s_s_ = self.learn_and_plan.encoder_diff_model(self.encoder)#diff_s_s_(self.encoder)
 #        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
 
         # used to disentangle actions
@@ -133,7 +144,7 @@ class MyQNetwork(QNetwork):
 
         self._compile()
 
-        self.learn_and_plan_target = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim)
+        self.learn_and_plan_target = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim, internal_dim=self._internal_dim)
         self.encoder_target = self.learn_and_plan_target.encoder_model()
         self.Q_target = self.learn_and_plan_target.Q_model()
         self.R_target = self.learn_and_plan_target.R_model()
@@ -253,6 +264,21 @@ class MyQNetwork(QNetwork):
             #print self.loss_T[n]
             self.loss_T[n]=self.loss_T[n]+self.diff_Tx_x_s[n].train_on_batch(states_val+next_states_val+onehot_actions[-1-n:]+[(1-terminals_val[:,-1])], np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))
     
+        # Interpretable AI
+        if(self._high_int_dim==False):
+            target_modif_features=np.zeros((self._n_actions,self._internal_dim))
+            target_modif_features[0,0]=1    # dir
+            target_modif_features[1,0]=-1   # opposite dir
+            target_modif_features[0:2,1]=1    # temps
+            target_modif_features=np.repeat(target_modif_features,self._batch_size,axis=0)
+            states_val_tiled=[]
+            for obs in observations_val:
+                states_val_tiled.append(np.tile(obs[:,-2:-1],(self._n_actions,1,1,1)))
+            onehot_actions_tiled = np.diag(np.ones(self._n_actions))#np.zeros((self._batch_size*self._n_actions, self._n_actions))
+            onehot_actions_tiled = np.repeat(onehot_actions_tiled,self._batch_size,axis=0)
+                
+            self.loss_interpret+=self.force_features.train_on_batch(states_val_tiled+[onehot_actions_tiled], target_modif_features)
+
         # Fit rewards
         for n in range(self.nstep):
             states_val=[]
@@ -267,8 +293,7 @@ class MyQNetwork(QNetwork):
                 states_val.append(obs[:,-n-2:-n-1]) # t-n
             self.loss_gamma[n]+=self.full_gammas[n].train_on_batch(states_val+onehot_actions[-1-n:], (1-terminals_val[:,-1])*self._df) 
 
-        # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
-        # reduce the squared value of the abstract features
+        # Loss to ensure limited volume in abstract state space
         self.loss_disambiguate1+=self.encoder.train_on_batch(states_val,np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
         
         # Increase the entropy in the abstract features of two states
@@ -284,13 +309,14 @@ class MyQNetwork(QNetwork):
 #                    break
 #                j=j+1
 #            rolled[i]=rolled[i+j-l]
+        # Loss to ensure entropy in abstract state space
         self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
         #
         #
-        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.ones(self._batch_size)) #np.ones((self._batch_size,3))*2) 
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))#np.ones(self._batch_size)) #np.ones((self._batch_size,3))*2) 
         #
         ## Disentangle actions
-        self.loss_disentangle_a+=self.diff_sa_sa.train_on_batch(states_val+onehot_actions[-1:]+onehot_actions_rand[-1:], np.ones(self._batch_size))
+        self.loss_disentangle_a+=self.diff_sa_sa.train_on_batch(states_val+onehot_actions[-1:]+onehot_actions_rand[-1:], np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.ones(self._batch_size))
 
 #
 #        # Loss to have all s' following s,a with a to a distance 1 of s,a)
@@ -310,10 +336,14 @@ class MyQNetwork(QNetwork):
             else:
                 print "self.loss_T[0]/100.,self.lossR[0]/100.,self.loss_gamma[0]/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
                 print self.loss_T[0]/100.,self.lossR[0]/100.,self.loss_gamma[0]/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
+            if(self._high_int_dim==False):
+                print "self.loss_interpret/100."
+                print self.loss_interpret/100.
                 
             print K.get_value(self.encoder.optimizer.lr)
             print K.get_value(self.encoder_diff.optimizer.lr)
             self.loss_T=np.zeros((self.nstep))
+            self.loss_interpret=0
             self.loss_T2=0
             self.lossR=np.zeros((self.nstep))
             self.loss_gamma=np.zeros((self.nstep))
@@ -498,17 +528,13 @@ class MyQNetwork(QNetwork):
         print "r_vals_d0"
         print r_vals_d0
         next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
-        print "next_x_predicted"
-        print next_x_predicted
-        next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
-        #print "next_x_predicted action 0 t2"
+        #print "next_x_predicted"
         #print next_x_predicted
         next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
-        #print "next_x_predicted action 0 t3"
-        #print next_x_predicted
         next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
-        print "next_x_predicted action 0 t4"
-        print next_x_predicted
+        next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
+        #print "next_x_predicted action 0 t4"
+        #print next_x_predicted
         ## END DEBUG PURPOSES
 
         QD_plan=0
@@ -664,6 +690,7 @@ class MyQNetwork(QNetwork):
         optimizer5=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
         optimizer6=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
         optimizer7=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
+        optimizer8=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
 
         for i in range(self.nstep):
             #for l in self.R.layers+self.gamma.layers+self.transition.layers:
@@ -677,6 +704,9 @@ class MyQNetwork(QNetwork):
             #    l.trainable=True            
             self.diff_Tx_x_s[i].compile(optimizer=optimizer1, loss='mse') # Fit transitions
 
+        if(self._high_int_dim==False):
+            self.force_features.compile(optimizer=optimizer8,
+                  loss=cosine_proximity2)
 #        self.transition2.compile(optimizer=optimizer2, loss='mse') # Fit accurate transitions without encoders
 
         self.encoder.compile(optimizer=optimizer4,
@@ -719,9 +749,24 @@ class MyQNetwork(QNetwork):
         
 #        K.set_value(self.transition2.optimizer.lr, self._lr/2.)
 
+        if(self._high_int_dim==False):
+            K.set_value(self.force_features.optimizer.lr, self._lr)
+
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/10.) # /10. for simple laby; /2 for distrib of laby
-        K.set_value(self.diff_sa_sa.optimizer.lr, self._lr/10.) # /10. for simple laby; /2 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
+
+    def transfer(self, original, transfer, epochs=1):
+        # First, make sure that the target network and the current network are the same
+        self._resetQHat()
+        
+        # 
+        x_original=self.encoder_target.predict(original)#[0]
+        print x_original
+        for i in range(epochs):
+            print self.encoder.train_on_batch(transfer , x_original )
+            print self.encoder.train_on_batch(original , x_original )
+         

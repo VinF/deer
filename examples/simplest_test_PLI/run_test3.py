@@ -1,6 +1,5 @@
-"""ALE launcher. See Wiki for more details about this experiment.
+"""Catcher
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import sys
@@ -11,7 +10,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.q_networks.q_net_keras_lp_nstep import MyQNetwork
 from test_env3 import MyEnv as test_env
 import deer.experiment.base_controllers as bc
 
@@ -23,7 +22,7 @@ class Defaults:
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 5000
-    EPOCHS = 50
+    EPOCHS = 10#50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -36,7 +35,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0005
+    LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
@@ -68,7 +67,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=True)
+    env = test_env(rng, higher_dim_obs=True, reverse=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -80,7 +79,9 @@ if __name__ == "__main__":
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
-        rng)
+        rng,
+        high_int_dim=False,
+        internal_dim=3)
     
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
 
@@ -169,6 +170,80 @@ if __name__ == "__main__":
 
     agent.gathering_data=False
     agent.run(parameters.epochs, parameters.steps_per_epoch)
+    
+
+
+    rand_ind=np.random.random_integers(0,20000,10)
+    original=[np.array([[agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(10)]) for o in range(1)]
+    transfer=[np.array([[1-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(10)]) for o in range(1)]
+
+    print "original, transfer"
+    print original, transfer
+
+    # Transfer between the two repr
+    qnetwork.transfer(original, transfer, 100)
+
+
+    # --- Instantiate environment ---
+    env = test_env(rng, higher_dim_obs=False, reverse=True)
+
+    # --- Instantiate agent ---
+    agent = NeuralAgent(
+        env,
+        qnetwork,
+        parameters.replay_memory_size,
+        max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
+        parameters.batch_size,
+        rng,
+        test_policy=test_policy)
+
+    # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
+    # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
+    # these validation epoch to interfere with the training of the agent, which is well established by the 
+    # TrainerController, EpsilonController and alike. Therefore, we will disable these controllers for the whole 
+    # duration of the validation epochs interleaved this way, using the controllersToDisable argument of the 
+    # InterleavedTestEpochController. For each validation epoch, we want also to display the sum of all rewards 
+    # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
+    # [parameters.period_btw_summary_perfs] *validation* epochs.
+    agent.attach(bc.InterleavedTestEpochController(
+        id=test_env.VALIDATION_MODE, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[],#[0, 1, 2, 3, 4],
+        periodicity=1,
+        show_score=True,
+        summarize_every=1))
+
+
+    agent.gathering_data=False
+    agent.run(parameters.epochs, parameters.steps_per_epoch)
+
+
+    #print "agent.DataSet.self._terminals"
+    #print "agent._dataset.terminals()"
+    #print agent._dataset.terminals()
+    #print agent._dataset._terminals._data[0:2000]
+    #print agent._dataset._actions._data[0:2000]
+#    r=agent._dataset._rewards._data[0:2000]
+#    print "r before"
+#    print r
+    print agent._dataset._observations[0]._data[0:10]
+#    ind=np.argwhere(r>0)
+#    print "agent._dataset._observations[0]._data[ind[0]]"
+#    print agent._dataset._observations[0]._data[ind[0]]
+#    print ind
+#    agent._dataset._rewards._data=np.delete(agent._dataset._rewards._data,ind)
+#    agent._dataset._terminals._data=np.delete(agent._dataset._terminals._data,ind)
+#    agent._dataset._actions._data=np.delete(agent._dataset._actions._data,ind)
+#    agent._dataset._observations[0]._data=np.delete(agent._dataset._observations[0]._data,ind,axis=0)
+#    r=agent._dataset._rewards._data[0:2000]
+#    print "r after"
+#    print r
+#    print "agent._dataset._observations[0]._data[ind[0]] after"
+#    print agent._dataset._observations[0]._data[ind[0]]
+#
+
+
+
     
     # --- Show results ---
     basename = "scores/" + fname
