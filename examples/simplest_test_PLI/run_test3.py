@@ -67,7 +67,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=True, reverse=False)
+    env = test_env(rng, higher_dim_obs=False, reverse=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -80,6 +80,7 @@ if __name__ == "__main__":
         parameters.batch_size,
         parameters.update_rule,
         rng,
+        double_Q=True,
         high_int_dim=False,
         internal_dim=3)
     

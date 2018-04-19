@@ -16,7 +16,8 @@ config.gpu_options.allow_growth=True
 sess = tf.Session(config=config)
 
 def mean_squared_error(y_true, y_pred):
-    return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
+    return K.clip(K.max(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
+    #return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
     #return K.mean(  K.square( K.clip(K.abs(y_pred - y_true)-1,0.,100.) )  ,  axis=-1  )   # = mse error
 
 def exp_dec_error(y_true, y_pred):
@@ -750,7 +751,7 @@ class MyQNetwork(QNetwork):
 #        K.set_value(self.transition2.optimizer.lr, self._lr/2.)
 
         if(self._high_int_dim==False):
-            K.set_value(self.force_features.optimizer.lr, self._lr)
+            K.set_value(self.force_features.optimizer.lr, self._lr*0.75)
 
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)

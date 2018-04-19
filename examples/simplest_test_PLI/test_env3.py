@@ -279,7 +279,7 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
-        #plt.show()
+        plt.show()
         for ii in xrange(-15,345,30):
             ax.view_init(elev=20., azim=ii)
             plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
