@@ -21,8 +21,8 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 5000
-    EPOCHS = 10#50
+    STEPS_PER_EPOCH = 1000
+    EPOCHS = 50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -36,7 +36,7 @@ class Defaults:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
     LEARNING_RATE = 0.0002
-    LEARNING_RATE_DECAY = 0.98
+    LEARNING_RATE_DECAY = 1
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
     DISCOUNT_MAX = 0.99
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         high_int_dim=False,
         internal_dim=3)
     
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.2)#1.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
@@ -128,8 +128,9 @@ if __name__ == "__main__":
         pass
     dump(vars(parameters), "params/" + fname + ".jldump")
     
-    agent.run(n_epochs=1, epoch_length=20000)
-    print "end gathering data"
+    #agent.run(n_epochs=1, epoch_length=20000)
+    #print "end gathering data"
+    
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman
     # residual and the average of the V values obtained during the last episode, hence the two last arguments.
@@ -169,26 +170,26 @@ if __name__ == "__main__":
         show_score=True,
         summarize_every=1))
 
-    agent.gathering_data=False
+    #agent.gathering_data=False
     agent.run(parameters.epochs, parameters.steps_per_epoch)
     
 
-
-    rand_ind=np.random.random_integers(0,20000,10)
-    original=[np.array([[agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(10)]) for o in range(1)]
-    transfer=[np.array([[1-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(10)]) for o in range(1)]
+    samples_transfer=200
+    rand_ind=np.random.random_integers(0,20000,samples_transfer)
+    original=[np.array([[agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
+    transfer=[np.array([[1-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
 
     print "original, transfer"
     print original, transfer
 
     # Transfer between the two repr
-    qnetwork.transfer(original, transfer, 100)
+    qnetwork.transfer(original, transfer, 5000)
 
 
-    # --- Instantiate environment ---
+    # --- Instantiate environment with reverse=True ---
     env = test_env(rng, higher_dim_obs=False, reverse=True)
 
-    # --- Instantiate agent ---
+    # --- Re instantiate agent ---
     agent = NeuralAgent(
         env,
         qnetwork,
@@ -197,6 +198,48 @@ if __name__ == "__main__":
         parameters.batch_size,
         rng,
         test_policy=test_policy)
+
+    # --- Bind controllers to the agent ---
+    # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
+    # learning rate as well as the training epoch number.
+    agent.attach(bc.VerboseController(
+        evaluate_on='epoch', 
+        periodicity=1))
+        
+    # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
+    # policy implemented by the agent. This controllers has a bit more capabilities, as it allows one to choose more
+    # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
+    # episode or epoch (or never, hence the resetEvery='none').
+    agent.attach(bc.EpsilonController(
+        initial_e=parameters.epsilon_start, 
+        e_decays=parameters.epsilon_decay, 
+        e_min=parameters.epsilon_min,
+        evaluate_on='action',
+        periodicity=1,
+        reset_every='none'))
+
+    # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
+    # Plus, we also want to display after each training episode (!= than after every training) the average bellman
+    # residual and the average of the V values obtained during the last episode, hence the two last arguments.
+    agent.attach(bc.TrainerController(
+        evaluate_on='action', 
+        periodicity=parameters.update_frequency, 
+        show_episode_avg_V_value=True, 
+        show_avg_Bellman_residual=True))
+
+    # Every epoch end, one has the possibility to modify the learning rate using a LearningRateController. Here we 
+    # wish to update the learning rate after every training epoch (periodicity=1), according to the parameters given.
+    agent.attach(bc.LearningRateController(
+        initial_learning_rate=parameters.learning_rate, 
+        learning_rate_decay=parameters.learning_rate_decay,
+        periodicity=1))
+    
+    # Same for the discount factor.
+    agent.attach(bc.DiscountFactorController(
+        initial_discount_factor=parameters.discount, 
+        discount_factor_growth=parameters.discount_inc, 
+        discount_factor_max=parameters.discount_max,
+        periodicity=1))
 
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
     # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
@@ -209,8 +252,8 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=test_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[],#[0, 1, 2, 3, 4],
-        periodicity=1,
+        controllers_to_disable=[0, 1, 2, 3, 4],
+        periodicity=2,
         show_score=True,
         summarize_every=1))
 

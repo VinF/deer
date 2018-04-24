@@ -27,7 +27,7 @@ class MyEnv(Environment):
         self._height=10#15
         self._width=10 #preferably an odd number so that it's symmetrical
         self._width_paddle=1
-        self._nx_block=2 #number of different x positions of the falling blocks
+        self._nx_block=3#self._width#2 #number of different x positions of the falling blocks
         self._higher_dim_obs=kwargs["higher_dim_obs"]
         self._reverse=kwargs["reverse"]
 
@@ -157,7 +157,7 @@ class MyEnv(Environment):
 
         for j in range(3):
             # Plot the trajectory
-            for i in xrange(n-1):
+            for i in xrange(30):#(n-1):
                 ax.plot(x[j*24+i:j*24+i+2], y[j*24+i:j*24+i+2], z[j*24+i:j*24+i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
 
         # Plot the estimated transitions
@@ -279,7 +279,7 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
-        plt.show()
+        #plt.show()
         for ii in xrange(-15,345,30):
             ax.view_init(elev=20., azim=ii)
             plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
@@ -395,8 +395,9 @@ class MyEnv(Environment):
             
             obs[y_t-2:y_t+3,x_block_t-3:x_block_t+4]=ball
             obs[3:6,x_t-3:x_t+4]=paddle
-            if(self._reverse==True):
-                obs=1-obs
+        
+        if(self._reverse==True):
+            obs=1-obs
             #plt.imshow(np.flip(obs,axis=0), cmap='gray_r')
             #plt.show()
 

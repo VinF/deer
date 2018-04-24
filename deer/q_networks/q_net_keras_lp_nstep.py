@@ -15,7 +15,7 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth=True
 sess = tf.Session(config=config)
 
-def mean_squared_error(y_true, y_pred):
+def mean_squared_error_p(y_true, y_pred):
     return K.clip(K.max(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
     #return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
     #return K.mean(  K.square( K.clip(K.abs(y_pred - y_true)-1,0.,100.) )  ,  axis=-1  )   # = mse error
@@ -531,9 +531,11 @@ class MyQNetwork(QNetwork):
         next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
         #print "next_x_predicted"
         #print next_x_predicted
-        next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
-        next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
-        next_x_predicted=T.predict([next_x_predicted[0:1],np.array([[1,0,0,0]])])
+        one_hot_first_action=np.zeros((1,self._n_actions))
+        one_hot_first_action[0]=1
+        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
+        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
+        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
         #print "next_x_predicted action 0 t4"
         #print next_x_predicted
         ## END DEBUG PURPOSES
@@ -541,7 +543,7 @@ class MyQNetwork(QNetwork):
         QD_plan=0
         for i in range(d+1): #TO DO: improve planning algorithm
             #print encoded_x
-            Qd=self.qValues_planning_abstr(encoded_x, R, gamma, T, Q, d=i, branching_factor=2).reshape(len(encoded_x),-1)
+            Qd=self.qValues_planning_abstr(encoded_x, R, gamma, T, Q, d=i, branching_factor=[self._n_actions,2,2,2,2,2,2,2]).reshape(len(encoded_x),-1)
             print "Qd,i"
             print Qd,i
             QD_plan+=Qd
@@ -592,17 +594,20 @@ class MyQNetwork(QNetwork):
     def qValues_planning_abstr(self, state_abstr_val, R, gamma, T, Q, d, branching_factor=None):
         """ 
         """
-        if(branching_factor==None or branching_factor>self._n_actions):
-            branching_factor=self._n_actions
+        #if(branching_factor==None or branching_factor>self._n_actions):
+        #    branching_factor=self._n_actions
+        
         #print "qValues_planning_abstr d"
         #print d
         n=len(state_abstr_val)
         identity_matrix = np.diag(np.ones(self._n_actions))
         
+        this_branching_factor=branching_factor.pop(0)
         if (n==1):
+            # We require that the first branching factor is self._n_actions so that QD_plan has the right dimension
             this_branching_factor=self._n_actions
-        else:
-            this_branching_factor=branching_factor
+        #else:
+        #    this_branching_factor=branching_factor
                          
         if (d==0):
             if(this_branching_factor<self._n_actions):
@@ -652,7 +657,7 @@ class MyQNetwork(QNetwork):
             gamma_vals_d0=gamma_vals_d0.flatten()
 
             next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
-            return r_vals_d0+gamma_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor),axis=1).flatten()
+            return r_vals_d0+gamma_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor[0]),axis=1).flatten()
         
 
 
@@ -711,7 +716,7 @@ class MyQNetwork(QNetwork):
 #        self.transition2.compile(optimizer=optimizer2, loss='mse') # Fit accurate transitions without encoders
 
         self.encoder.compile(optimizer=optimizer4,
-                  loss=mean_squared_error)
+                  loss=mean_squared_error_p)
         self.encoder_diff.compile(optimizer=optimizer5,
                   loss=exp_dec_error)
                   #metrics=['accuracy'])
@@ -756,18 +761,33 @@ class MyQNetwork(QNetwork):
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/1.) # /5. for simple laby or simple catcher; /1 for distrib of laby
         K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
 
     def transfer(self, original, transfer, epochs=1):
         # First, make sure that the target network and the current network are the same
         self._resetQHat()
+        # modify the loss of the encoder
+        #self.encoder=self.learn_and_plan.encoder_model()
+        optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
+        self.encoder.compile(optimizer=optimizer4,
+                  loss='mse')
         
-        # 
+        # Then, train the encoder such that the original and transfer states are mapped into the same abstract representation
         x_original=self.encoder_target.predict(original)#[0]
         print x_original
         for i in range(epochs):
-            print self.encoder.train_on_batch(transfer , x_original )
-            print self.encoder.train_on_batch(original , x_original )
+            size = original[0].shape[0]
+            #print size
+            #print transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)]
+            print "train"
+            print self.encoder.train_on_batch(transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] )
+            #print self.encoder.train_on_batch(original[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] )
+            print "validation"
+            print self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):])
+            #print self.encoder.test_on_batch(original[0][int(size*0.8):] , x_original[int(size*0.8):] )
          
+        # recompile with original loss
+        self.encoder.compile(optimizer=optimizer4,
+                  loss=mean_squared_error_p)
