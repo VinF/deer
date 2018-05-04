@@ -22,7 +22,7 @@ class Defaults:
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 1000
-    EPOCHS = 50
+    EPOCHS = 30
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -54,7 +54,8 @@ class Defaults:
     DETERMINISTIC = False
 
 
-
+HIGHER_DIM_OBS = False#True
+HIGH_INT_DIM = False
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -67,7 +68,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=False, reverse=False)
+    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -81,10 +82,10 @@ if __name__ == "__main__":
         parameters.update_rule,
         rng,
         double_Q=True,
-        high_int_dim=False,
+        high_int_dim=HIGH_INT_DIM,
         internal_dim=3)
     
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.2)#1.)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.1)#1.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
@@ -174,20 +175,43 @@ if __name__ == "__main__":
     agent.run(parameters.epochs, parameters.steps_per_epoch)
     
 
-    samples_transfer=200
+    ###
+    # TRANSFER
+    ###
+    optimized_params=qnetwork.getAllParams()
+    print "optimized_params"
+    print optimized_params
+
+    # --- Instantiate qnetwork ---
+    qnetwork = MyQNetwork(
+        env,
+        parameters.rms_decay,
+        parameters.rms_epsilon,
+        parameters.momentum,
+        parameters.clip_delta,
+        parameters.freeze_interval,
+        parameters.batch_size,
+        parameters.update_rule,
+        rng,
+        double_Q=True,
+        high_int_dim=HIGH_INT_DIM,
+        internal_dim=3)
+    qnetwork.setAllParams(optimized_params)
+
+    samples_transfer=500
     rand_ind=np.random.random_integers(0,20000,samples_transfer)
     original=[np.array([[agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
-    transfer=[np.array([[1-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
+    transfer=[np.array([[-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
 
-    print "original, transfer"
-    print original, transfer
+    print "original[0][0:10], transfer[0][0:10]"
+    print original[0][0:10], transfer[0][0:10]
 
     # Transfer between the two repr
     qnetwork.transfer(original, transfer, 5000)
 
-
+    
     # --- Instantiate environment with reverse=True ---
-    env = test_env(rng, higher_dim_obs=False, reverse=True)
+    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=True)
 
     # --- Re instantiate agent ---
     agent = NeuralAgent(
@@ -258,7 +282,7 @@ if __name__ == "__main__":
         summarize_every=1))
 
 
-    agent.gathering_data=False
+    #agent.gathering_data=False
     agent.run(parameters.epochs, parameters.steps_per_epoch)
 
 

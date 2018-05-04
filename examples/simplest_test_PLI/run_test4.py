@@ -1,6 +1,6 @@
-"""ALE launcher. See Wiki for more details about this experiment.
+"""Simple maze launcher
 
-Authors: Vincent Francois-Lavet, David Taralla
+Authors: Vincent Francois-Lavet
 """
 
 import sys
@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp_nstep import MyQNetwork
+from deer.q_networks.q_net_keras_lp import MyQNetwork
 from test_env4 import MyEnv as test_env
 import deer.experiment.base_controllers as bc
 
@@ -36,7 +36,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0002
+    LEARNING_RATE = 0.0005
     LEARNING_RATE_DECAY = 0.98
     DISCOUNT = 0.9
     DISCOUNT_INC = 1

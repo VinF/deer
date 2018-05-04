@@ -268,9 +268,15 @@ class MyQNetwork(QNetwork):
         # Interpretable AI
         if(self._high_int_dim==False):
             target_modif_features=np.zeros((self._n_actions,self._internal_dim))
-            target_modif_features[0,0]=1    # dir
-            target_modif_features[1,0]=-1   # opposite dir
-            target_modif_features[0:2,1]=1    # temps
+            ## Catcher
+            #target_modif_features[0,0]=1    # dir
+            #target_modif_features[1,0]=-1   # opposite dir
+            #target_modif_features[0:2,1]=1    # temps
+            ## Laby
+            target_modif_features[0,0]=1
+            target_modif_features[1,0]=0
+            #target_modif_features[2,1]=0
+            #target_modif_features[3,1]=0
             target_modif_features=np.repeat(target_modif_features,self._batch_size,axis=0)
             states_val_tiled=[]
             for obs in observations_val:
@@ -501,15 +507,15 @@ class MyQNetwork(QNetwork):
         #print "state_val[0]"
         #print state_val[0]
         #print len(state_val)
-        print "state_val[0][0]"
-        print state_val[0][0]
-        print state_val[0].shape
+#        print "state_val[0][0]"
+#        print state_val[0][0]
+#        print state_val[0].shape
         print "self.full_Qs[0].predict(state_val)[0]"
         print self.full_Qs[0].predict(state_val)[0]
         encoded_x = self.encoder.predict(state_val)
         ## DEBUG PURPOSES
-        print "encoded_x[0]"
-        print encoded_x[0]
+#        print "encoded_x[0]"
+#        print encoded_x[0]
         
         identity_matrix = np.diag(np.ones(self._n_actions))
         if(encoded_x.ndim==2):
@@ -661,7 +667,7 @@ class MyQNetwork(QNetwork):
         
 
 
-    def chooseBestAction(self, state, mode):
+    def chooseBestAction(self, state, mode=0):
         """ Get the best action for a belief state
 
         Arguments
@@ -674,7 +680,7 @@ class MyQNetwork(QNetwork):
         """
         if(mode>0):
             # We use the mode to define the planning depth
-            q_vals = self.qValues_planning([np.expand_dims(s,axis=0) for s in state],self.R,self.gamma, self.transition, self.Q, d=mode*3)#self.qValues(state)#
+            q_vals = self.qValues_planning([np.expand_dims(s,axis=0) for s in state],self.R,self.gamma, self.transition, self.Q, d=mode*2)#self.qValues(state)#
         else:
             q_vals = self.qValues_planning([np.expand_dims(s,axis=0) for s in state],self.R,self.gamma, self.transition, self.Q, d=0)
         return np.argmax(q_vals),np.max(q_vals)
@@ -761,7 +767,7 @@ class MyQNetwork(QNetwork):
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/1.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
         K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
 
@@ -770,13 +776,19 @@ class MyQNetwork(QNetwork):
         self._resetQHat()
         # modify the loss of the encoder
         #self.encoder=self.learn_and_plan.encoder_model()
+        #for l in self.encoder.layers[-5:]:
+        #    l.trainable = False # Freeze dense layers # DOES NOT SEEM TO HELP (transfer on catcher)
+        #print "self.encoder.layers[-1].get_weights()"
+        #print self.encoder.layers[-1].get_weights()
+        
         optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
         self.encoder.compile(optimizer=optimizer4,
                   loss='mse')
         
         # Then, train the encoder such that the original and transfer states are mapped into the same abstract representation
-        x_original=self.encoder_target.predict(original)#[0]
-        print x_original
+        x_original=self.encoder.predict(original)#[0]
+        print "x_original[0:10]"
+        print x_original[0:10]
         for i in range(epochs):
             size = original[0].shape[0]
             #print size
@@ -788,6 +800,10 @@ class MyQNetwork(QNetwork):
             print self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):])
             #print self.encoder.test_on_batch(original[0][int(size*0.8):] , x_original[int(size*0.8):] )
          
+        #print "self.encoder.layers[-1].get_weights()"
+        #print self.encoder.layers[-1].get_weights()
+        #for l in self.encoder.layers[-5:]:
+        #    l.trainable = True
         # recompile with original loss
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)

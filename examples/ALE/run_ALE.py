@@ -11,8 +11,8 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
-from ALE_env import MyEnv as ALE_env
+from deer.q_networks.q_net_keras_lp import MyQNetwork
+from ALE_env_gym import MyEnv as ALE_env
 import deer.experiment.base_controllers as bc
 
 from deer.policies import EpsilonGreedyPolicy
@@ -21,9 +21,9 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
-    EPOCHS = 40
-    STEPS_PER_TEST = 125000
+    STEPS_PER_EPOCH = 10000#250000
+    EPOCHS = 500#40
+    STEPS_PER_TEST = 2000#125000
     PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------
@@ -34,8 +34,8 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'deepmind_rmsprop'
-    LEARNING_RATE = 0.01
+    UPDATE_RULE = 'rmsprop'
+    LEARNING_RATE = 0.001
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.95
     DISCOUNT_INC = 0.99
@@ -53,7 +53,7 @@ class Defaults:
     FREEZE_INTERVAL = 10000
     DETERMINISTIC = True
 
-
+HIGH_INT_DIM = True
 
 
 if __name__ == "__main__":
@@ -67,11 +67,13 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = ALE_env(rng, frame_skip=parameters.frame_skip, 
-                ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
-                             {"key": "color_averaging", "value": True},
-                             {"key": "repeat_action_probability", "value": 0.}])
-
+    #env = ALE_env(rng, frame_skip=parameters.frame_skip, 
+    #            ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
+    #                         {"key": "color_averaging", "value": True},
+    #                         {"key": "repeat_action_probability", "value": 0.}])
+    
+    env = ALE_env(rng, frame_skip=parameters.frame_skip)
+    
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
@@ -82,9 +84,13 @@ if __name__ == "__main__":
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
-        rng)
+        rng,     
+        double_Q=True,
+        high_int_dim=HIGH_INT_DIM,
+        internal_dim=3)
     
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)
+    train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
@@ -94,6 +100,7 @@ if __name__ == "__main__":
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng,
+        train_policy=train_policy,
         test_policy=test_policy)
 
     # --- Create unique filename for FindBestController ---
@@ -169,11 +176,36 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4],
+        controllers_to_disable=[0, 1, 2, 3, 4, 6,7,8],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+1, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 7,8],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+2, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6,8],
         periodicity=2,
         show_score=True,
         summarize_every=1))
     
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+3, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6, 7],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+
     # --- Run the experiment ---
     try:
         os.mkdir("params")

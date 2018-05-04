@@ -12,6 +12,7 @@ matplotlib.use('qt5agg')
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
+plt.switch_backend('agg') # For remote servers
 import copy 
 
 class MyEnv(Environment):
@@ -254,7 +255,7 @@ class MyEnv(Environment):
         ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
         ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
-        plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
+        #plt.savefig('fig_base'+str(learning_algo.update_counter)+'.pdf')
 
 
         # Plot the Q_vals
@@ -280,9 +281,9 @@ class MyEnv(Environment):
         cb1.set_label('Estimated expected return')
 
         #plt.show()
-        for ii in xrange(-15,345,30):
-            ax.view_init(elev=20., azim=ii)
-            plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
+        #for ii in xrange(-15,345,30):
+        #    ax.view_init(elev=20., azim=ii)
+        #    plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
 
         # fig_visuV
@@ -314,7 +315,7 @@ class MyEnv(Environment):
         cb1.set_label('Estimated expected return')
 
         #plt.show()
-        plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
+        #plt.savefig('fig_visuV'+str(learning_algo.update_counter)+'.pdf')
 
 
         # fig_visuR
@@ -353,7 +354,7 @@ class MyEnv(Environment):
         cb1.set_label('Estimated expected return')
 
         #plt.show()
-        plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
+        #plt.savefig('fig_visuR'+str(learning_algo.update_counter)+'.pdf')
 
         matplotlib.pyplot.close("all") # avoids memory leaks
 
@@ -397,7 +398,7 @@ class MyEnv(Environment):
             obs[3:6,x_t-3:x_t+4]=paddle
         
         if(self._reverse==True):
-            obs=1-obs
+            obs=-obs
             #plt.imshow(np.flip(obs,axis=0), cmap='gray_r')
             #plt.show()
 

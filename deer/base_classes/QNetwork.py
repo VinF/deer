@@ -2,7 +2,6 @@
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
-from theano import config
 import numpy as np
 
 class QNetwork(object):

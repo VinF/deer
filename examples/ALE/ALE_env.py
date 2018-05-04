@@ -68,8 +68,8 @@ class MyEnv(Environment):
         action = self._actions[action]
         
         reward = self._ale.act(action)
-        if self.inTerminalState():
-            break
+        #if self.inTerminalState():
+        #    break
             
         self._ale.getScreenGrayscale(self._screen)
         cv2.resize(self._screen, (84, 84), self._reduced_screen, interpolation=cv2.INTER_NEAREST)

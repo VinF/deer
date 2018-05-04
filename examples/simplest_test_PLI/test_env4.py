@@ -1,14 +1,6 @@
-""" Interface with the test environment
+""" Simple maze environment
 
 Authors: Vincent Francois-Lavet
-
-def encoder_model(self):
-
-def transition_model(self):
-    x = Dense(10, activation='tanh')(x) #5,15
-    x = Dense(30, activation='tanh')(x) # ,30
-    x = Dense(30, activation='tanh')(x) # ,30
-    x = Dense(10, activation='tanh')(x) # ,30
 
 """
 import numpy as np
@@ -205,8 +197,13 @@ class MyEnv(Environment):
             fig = plt.figure()
             if(self.intern_dim==2):
                 ax = fig.add_subplot(111)
+                ax.set_xlabel(r'$X_1$')
+                ax.set_ylabel(r'$X_2$')
             else:
                 ax = fig.add_subplot(111,projection='3d')
+                ax.set_xlabel(r'$X_1$')
+                ax.set_ylabel(r'$X_2$')
+                ax.set_zlabel(r'$X_3$')
             
             #for j in range(3):
             #    # Plot the trajectory
@@ -221,15 +218,15 @@ class MyEnv(Environment):
                 predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1,0]])])
                 predicted4=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,0,1]])])
                 if(self.intern_dim==2):
-                    ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), color="0.15", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), color="0.4", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), color="0.65", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted4[0,:1]]), np.concatenate([y[i:i+1],predicted4[0,1:2]]), color="0.9", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), color="0.9", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), color="0.65", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), color="0.4", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted4[0,:1]]), np.concatenate([y[i:i+1],predicted4[0,1:2]]), color="0.15", alpha=0.75)
                 else:
-                    ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.15", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.4", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:3]]), color="0.65", alpha=0.75)
-                    ax.plot(np.concatenate([x[i:i+1],predicted4[0,:1]]), np.concatenate([y[i:i+1],predicted4[0,1:2]]), np.concatenate([z[i:i+1],predicted4[0,2:3]]), color="0.9", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.9", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.65", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted3[0,:1]]), np.concatenate([y[i:i+1],predicted3[0,1:2]]), np.concatenate([z[i:i+1],predicted3[0,2:3]]), color="0.4", alpha=0.75)
+                    ax.plot(np.concatenate([x[i:i+1],predicted4[0,:1]]), np.concatenate([y[i:i+1],predicted4[0,1:2]]), np.concatenate([z[i:i+1],predicted4[0,2:3]]), color="0.15", alpha=0.75)
             
 #            for xx in np.arange(self._size_maze)-self._size_maze//2:
 #                for yy in np.arange(self._size_maze)-self._size_maze//2:
@@ -497,9 +494,9 @@ class MyEnv(Environment):
 
 
     def inTerminalState(self):
-        if((self._pos_agent[0]<=1 and self._cur_action==0) ):#((self._pos_agent==[4,1] and self._cur_action==1) or (self._pos_agent==[5,2] and (self._cur_action==1 or self._cur_action==2)) or (self._pos_agent==[6,3] and self._cur_action==2))):
-        #(self._pos_agent[1]>=self._size_maze-2 and self._cur_action==1) ):
-            return True
+#        if((self._pos_agent[0]<=1 and self._cur_action==0) ):#((self._pos_agent==[4,1] and self._cur_action==1) or (self._pos_agent==[5,2] and (self._cur_action==1 or self._cur_action==2)) or (self._pos_agent==[6,3] and self._cur_action==2))):
+#        #(self._pos_agent[1]>=self._size_maze-2 and self._cur_action==1) ):
+#            return True
         return False
         #if (self._pos_agent==self._pos_goal):
         #    return True

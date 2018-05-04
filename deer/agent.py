@@ -5,7 +5,6 @@ to specify its behavior in the environment.
 .. Authors: Vincent Francois-Lavet, David Taralla
 """
 
-from theano import config
 import os
 import numpy as np
 import copy
@@ -77,7 +76,7 @@ class NeuralAgent(object):
         self._selected_action = -1
         self._state = []
         for i in range(len(inputDims)):
-            self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
+            self._state.append(np.zeros(inputDims[i]))
         if (train_policy==None):
             self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
         else:
@@ -142,12 +141,12 @@ class NeuralAgent(object):
         """
         return self._total_mode_reward/self._totalModeNbrEpisode, self._totalModeNbrEpisode
 
-    def bestAction(self):
-        """ Returns the best Action
-        """
-        action = self._network.chooseBestAction(self._state)
-        V = max(self._network.qValues(self._state))
-        return action, V
+#    def bestAction(self):
+#        """ Returns the best Action
+#        """
+#        action = self._network.chooseBestAction(self._state)
+#        V = max(self._network.qValues(self._state))
+#        return action, V
      
     def attach(self, controller):
         if (isinstance(controller, controllers.Controller)):

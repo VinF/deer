@@ -34,7 +34,7 @@ class NN():
         self._action_as_input=action_as_input
         self._high_int_dim=kwargs["high_int_dim"]
         if(self._high_int_dim==True):
-            self.n_channels_internal_dim=kwargs["internal_dim"] #dim[0]
+            self.n_channels_internal_dim=kwargs["internal_dim"] #dim[-3]
         else:
             self.internal_dim=kwargs["internal_dim"]    #2 for laby
                                                         #3 for catcher
@@ -59,16 +59,16 @@ class NN():
             # - observation[i] is a FRAME
             print "dim enc"
             print dim
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
+            if len(dim) == 3 or len(dim) == 4:
+                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
-                x=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
-                if(dim[1]>8 and dim[2]>8):
+                x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
+                if(dim[-2]>8 and dim[-1]>8):
                     self._pooling_encoder=6
                     #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
                     #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
-                    x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
+                    #x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
+                    x = Conv2D(8, (2, 2), padding='same', activation='tanh')(x)
                     x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
                     x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                     x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
@@ -90,10 +90,10 @@ class NN():
                 
             # - observation[i] is a VECTOR
             elif len(dim) == 2:
-                if dim[0] > 3:
-                    input = Input(shape=(dim[0],dim[1]))
+                if dim[-3] > 3:
+                    input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
-                    reshaped=Reshape((dim[0],dim[1],1), input_shape=(dim[0],dim[1]))(input)     #data_format='channels_last'
+                    reshaped=Reshape((dim[-3],dim[-2],1), input_shape=(dim[-3],dim[-2]))(input)     #data_format='channels_last'
                     x = Conv2D(16, (2, 1), activation='relu', border_mode='valid')(reshaped)    #Conv on the history
                     x = Conv2D(16, (2, 2), activation='relu', border_mode='valid')(x)           #Conv on the history & features
             
@@ -102,17 +102,17 @@ class NN():
                     else:
                         out = Flatten()(x)
                 else:
-                    input = Input(shape=(dim[0],dim[1]))
+                    input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
                     out = Flatten()(input)
             
             # - observation[i] is a SCALAR -
             else:
-                if dim[0] > 3:
+                if dim[-3] > 3:
                     # this returns a tensor
-                    input = Input(shape=(dim[0],))
+                    input = Input(shape=(dim[-3],))
                     inputs.append(input)
-                    reshaped=Reshape((1,dim[0],1), input_shape=(dim[0],))(input)            #data_format='channels_last'
+                    reshaped=Reshape((1,dim[-3],1), input_shape=(dim[-3],))(input)            #data_format='channels_last'
                     x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(reshaped)  #Conv on the history
                     x = Conv2D(8, (1,2), activation='relu', border_mode='valid')(x)         #Conv on the history
                     
@@ -122,7 +122,7 @@ class NN():
                         out = Flatten()(x)
                                         
                 else:
-                    input = Input(shape=(dim[0],))
+                    input = Input(shape=(dim[-3],))
                     inputs.append(input)
                     out=input
                     
@@ -170,16 +170,16 @@ class NN():
         
         for j in range(2):
             for i, dim in enumerate(self._input_dimensions):
-                if len(dim) == 3:
-                    input = Input(shape=(dim[0],dim[1],dim[2]))
+                if len(dim) == 3 or len(dim) == 4:
+                    input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
             
                 elif len(dim) == 2:
-                    input = Input(shape=(dim[0],dim[1]))
+                    input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
             
                 else:
-                    input = Input(shape=(dim[0],))
+                    input = Input(shape=(dim[-3],))
                     inputs.append(input)
         
         half = len(inputs)/2
@@ -209,14 +209,14 @@ class NN():
         """
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
             print inputs[0]._keras_shape
             print inputs[1]._keras_shape
             
             layers_action=inputs[1]
-            layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[1]*dim[2],axis=1)
-            layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[-2]*dim[-1],axis=1)
+            layers_action=Reshape((self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)
+            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
             
@@ -290,16 +290,16 @@ class NN():
         inputs=[]
         for j in range(2):
             for i, dim in enumerate(self._input_dimensions):
-                if len(dim) == 3:
-                    input = Input(shape=(dim[0],dim[1],dim[2]))
+                if len(dim) == 3 or len(dim) == 4:
+                    input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
             
                 elif len(dim) == 2:
-                    input = Input(shape=(dim[0],dim[1]))
+                    input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
             
                 else:
-                    input = Input(shape=(dim[0],))
+                    input = Input(shape=(dim[-3],))
                     inputs.append(input)
 
         half = len(inputs)/2
@@ -342,16 +342,16 @@ class NN():
         """
         inputs=[]
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
+            if len(dim) == 3 or len(dim) == 4:
+                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
         
             elif len(dim) == 2:
-                input = Input(shape=(dim[0],dim[1]))
+                input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
         
             else:
-                input = Input(shape=(dim[0],))
+                input = Input(shape=(dim[-3],))
                 inputs.append(input)
 
         enc_x = encoder_model(inputs[:]) #s --> x
@@ -427,15 +427,15 @@ class NN():
 #        for j in range(2):
 #            for i, dim in enumerate(self._input_dimensions):
 #                if len(dim) == 3:
-#                    input = Input(shape=(dim[0],dim[1],dim[2]))
+#                    input = Input(shape=(dim[-3],dim[-2],dim[-1]))
 #                    inputs.append(input)
 #            
 #                elif len(dim) == 2:
-#                    input = Input(shape=(dim[0],dim[1]))
+#                    input = Input(shape=(dim[-3],dim[-2]))
 #                    inputs.append(input)
 #            
 #                else:
-#                    input = Input(shape=(dim[0],))
+#                    input = Input(shape=(dim[-3],))
 #                    inputs.append(input)
 #        
 #        half = len(inputs)/2
@@ -470,16 +470,16 @@ class NN():
         inputs=[]
         
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
+            if len(dim) == 3 or len(dim) == 4:
+                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
 
             elif len(dim) == 2:
-                input = Input(shape=(dim[0],dim[1]))
+                input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
 
             else:
-                input = Input(shape=(dim[0],))
+                input = Input(shape=(dim[-3],))
                 inputs.append(input)
         
         input = Input(shape=(self._n_actions,))
@@ -554,13 +554,13 @@ class NN():
         
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
-            inputs = [ Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
+            inputs = [ Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     #data_format='channels_last'
             
             layers_action=inputs[1]
-            layers_action=RepeatVector(-(-dim[1] // self._pooling_encoder)*-(-dim[2] // self._pooling_encoder))(layers_action)
+            layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)
             print layers_action._keras_shape
-            layers_action=Reshape((self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=Reshape((self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)
+            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             print layers_action._keras_shape
 
             
@@ -606,16 +606,16 @@ class NN():
         inputs=[]
         
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
+            if len(dim) == 3 or len(dim) == 4:
+                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
 
             elif len(dim) == 2:
-                input = Input(shape=(dim[0],dim[1]))
+                input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
 
             else:
-                input = Input(shape=(dim[0],))
+                input = Input(shape=(dim[-3],))
                 inputs.append(input)
         
         enc_x = encoder_model(inputs[:]) #s --> x
@@ -642,10 +642,10 @@ class NN():
                 # - observation[i] is a FRAME
                 print "dim Q mod"
                 print dim
-                if len(dim) == 3:
-                    input = Input(shape=(-(-dim[1] // self._pooling_encoder),-(-dim[2] // self._pooling_encoder),self.n_channels_internal_dim)) #data_format is already 'channels_last'
+                if len(dim) == 3 or len(dim) == 4:
+                    input = Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)) #data_format is already 'channels_last'
                     inputs.append(input)
-                    #reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)
+                    #reshaped=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)
                     x = input     #data_format is already 'channels_last'
                     print x._keras_shape
             
@@ -723,16 +723,16 @@ class NN():
         inputs=[]
         
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))                
+            if len(dim) == 3 or len(dim) == 4:
+                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
 
             elif len(dim) == 2:
-                input = Input(shape=(dim[0],dim[1]))
+                input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
 
             else:
-                input = Input(shape=(dim[0],))
+                input = Input(shape=(dim[-3],))
                 inputs.append(input)
         
         out = encoder_model(inputs)
@@ -756,7 +756,7 @@ class NN():
             out=transition_model([out]+inputs[-1:])
 
         #if(self._high_int_dim==True):
-        #    input = Input(shape=(dim[1],dim[2],dim[0]))
+        #    input = Input(shape=(dim[-2],dim[-1],dim[-3]))
         #    inputs.append(input)
         #else:
         #    input = Input(shape=(self.internal_dim,))
