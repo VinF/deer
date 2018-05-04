@@ -702,19 +702,19 @@ class MyQNetwork(QNetwork):
         self._lr = lr
         print "modif lr"
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
-        K.set_value(self.full_Q.optimizer.lr, 0)#self._lr)
+        K.set_value(self.full_Q.optimizer.lr, self._lr)
 
-        K.set_value(self.full_R.optimizer.lr, 0)#self._lr)
-        K.set_value(self.full_gamma.optimizer.lr, 0)#self._lr)
+        K.set_value(self.full_R.optimizer.lr, self._lr)
+        K.set_value(self.full_gamma.optimizer.lr, self._lr)
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr)
         
         if(self._high_int_dim==False):
-            K.set_value(self.force_features.optimizer.lr, 0)#self._lr/2.)
+            K.set_value(self.force_features.optimizer.lr, self._lr)
 
         K.set_value(self.encoder.optimizer.lr, self._lr)
-        K.set_value(self.encoder_diff.optimizer.lr, self._lr/2.)
+        K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/1.) # /5. for simple laby or simple catcher; /1 for distrib of laby
         K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
 
@@ -747,11 +747,6 @@ class MyQNetwork(QNetwork):
             print self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):])
             #print self.encoder.test_on_batch(original[0][int(size*0.8):] , x_original[int(size*0.8):] )
          
-        #print "self.encoder.layers[-1].get_weights()"
-        #print self.encoder.layers[-1].get_weights()
-        #for l in self.encoder.layers[-5:]:
-        #    l.trainable = True
-        # recompile with original loss
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)
 

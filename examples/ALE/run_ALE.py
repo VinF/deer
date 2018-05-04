@@ -160,10 +160,10 @@ if __name__ == "__main__":
     # structure of the neural network having the best validation score. These dumps can then used to plot the evolution 
     # of the validation and test scores (see below) or simply recover the resulting neural network for your 
     # application.
-    agent.attach(bc.FindBestController(
-        validationID=ALE_env.VALIDATION_MODE,
-        testID=None,
-        unique_fname=fname))
+#    agent.attach(bc.FindBestController(
+#        validationID=ALE_env.VALIDATION_MODE,
+#        testID=None,
+#        unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
     # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
