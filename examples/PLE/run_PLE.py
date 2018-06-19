@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.q_networks.q_net_keras import MyQNetwork
 from PLE_env import MyEnv as PLE_env
 import deer.experiment.base_controllers as bc
 
@@ -25,7 +25,7 @@ class Defaults:
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 1000
-    EPOCHS = 500
+    EPOCHS = 100
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -38,7 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.002
+    LEARNING_RATE = 0.005
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 1

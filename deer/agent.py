@@ -179,7 +179,7 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmp_dataset, self._network)
+        self._environment.summarizePerformance(self._tmp_dataset)
 
     def train(self):
         """
@@ -270,15 +270,6 @@ class NeuralAgent(object):
             self._training_loss_averages = []
 
             if self._mode != -1:
-                #loss=0
-                #for ii in range(10000):
-                #    states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
-                #    loss+=self._network.train_model(states, actions, rewards, next_states, terminals)
-                #    if(ii%100==99):
-                #        print "loss T before valid or test"
-                #        print loss/100.
-                #        loss=0
-                
                 self._totalModeNbrEpisode=0
                 while self._mode_epochs_length > 0:
                     self._totalModeNbrEpisode += 1

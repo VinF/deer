@@ -59,10 +59,6 @@ class MyQNetwork(QNetwork):
         Q_net = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state)
         self.q_vals, self.params = Q_net._buildDQN()
         
-        if update_rule == 'deepmind_rmsprop':
-            warn("The update_rule used is rmsprop")
-            update_rule='rmsprop'            
-        
         self._compile()
 
         self.next_q_vals, self.next_params = Q_net._buildDQN()
@@ -181,3 +177,6 @@ class MyQNetwork(QNetwork):
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             K.set_value(next_param,K.get_value(param))
+
+        self._compile() # recompile to take into account new optimizer parameters that may have changed since
+                        # self._compile() was called in __init__. FIXME: this call should ideally be done elsewhere
