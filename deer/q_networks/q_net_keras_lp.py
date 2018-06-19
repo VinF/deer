@@ -191,23 +191,25 @@ class MyQNetwork(QNetwork):
         onehot_actions_rand[np.arange(self._batch_size), np.random.randint(0,2,(32))] = 1
         states_val=list(states_val)
         next_states_val=list(next_states_val)
-        for i,o in enumerate(states_val):
-            if(o.ndim==5): #FIXME
-                states_val[i]=states_val[i][:,0,:,:,:]/128.-1
-        for i,o in enumerate(next_states_val):
-            if(o.ndim==5): #FIXME
-                next_states_val[i]=next_states_val[i][:,0,:,:,:]/128.-1
+        #for i,o in enumerate(states_val):
+        #    if(o.ndim==5): #FIXME
+        #        states_val[i]=states_val[i][:,0,:,:,:]/128.-1
+        #for i,o in enumerate(next_states_val):
+        #    if(o.ndim==5): #FIXME
+        #        next_states_val[i]=next_states_val[i][:,0,:,:,:]/128.-1
             
         Es_=self.encoder.predict(next_states_val)
         Es=self.encoder.predict(states_val)
         ETs=self.transition.predict([Es,onehot_actions])
         R=self.R.predict([Es,onehot_actions])
                    
-        if(self.update_counter%100==0):
+        if(self.update_counter%500==0):
             print states_val[0][0]
             print "len(states_val)"
             print len(states_val)
+            print "next_states_val[0][0]"
             print next_states_val[0][0]
+            print "actions_val[0], rewards_val[0], terminals_val[0]"
             print actions_val[0], rewards_val[0], terminals_val[0]
             print "Es[0],ETs[0],Es_[0]"
             if(Es.ndim==4):
@@ -341,7 +343,7 @@ class MyQNetwork(QNetwork):
         else:
             max_next_q_vals=np.max(next_q_vals, axis=1, keepdims=True)
 
-        not_terminals=np.ones_like(terminals_val) - terminals_val
+        not_terminals=np.ones_like(terminals_val,dtype=float) - terminals_val
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
@@ -436,9 +438,9 @@ class MyQNetwork(QNetwork):
         The q values for the provided belief state
         """ 
         copy_state=copy.deepcopy(state_val) #Required because of the "hack" below
-        for i,o in enumerate(state):
-            if(o.ndim==4): #FIXME
-                copy_state[i]=copy_state[i][0,:,:,:]/128.-1
+        #for i,o in enumerate(state):
+        #    if(o.ndim==4): #FIXME
+        #        copy_state[i]=copy_state[i][0,:,:,:]/128.-1
 
         #return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
         return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state])[0]
@@ -628,9 +630,9 @@ class MyQNetwork(QNetwork):
         The best action : int
         """
         copy_state=copy.deepcopy(state) #Required because of the "hack" below
-        for i,o in enumerate(state):
-            if(o.ndim==4): #FIXME
-                copy_state[i]=copy_state[i][0,:,:,:]/128.-1
+        #for i,o in enumerate(state):
+        #    if(o.ndim==4): #FIXME
+        #        copy_state[i]=copy_state[i][0,:,:,:]/128.-1
 
         if(mode==None):
             mode=0

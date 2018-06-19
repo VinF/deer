@@ -10,7 +10,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp_nstep import MyQNetwork
+from deer.q_networks.q_net_keras_lp import MyQNetwork
 from test_env3 import MyEnv as test_env
 import deer.experiment.base_controllers as bc
 
@@ -21,8 +21,8 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 1000
-    EPOCHS = 30
+    STEPS_PER_EPOCH = 2000
+    EPOCHS = 20
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -54,7 +54,7 @@ class Defaults:
     DETERMINISTIC = False
 
 
-HIGHER_DIM_OBS = False#True
+HIGHER_DIM_OBS = True
 HIGH_INT_DIM = False
 
 if __name__ == "__main__":

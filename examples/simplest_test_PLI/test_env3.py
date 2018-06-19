@@ -28,7 +28,7 @@ class MyEnv(Environment):
         self._height=10#15
         self._width=10 #preferably an odd number so that it's symmetrical
         self._width_paddle=1
-        self._nx_block=3#self._width#2 #number of different x positions of the falling blocks
+        self._nx_block=2#self._width#2 #number of different x positions of the falling blocks
         self._higher_dim_obs=kwargs["higher_dim_obs"]
         self._reverse=kwargs["reverse"]
 
@@ -196,7 +196,7 @@ class MyEnv(Environment):
         # Plot the dots at each time step depending on the action taken
         length_block=self._height*(self._width-self._width_paddle+1)
         for i in range(self._nx_block):
-            line3 = ax.scatter(all_possib_abs_states[i*length_block:(i+1)*length_block,0], all_possib_abs_states[i*length_block:(i+1)*length_block,1] ,all_possib_abs_states[i*length_block:(i+1)*length_block,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.2)
+            line3 = ax.scatter(all_possib_abs_states[i*length_block:(i+1)*length_block,0], all_possib_abs_states[i*length_block:(i+1)*length_block,1] ,all_possib_abs_states[i*length_block:(i+1)*length_block,2], s=10, marker='x', depthshade=True, edgecolors='k', alpha=0.3)
         line2 = ax.scatter(x, y ,z , c=np.tile(np.expand_dims(1-actions/2.,axis=1),(1,3))-0.25, s=50, marker='o', edgecolors='k', alpha=0.75, depthshade=True)
         axes_lims=[ax.get_xlim(),ax.get_ylim(),ax.get_zlim()]
         zrange=axes_lims[2][1]-axes_lims[2][0]
@@ -283,7 +283,7 @@ class MyEnv(Environment):
         #plt.show()
         #for ii in xrange(-15,345,30):
         #    ax.view_init(elev=20., azim=ii)
-        #    plt.savefig('fig_w_V_div5'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
+        #    plt.savefig('fig_w_V_div5_'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
 
         # fig_visuV

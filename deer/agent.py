@@ -76,7 +76,7 @@ class NeuralAgent(object):
         self._selected_action = -1
         self._state = []
         for i in range(len(inputDims)):
-            self._state.append(np.zeros(inputDims[i]))
+            self._state.append(np.zeros(inputDims[i], dtype=float))
         if (train_policy==None):
             self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
         else:

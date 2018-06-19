@@ -90,7 +90,7 @@ if __name__ == "__main__":
         internal_dim=3)
     
     train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
