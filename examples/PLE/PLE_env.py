@@ -1,5 +1,4 @@
 """ Interface with the PLE environment
-
 Authors: Vincent Francois-Lavet, David Taralla
 Modified by: Norman Tasfi
 """

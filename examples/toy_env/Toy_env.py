@@ -27,7 +27,7 @@ class MyEnv(Environment):
 
         Parameters
         -----------
-            rng : the numpy random number generator
+        rng : the numpy random number generator
         """
         # Defining the type of environment
         self._last_ponctual_observation = [0, 0] # At each time step, the observation is made up of two elements, each scalar
@@ -47,6 +47,19 @@ class MyEnv(Environment):
         self._counter = 1
                 
     def reset(self, mode):
+        """ Resets the environment for a new episode.
+
+        Parameters
+        -----------
+        mode : int
+            -1 is for the training phase, others are for validation/test.
+
+        Returns
+        -------
+        list
+            Initialization of the sequence of observations used for the pseudo-state; dimension must match self.inputDimensions().
+            If only the current observation is used as a (pseudo-)state, then this list is equal to self._last_ponctual_observation.
+        """
         if mode == -1:
             self.prices = self._price_signal_train
         else:
@@ -59,6 +72,17 @@ class MyEnv(Environment):
         return [6*[0], 0]
 
     def act(self, action):
+        """ Performs one time-step within the environment and updates the current observation self._last_ponctual_observation
+
+        Parameters
+        -----------
+        action : int
+            Integer in [0, ..., N_A] where N_A is the number of actions given by self.nActions()
+
+        Returns
+        -------
+        reward: float
+        """
         reward = 0
         
         if (action == 0 and self._last_ponctual_observation[1] == 1):

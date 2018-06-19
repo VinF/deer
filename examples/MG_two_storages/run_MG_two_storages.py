@@ -8,7 +8,11 @@ import logging
 import numpy as np
 from joblib import hash, dump, load
 import os
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+
+import sys
+from os import path
+sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
@@ -34,7 +38,7 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0005
+    LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 0.99
@@ -50,7 +54,7 @@ class Defaults:
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
     FREEZE_INTERVAL = 1000
-    DETERMINISTIC = True
+    DETERMINISTIC = False
 
 
 
@@ -60,13 +64,22 @@ if __name__ == "__main__":
     
     # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
+    print parameters.deterministic
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
         rng = np.random.RandomState()
     
+    if(parameters.param1 is not None and parameters.param1!="1"):
+        # We Reduce the size of the time series so that the number of days is divisible by 4*parameters.param1
+        # That way, the number of days in each season is divisible by parameters.param1 and it is thus possible
+        # to reduce the variety of the data within each season in the time series by a factor of parameters.param1
+        parameters.steps_per_epoch=parameters.steps_per_epoch-(parameters.steps_per_epoch%(24*4*int(parameters.param1)))-1
+    print "parameters.steps_per_epoch"
+    print parameters.steps_per_epoch
+
     # --- Instantiate environment ---
-    env = MG_two_storages_env(rng)
+    env = MG_two_storages_env(rng, parameters.param1, parameters.param2, parameters.param3)
 
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -162,7 +175,7 @@ if __name__ == "__main__":
     # the summarizePerformance method of MG_two_storage_env.
     agent.attach(bc.InterleavedTestEpochController(
         id=MG_two_storages_env.VALIDATION_MODE, 
-        epoch_length=parameters.steps_per_test,
+        epoch_length=parameters.steps_per_epoch,
         controllers_to_disable=[0, 1, 2, 3, 4, 7],
         periodicity=2, 
         show_score=True,
@@ -189,6 +202,7 @@ if __name__ == "__main__":
     except Exception:
         pass
     dump(vars(parameters), "params/" + fname + ".jldump")
+            
     agent.run(parameters.epochs, parameters.steps_per_epoch)
     
     # --- Show results ---

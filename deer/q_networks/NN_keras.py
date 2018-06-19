@@ -107,7 +107,7 @@ class NN():
                 out = Dense(len(self._n_actions))(x)
         else:
             out = Dense(1)(x)
-                
+
         model = Model(input=inputs, output=out)
         layers=model.layers
         
