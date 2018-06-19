@@ -60,9 +60,7 @@ class Defaults:
 
 
 if __name__ == "__main__":
-    width=64
-    height=64
-    game = Catcher(width=width, height=height) 
+    game = Catcher(width=64, height=64) 
     logging.basicConfig(level=logging.INFO)
     
     # --- Parse parameters ---
