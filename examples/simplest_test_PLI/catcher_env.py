@@ -1,4 +1,4 @@
-""" Interface with the test environment
+""" Interface with the catcher environment
 
 Authors: Vincent Francois-Lavet
 """
@@ -280,10 +280,10 @@ class MyEnv(Environment):
         cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,norm=norm,orientation='vertical')
         cb1.set_label('Estimated expected return')
 
-        #plt.show()
-        #for ii in xrange(-15,345,30):
-        #    ax.view_init(elev=20., azim=ii)
-        #    plt.savefig('fig_w_V_div5_'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
+        plt.show()
+        for ii in xrange(-15,345,30):
+            ax.view_init(elev=20., azim=ii)
+            plt.savefig('fig_w_V_div5_'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
 
         # fig_visuV

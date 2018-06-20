@@ -711,12 +711,12 @@ class MyQNetwork(QNetwork):
         K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr)
         
         if(self._high_int_dim==False):
-            K.set_value(self.force_features.optimizer.lr, self._lr)
+            K.set_value(self.force_features.optimizer.lr, 0)#self._lr)
 
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/1.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
         K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
 #        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
 

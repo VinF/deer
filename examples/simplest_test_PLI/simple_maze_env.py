@@ -330,7 +330,7 @@ class MyEnv(Environment):
             #ax.w_xaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
             #ax.w_yaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
             #ax.w_zaxis.set_pane_color((0.99, 0.99, 0.99, 0.99))
-            #plt.show()
+            plt.show()
             plt.savefig('fig_base_explo'+str(learning_algo.update_counter)+'.pdf')
 
 

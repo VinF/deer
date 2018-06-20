@@ -12,7 +12,7 @@ import os
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
 from deer.q_networks.q_net_keras_lp import MyQNetwork
-from test_env4 import MyEnv as test_env
+from simple_maze_env import MyEnv as simple_maze_env
 import deer.experiment.base_controllers as bc
 
 from deer.policies import EpsilonGreedyPolicy
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=False)
+    env = simple_maze_env(rng, higher_dim_obs=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     # of the validation and test scores (see below) or simply recover the resulting neural network for your 
     # application.
     agent.attach(bc.FindBestController(
-        validationID=test_env.VALIDATION_MODE,
+        validationID=simple_maze_env.VALIDATION_MODE,
         testID=None,
         unique_fname=fname))
     
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
     # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=test_env.VALIDATION_MODE, 
+        id=simple_maze_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4],
         periodicity=2,

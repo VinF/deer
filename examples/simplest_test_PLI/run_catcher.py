@@ -1,4 +1,4 @@
-"""Catcher
+""" Catcher launcher
 
 """
 
@@ -11,7 +11,7 @@ import os
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
 from deer.q_networks.q_net_keras_lp import MyQNetwork
-from test_env3 import MyEnv as test_env
+from catcher_env import MyEnv as catcher_env
 import deer.experiment.base_controllers as bc
 
 from deer.policies import EpsilonGreedyPolicy
@@ -54,7 +54,7 @@ class Defaults:
     DETERMINISTIC = False
 
 
-HIGHER_DIM_OBS = True
+HIGHER_DIM_OBS = False
 HIGH_INT_DIM = False
 
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=False)
+    env = catcher_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=False)
     
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
     # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=test_env.VALIDATION_MODE, 
+        id=catcher_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4],
         periodicity=2,
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     
     # --- Instantiate environment with reverse=True ---
-    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=True)
+    env = catcher_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=True)
 
     # --- Re instantiate agent ---
     agent = NeuralAgent(
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
     # [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=test_env.VALIDATION_MODE, 
+        id=catcher_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4],
         periodicity=2,
