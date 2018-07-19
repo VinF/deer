@@ -70,7 +70,7 @@ class CRAR(LearningAlgo):
         """ Initialize environment
         
         """
-        QNetwork.__init__(self,environment, batch_size)
+        LearningAlgo.__init__(self,environment, batch_size)
 
         self._rho = rho
         self._rms_epsilon = rms_epsilon
