@@ -1,7 +1,7 @@
 """ Interface with the ALE environment
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
+
 import numpy as np
 import cv2
 from ale_python_interface import ALEInterface

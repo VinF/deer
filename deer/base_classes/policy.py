@@ -1,3 +1,8 @@
+"""
+This module defines the base class for the policies.
+
+"""
+
 import numpy as np
 
 class Policy(object):

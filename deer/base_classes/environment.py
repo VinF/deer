@@ -1,5 +1,6 @@
 """
-.. Authors: Vincent Francois-Lavet, David Taralla
+This module defines the base class for the environments.
+
 """
 
 import numpy as np

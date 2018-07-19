@@ -1,5 +1,5 @@
 """ Exploration policy for permutation invariant environments
-Authors: Vincent Francois-Lavet, Adrien Couetoux
+
 """
 
 from ..base_classes import Policy

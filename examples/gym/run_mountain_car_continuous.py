@@ -1,7 +1,6 @@
 """ Launcher for mountain car environment with continuous action space.
 Same principles as run_toy_env. See the wiki for more details.
 
-Author: Vincent Francois-Lavet
 """
 
 import sys

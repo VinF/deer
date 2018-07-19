@@ -8,7 +8,6 @@ The state of the agent is made up of an history of two punctual observations:
 - Either the agent possesses the good or not (1 or 0)
 The price signal is build following the same rules for the training and the validation environment. That allows the agent to learn a strategy that exploits this successfully.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import numpy as np

@@ -1,7 +1,6 @@
 """
 Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 
-.. Author: Vincent Francois-Lavet
 """
 
 import sys

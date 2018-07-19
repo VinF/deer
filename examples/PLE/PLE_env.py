@@ -1,7 +1,7 @@
 """ Interface with the PLE environment
-Authors: Vincent Francois-Lavet, David Taralla
-Modified by: Norman Tasfi
+
 """
+
 import numpy as np
 import cv2
 from ple import PLE

@@ -2,7 +2,6 @@
 It relies on the controllers, the chosen training/test policy and the learning algorithm
 to specify its behavior in the environment.
 
-.. Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import os

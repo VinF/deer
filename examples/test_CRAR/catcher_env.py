@@ -1,6 +1,5 @@
 """ Interface with the catcher environment
 
-Authors: Vincent Francois-Lavet
 """
 import numpy as np
 import cv2

@@ -11,7 +11,6 @@ The state of the agent is made up of an history of two to four punctual observat
 More information can be found in the paper to be published :
 Efficient decision making in stochastic micro-grids using deep reinforcement learning, Vincent Francois-Lavet, David Taralla, Raphael Fonteneau, Damien Ernst
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import numpy as np

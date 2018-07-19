@@ -1,6 +1,5 @@
 """This module contains a function to help parse command-line arguments.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 

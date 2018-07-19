@@ -1,6 +1,5 @@
 """Toy environment launcher. See the docs for more details about this environment.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import numpy as np
