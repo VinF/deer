@@ -113,7 +113,7 @@ class MyEnv(Environment):
 
         return self._last_observation
         
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         """ This function is called at every PERIOD_BTW_SUMMARY_PERFS.
 
         Arguments:

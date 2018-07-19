@@ -89,7 +89,7 @@ class MyEnv(Environment):
         self._mode_score += self.reward
         return np.sign(self.reward)
 
-    def summarizePerformance(self, test_data_set, learning_algo):
+    def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
         all_possib_inp=np.expand_dims(np.array(plot_all_frames.get_all_possib_inp(self.width,self.height)),axis=1)/256.
         #print "all_possib_inp[0]"
         print "all_possib_inp.shape"

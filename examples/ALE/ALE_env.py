@@ -77,7 +77,7 @@ class MyEnv(Environment):
         self._mode_score += reward
         return np.sign(reward)
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))

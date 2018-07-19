@@ -82,7 +82,7 @@ class MyEnv(Environment):
         self._mode_score += self.reward
         return self.reward
 
-    def summarizePerformance(self, test_data_set, learning_algo):
+    def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
         #print "test_data_set.observations.shape"
         #print test_data_set.observations()[0][0:1]
         

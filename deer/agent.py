@@ -180,7 +180,7 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmp_dataset, self._network)
+        self._environment.summarizePerformance(self._tmp_dataset, self._network, train_data_set=self._dataset)
 
     def train(self):
         """
@@ -334,9 +334,13 @@ class NeuralAgent(object):
                 if self._mode != -1:
                     self._total_mode_reward += reward
                 
-                is_terminal = self._environment.inTerminalState()
+                is_terminal = self._environment.inTerminalState()   # If the transition ends up in a terminal state, mark transition as terminal
+                                                                    # Note that the new obs will not be stored, as it is unnecessary.
                     
-                self._addSample(obs, action, reward, is_terminal)
+                if(maxSteps>0):
+                    self._addSample(obs, action, reward, is_terminal)
+                else:
+                    self._addSample(obs, action, reward, True)      # If the episode ends because max number of steps is reached, mark the transition as terminal
             
             for c in self._controllers: c.onActionTaken(self)
             

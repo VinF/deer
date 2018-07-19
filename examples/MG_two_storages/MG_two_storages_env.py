@@ -256,7 +256,7 @@ class MyEnv(Environment):
     def observe(self):
         return copy.deepcopy(self._last_ponctual_observation)
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         print("summary perf")
         print("self.hydrogen_storage: {}".format(self.hydrogen_storage))
         observations = test_data_set.observations()
