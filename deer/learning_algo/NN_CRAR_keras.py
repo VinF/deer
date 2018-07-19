@@ -363,44 +363,8 @@ class NN():
         
         print "Tx._keras_shape"
         print Tx._keras_shape
-        
-#        input = Input(shape=(self.internal_dim,self._n_actions))
-#        inputs.append(input)
-#        
-#        #if(high_int_dim==True):
-#        #    Tx_tiled=K.tile(Tx,(self._n_actions,1,1,1))
-#        #else:
-#        #    Tx_tiled=K.tile(Tx,(self._n_actions,1))
-#        
-#        for i in range self._n_actions:            
-#            #constants = np.zeros((self._n_actions))
-#            #k_constants = K.variable(constants)
-#            #fixed_input = Input(tensor=k_constants)
-#            Tx= transition_model([Tx,constants])
-#        Tx_tiled=Dot(axes=(-1))([Tx,fixed_input])
-#
-#        print "Tx_tiled._keras_shape"
-#        print Tx_tiled._keras_shape
-            
+                    
         diff_features = Subtract()([Tx,enc_x]) # Modification of the features after (sequence of) action(s)
-
-        #print "K.eval(diff_features)"
-        #print diff_features.output
-        #inputs.append(Input(shape=(self.internal_dim,)))
-        #cos_proxi=Dot(axes=(-1),normalize=True)([diff_features,inputs[-1]]) # Cosine proximity between diff_features and target_modif_features
-        
-        #constants = np.ones((self.internal_dim,))#((self._batch_size*self._n_actions,self.internal_dim,))
-        #k_constants = K.variable(constants)
-        #fixed_input = Input(tensor=k_constants)
-        #inputs.append(fixed_input)
-        #print "fixed_input._keras_shape"
-        #print fixed_input._keras_shape
-        #cos_proxi_add1=Subtract()([fixed_input,cos_proxi])
-        
-        #print "cos_proxi.output"
-        #print cos_proxi.output
-        #print "cos_proxi._keras_shape"
-        #print cos_proxi._keras_shape
         
         model = Model(inputs=inputs, outputs=diff_features )
         

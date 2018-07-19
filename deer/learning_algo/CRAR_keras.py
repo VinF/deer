@@ -16,9 +16,8 @@ sess = tf.Session(config=config)
 import copy
 
 def mean_squared_error_p(y_true, y_pred):
-    return K.clip(K.max(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
-    #return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = mse error
-    #return K.mean(  K.square( K.clip(K.abs(y_pred - y_true)-1,0.,100.) )  ,  axis=-1  )   # = mse error
+    return K.clip(K.max(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)     # = modified mse error L_inf
+    #return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = modified mse error L_2
 
 def exp_dec_error(y_true, y_pred):
     return K.exp( - 5.*K.sqrt( K.clip(K.sum(K.square(y_pred), axis=-1, keepdims=True),0.000001,10) )  ) # tend to increase y_pred
@@ -27,12 +26,6 @@ def cosine_proximity2(y_true, y_pred):
     y_true = K.l2_normalize(y_true[:,0:2], axis=-1)
     y_pred = K.l2_normalize(y_pred[:,0:2], axis=-1)
     return -K.sum(y_true * y_pred, axis=-1)
-
-#def rms_from_squared_components(y_true, y_pred):
-#    return - K.sum(  K.sqrt( K.clip(y_pred,0.000001,1))  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1#
-#
-#def squared_error_from_squared_components(y_true, y_pred):
-#    return - K.sum(  K.clip(y_pred,0.,1)  , axis=-1, keepdims=True ) # tend to increase y_pred --> loss -1
 
 def loss_diff_s_s_(y_true, y_pred):
     return K.square(   1.    -    K.sqrt(  K.clip( K.sum(y_pred,axis=-1,keepdims=True), 0.000001 , 1. )  )     ) # tend to increase y_pred --> loss -1
@@ -190,12 +183,6 @@ class CRAR(LearningAlgo):
         onehot_actions_rand[np.arange(self._batch_size), np.random.randint(0,2,(32))] = 1
         states_val=list(states_val)
         next_states_val=list(next_states_val)
-        #for i,o in enumerate(states_val):
-        #    if(o.ndim==5): #FIXME
-        #        states_val[i]=states_val[i][:,0,:,:,:]/128.-1
-        #for i,o in enumerate(next_states_val):
-        #    if(o.ndim==5): #FIXME
-        #        next_states_val[i]=next_states_val[i][:,0,:,:,:]/128.-1
             
         Es_=self.encoder.predict(next_states_val)
         Es=self.encoder.predict(states_val)
@@ -331,7 +318,6 @@ class CRAR(LearningAlgo):
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        #next_q_vals = self.next_full_Q.predict([next_states_val[0],np.zeros_like(Es)]) #np.zeros((32,self.learn_and_plan.internal_dim))])
         next_q_vals = self.full_Q_target.predict(next_states_val)
         
         if(self._double_Q==True):
@@ -346,7 +332,6 @@ class CRAR(LearningAlgo):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        #q_vals=self.full_Q.predict([states_val[0],np.zeros_like(Es)]) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])
         q_vals=self.full_Q.predict([states_val[0]])
         
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
@@ -366,8 +351,6 @@ class CRAR(LearningAlgo):
         loss=0
         #loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         loss=self.full_Q.train_on_batch(states_val , q_vals ) 
-        #print "self.q_vals.optimizer.lr"
-        #print K.eval(self.q_vals.optimizer.lr)
         self.loss_Q+=loss
 
         if(self.update_counter%100==0):
@@ -437,9 +420,6 @@ class CRAR(LearningAlgo):
         The q values for the provided belief state
         """ 
         copy_state=copy.deepcopy(state_val) #Required because of the "hack" below
-        #for i,o in enumerate(state):
-        #    if(o.ndim==4): #FIXME
-        #        copy_state[i]=copy_state[i][0,:,:,:]/128.-1
 
         #return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
         return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state])[0]
@@ -610,8 +590,6 @@ class CRAR(LearningAlgo):
             r_vals_d0=r_vals_d0.flatten()
             
             gamma_vals_d0=np.array(gamma.predict([tile3_encoded_x,repeat_identity]))
-            #print "r_vals_d0"
-            #print r_vals_d0
             gamma_vals_d0=gamma_vals_d0.flatten()
 
             next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
@@ -629,9 +607,6 @@ class CRAR(LearningAlgo):
         The best action : int
         """
         copy_state=copy.deepcopy(state) #Required because of the "hack" below
-        #for i,o in enumerate(state):
-        #    if(o.ndim==4): #FIXME
-        #        copy_state[i]=copy_state[i][0,:,:,:]/128.-1
 
         if(mode==None):
             mode=0
@@ -723,15 +698,8 @@ class CRAR(LearningAlgo):
         # First, make sure that the target network and the current network are the same
         self._resetQHat()
         # modify the loss of the encoder
-        #self.encoder=self.learn_and_plan.encoder_model()
-        #for l in self.encoder.layers[-5:]:
-        #    l.trainable = False # Freeze dense layers # DOES NOT SEEM TO HELP (transfer on catcher)
-        #print "self.encoder.layers[-1].get_weights()"
-        #print self.encoder.layers[-1].get_weights()
-        
         optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
-        self.encoder.compile(optimizer=optimizer4,
-                  loss='mse')
+        self.encoder.compile(optimizer=optimizer4, loss='mse')
         
         # Then, train the encoder such that the original and transfer states are mapped into the same abstract representation
         x_original=self.encoder.predict(original)#[0]
