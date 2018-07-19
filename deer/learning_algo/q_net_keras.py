@@ -148,11 +148,11 @@ class MyQNetwork(QNetwork):
         return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
 
     def chooseBestAction(self, state, *args, **kwargs):
-        """ Get the best action for a belief state
+        """ Get the best action for a pseudo-state
 
         Arguments
         ---------
-        state : one belief state
+        state : one pseudo-state
 
         Returns
         -------

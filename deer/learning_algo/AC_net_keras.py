@@ -207,11 +207,11 @@ class MyACNetwork(ACNetwork):
         return out
 
     def chooseBestAction(self, state):
-        """ Get the best action for a belief state
+        """ Get the best action for a pseudo-state
 
         Arguments
         ---------
-        state : one belief state
+        state : one pseudo-state
 
         Returns
         -------

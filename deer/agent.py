@@ -1,4 +1,5 @@
-"""This module contains classes used to define the standard behavior of the agent.
+""" 
+This module contains classes used to define the standard behavior of the agent.
 It relies on the controllers, the chosen training/test policy and the learning algorithm
 to specify its behavior in the environment.
 
@@ -16,7 +17,7 @@ from .helper import tree
 from deer.policies import EpsilonGreedyPolicy
 
 class NeuralAgent(object):
-    """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
+    """The NeuralAgent class wraps a learning algorithm (such as a deep Q-network) for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
     
@@ -24,8 +25,8 @@ class NeuralAgent(object):
     -----------
     environment : object from class Environment
         The environment in which the agent interacts
-    q_network : object from class QNetwork
-        The q_network associated to the agent
+    learning_algo : object from class LearningAlgo
+        The learning algorithm associated to the agent
     replay_memory_size : int
         Size of the replay memory. Default : 1000000
     replay_start_size : int
@@ -47,7 +48,7 @@ class NeuralAgent(object):
         observations before the beginning of the episode
     """
 
-    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
+    def __init__(self, environment, learning_algo, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
         inputDims = environment.inputDimensions()
         
         if replay_start_size == None:
@@ -57,7 +58,7 @@ class NeuralAgent(object):
         
         self._controllers = []
         self._environment = environment
-        self._network = q_network
+        self._learning_algo = learning_algo
         self._replay_memory_size = replay_memory_size
         self._replay_start_size = replay_start_size
         self._batch_size = batch_size
@@ -77,11 +78,11 @@ class NeuralAgent(object):
         for i in range(len(inputDims)):
             self._state.append(np.zeros(inputDims[i], dtype=float))
         if (train_policy==None):
-            self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
+            self._train_policy = EpsilonGreedyPolicy(learning_algo, environment.nActions(), random_state, 0.1)
         else:
             self._train_policy = train_policy
         if (test_policy==None):
-            self._test_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.)
+            self._test_policy = EpsilonGreedyPolicy(learning_algo, environment.nActions(), random_state, 0.)
         else:
             self._test_policy = test_policy
         self.gathering_data=True    # Whether the agent is gathering data or not
@@ -96,22 +97,22 @@ class NeuralAgent(object):
     def setLearningRate(self, lr):
         """ Set the learning rate for the gradient descent
         """
-        self._network.setLearningRate(lr)
+        self._learning_algo.setLearningRate(lr)
 
     def learningRate(self):
         """ Get the learning rate
         """
-        return self._network.learningRate()
+        return self._learning_algo.learningRate()
 
     def setDiscountFactor(self, df):
         """ Set the discount factor
         """
-        self._network.setDiscountFactor(df)
+        self._learning_algo.setDiscountFactor(df)
 
     def discountFactor(self):
         """ Get the discount factor
         """
-        return self._network.discountFactor()
+        return self._learning_algo.discountFactor()
 
     def overrideNextAction(self, action):
         """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
@@ -140,13 +141,6 @@ class NeuralAgent(object):
         """
         return self._total_mode_reward/self._totalModeNbrEpisode, self._totalModeNbrEpisode
 
-#    def bestAction(self):
-#        """ Returns the best Action
-#        """
-#        action = self._network.chooseBestAction(self._state)
-#        V = max(self._network.qValues(self._state))
-#        return action, V
-     
     def attach(self, controller):
         if (isinstance(controller, controllers.Controller)):
             self._controllers.append(controller)
@@ -179,12 +173,12 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmp_dataset, self._network, train_data_set=self._dataset)
+        self._environment.summarizePerformance(self._tmp_dataset, self._learning_algo, train_data_set=self._dataset)
 
     def train(self):
         """
         This function selects a random batch of data (with self._dataset.randomBatch) and performs a 
-        Q-learning iteration (with self._network.train).        
+        Q-learning iteration (with self._learning_algo.train).        
         """
         # We make sure that the number of elements in the replay memory
         # is strictly superior to self._replay_start_size before taking 
@@ -193,12 +187,12 @@ class NeuralAgent(object):
             return
 
         try:
-            if hasattr(self._network, 'nstep'):
-                observations, actions, rewards, terminals, rndValidIndices = self._dataset.randomBatch_nstep(self._batch_size, self._network.nstep, self._exp_priority)
-                loss, loss_ind = self._network.train(observations, actions, rewards, terminals)
+            if hasattr(self._learning_algo, 'nstep'):
+                observations, actions, rewards, terminals, rndValidIndices = self._dataset.randomBatch_nstep(self._batch_size, self._learning_algo.nstep, self._exp_priority)
+                loss, loss_ind = self._learning_algo.train(observations, actions, rewards, terminals)
             else:
                 states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
-                loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
+                loss, loss_ind = self._learning_algo.train(states, actions, rewards, next_states, terminals)
 
             self._training_loss_averages.append(loss)
             if (self._exp_priority):
@@ -227,7 +221,7 @@ class NeuralAgent(object):
             if fname in f:
                 os.remove("nnets/" + f)
 
-        all_params = self._network.getAllParams()
+        all_params = self._learning_algo.getAllParams()
 
         if (nEpoch>=0):
             joblib.dump(all_params, basename + ".epoch={}".format(nEpoch))
@@ -252,7 +246,7 @@ class NeuralAgent(object):
         else:
             all_params = joblib.load(basename)
 
-        self._network.setAllParams(all_params)
+        self._learning_algo.setAllParams(all_params)
 
     def run(self, n_epochs, epoch_length):
         """
@@ -274,16 +268,7 @@ class NeuralAgent(object):
         while i < n_epochs or self._mode_epochs_length > 0:
             self._training_loss_averages = []
 
-            if self._mode != -1:
-                #loss=0
-                #for ii in range(10000):
-                #    states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
-                #    loss+=self._network.train_model(states, actions, rewards, next_states, terminals)
-                #    if(ii%100==99):
-                #        print "loss T before valid or test"
-                #        print loss/100.
-                #        loss=0
-                
+            if self._mode != -1:                
                 self._totalModeNbrEpisode=0
                 while self._mode_epochs_length > 0:
                     self._totalModeNbrEpisode += 1

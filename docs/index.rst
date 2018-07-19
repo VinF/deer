@@ -65,7 +65,7 @@ If you are looking for information on a specific function, class or method, this
   modules/agents
   modules/controllers
   modules/environments
-  modules/q-networks
+  modules/learning-algorithms
   modules/policies
   
 Indices and tables

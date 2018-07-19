@@ -29,12 +29,12 @@ class LearningAlgo(object):
         raise NotImplementedError()
 
     def chooseBestAction(self, state):
-        """ Get the best action for a belief state
+        """ Get the best action for a pseudo-state
         """        
         raise NotImplementedError()
 
     def qValues(self, state):
-        """ Get the q value for one belief state
+        """ Get the q value for one pseudo-state
         """        
         raise NotImplementedError()
 

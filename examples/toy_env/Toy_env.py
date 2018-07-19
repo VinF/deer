@@ -14,8 +14,6 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
-import theano
-import copy
 
 from deer.base_classes import Environment
 
