@@ -80,13 +80,13 @@ class Environment(object):
         that occured was terminal).
 
         As the majority of control tasks considered have no end (a continuous control should be operated), by default 
-        this returns always False. But in the context of a video game for instance, terminal states can occurs and 
-        these cases this method should be overriden.
+        this returns always False. But in the context of a video game for instance, terminal states can happen and in
+        these cases, this method should be overridden.
         
         Returns
         -------
         isTerminal : bool
-
+            Whether or not the current state is terminal
         """
 
         return False

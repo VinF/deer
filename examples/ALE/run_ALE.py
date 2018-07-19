@@ -74,7 +74,7 @@ if __name__ == "__main__":
     env = ALE_env(rng, frame_skip=parameters.frame_skip)
     
     # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    qnetwork = CRAR(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,

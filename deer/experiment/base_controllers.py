@@ -134,7 +134,7 @@ class LearningRateController(Controller):
             return
 
         self._epoch_count = 0
-        agent._network.setLearningRate(self._init_lr)
+        agent._learning_algo.setLearningRate(self._init_lr)
         self._lr = self._init_lr * self._lr_decay
 
     def onEpochEnd(self, agent):
@@ -143,7 +143,7 @@ class LearningRateController(Controller):
 
         self._epoch_count += 1
         if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
-            agent._network.setLearningRate(self._lr)
+            agent._learning_algo.setLearningRate(self._lr)
             self._lr *= self._lr_decay
 
 class EpsilonController(Controller):
@@ -265,7 +265,7 @@ class DiscountFactorController(Controller):
             return
 
         self._epoch_count = 0
-        agent._network.setDiscountFactor(self._init_df)
+        agent._learning_algo.setDiscountFactor(self._init_df)
         if (self._init_df < self._df_max):
             self._df = 1 - (1 - self._init_df) * self._df_growth
         else:
@@ -278,7 +278,7 @@ class DiscountFactorController(Controller):
         self._epoch_count += 1
         if self._periodicity <= 1 or self._epoch_count % self._periodicity == 0:
             if (self._df < self._df_max):
-                agent._network.setDiscountFactor(self._df)
+                agent._learning_algo.setDiscountFactor(self._df)
                 self._df = 1 - (1 - self._df) * self._df_growth
 
 
@@ -488,8 +488,8 @@ class VerboseController(Controller):
     def _print(self, agent):
         if self._periodicity <= 1 or self._count % self._periodicity == 0:
             print("{} {}:".format(self._string, self._count + 1))
-            print("Learning rate: {}".format(agent._network.learningRate()))
-            print("Discount factor: {}".format(agent._network.discountFactor()))
+            print("Learning rate: {}".format(agent._learning_algo.learningRate()))
+            print("Discount factor: {}".format(agent._learning_algo.discountFactor()))
             print("Epsilon: {}".format(agent._train_policy.epsilon()))
         self._count += 1
 
