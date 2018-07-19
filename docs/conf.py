@@ -69,7 +69,7 @@ extensions = [
     'sphinx.ext.mathjax',
 #    'sphinx.ext.viewcode',  # create HTML file of source code and link to it
 #    'sphinx.ext.linkcode',  # link to github, see linkcode_resolve() below
-    'numpydoc',
+##    'numpydoc',               # !Generates unwanted tables with autoclass!
 #    'sphinx.ext.napoleon',  # alternative to numpydoc -- looks a bit worse.
 ]
 

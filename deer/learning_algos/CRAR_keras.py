@@ -31,8 +31,7 @@ def loss_diff_s_s_(y_true, y_pred):
     return K.square(   1.    -    K.sqrt(  K.clip( K.sum(y_pred,axis=-1,keepdims=True), 0.000001 , 1. )  )     ) # tend to increase y_pred --> loss -1
 
 class CRAR(LearningAlgo):
-    """
-    Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
+    """ Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
     
     Parameters
     -----------
@@ -56,7 +55,7 @@ class CRAR(LearningAlgo):
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
     neural_network : object, optional
-        default is deer.qnetworks.NN_keras
+        default is deer.learning_algos.NN_keras
     """
 
     def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN, **kwargs):
@@ -147,6 +146,8 @@ class CRAR(LearningAlgo):
         self._resetQHat()
 
     def getAllParams(self):
+        """ Provides all parameters used by the learning algorithm
+        """
         params_value=[]
         for i,p in enumerate(self.params):
             params_value.append(K.get_value(p))

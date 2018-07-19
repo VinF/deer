@@ -19,13 +19,17 @@ It is a work in progress and input is welcome. Please submit any contribution vi
 
 What is new
 ------------
+Version 0.4
+************
+- Integration of CRAR that allows to combine the model-free and the model-based approaches via abstract representations (see :ref:`CRAR`)
+- Augmented documentation and some interfaces have been updated.
+
 Version 0.3 
 ************
 - Integration of different exploration/exploitation policies and possibility to easily built your own (see :ref:`policies`)
 - Integration of DDPG for continuous action spaces (see :ref:`actor-critic`)
 - :ref:`naming_conv` and some interfaces have been updated. This may cause broken backward compatibility. In that case, make the changes to the new convention by looking at the API in this documentation or by looking at the current version of the examples.
 - Additional automated tests
-
 
 Version 0.2
 ***********

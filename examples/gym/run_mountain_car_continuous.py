@@ -10,7 +10,7 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.learning_algo.AC_net_keras import MyACNetwork
+from deer.learning_algos.AC_net_keras import MyACNetwork
 from mountain_car_continuous_env import MyEnv as mountain_car_continuous_env
 from deer.policies import LongerExplorationPolicy
 

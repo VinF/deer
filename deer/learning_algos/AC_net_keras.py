@@ -46,9 +46,9 @@ class MyACNetwork(ACNetwork):
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
     neural_network_critic : object, optional
-        default is deer.qnetworks.NN_keras
+        default is deer.learning_algos.NN_keras
     neural_network_actor : object, optional
-        default is deer.qnetworks.NN_keras
+        default is deer.learning_algos.NN_keras
     """
 
     def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network_critic=NN, neural_network_actor=NN):

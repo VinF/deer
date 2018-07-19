@@ -5,7 +5,7 @@
 import numpy as np
 
 from deer.agent import NeuralAgent
-from deer.learning_algo.q_net_keras import MyQNetwork
+from deer.learning_algos.q_net_keras import MyQNetwork
 from Toy_env import MyEnv as Toy_env
 import deer.experiment.base_controllers as bc
 

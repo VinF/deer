@@ -11,7 +11,7 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.learning_algo.q_net_keras import MyQNetwork
+from deer.learning_algos.q_net_keras import MyQNetwork
 from pendulum_env import MyEnv as pendulum_env
 
 class Defaults:
