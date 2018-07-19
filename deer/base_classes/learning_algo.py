@@ -1,11 +1,12 @@
 """
-.. Authors: Vincent Francois-Lavet, David Taralla
+This module defines the base class for the learning algorithms.
+
 """
 
 import numpy as np
 
-class QNetwork(object):
-    """ All the Q-networks and actor-critic networks should inherit this interface.
+class LearningAlgo(object):
+    """ All the Q-networks, actor-critic networks, etc. should inherit this interface.
 
     Parameters
     -----------

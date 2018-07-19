@@ -1,3 +1,3 @@
-from .Environment import Environment
-from .QNetwork import QNetwork
-from .Policy import Policy
+from .environment import Environment
+from .learning_algo import LearningAlgo
+from .policy import Policy

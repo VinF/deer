@@ -7,7 +7,7 @@ Code for general deep Q-learning using Keras that can take as inputs scalars, ve
 import numpy as np
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
-from ..base_classes import QNetwork
+from ..base_classes import LearningAlgo as QNetwork
 from .NN_keras import NN # Default Neural network used
 
 class MyQNetwork(QNetwork):
@@ -147,7 +147,7 @@ class MyQNetwork(QNetwork):
         """ 
         return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
 
-    def chooseBestAction(self, state):
+    def chooseBestAction(self, state, *args, **kwargs):
         """ Get the best action for a belief state
 
         Arguments

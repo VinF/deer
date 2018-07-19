@@ -19,8 +19,8 @@ class LongerExplorationPolicy(Policy):
     length : int
         Length of the exploration sequences that will be considered
     """
-    def __init__(self, q_network, n_actions, random_state, epsilon, length=10):
-        Policy.__init__(self, q_network, n_actions, random_state)
+    def __init__(self, learning_algo, n_actions, random_state, epsilon, length=10):
+        Policy.__init__(self, learning_algo, n_actions, random_state)
         self._epsilon = epsilon
         self._l = length
         self._count_down = -1

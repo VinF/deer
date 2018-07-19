@@ -10,7 +10,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.learning_algo.CRAR_keras import CRAR
 from catcher_env import MyEnv as catcher_env
 import deer.experiment.base_controllers as bc
 
@@ -70,8 +70,8 @@ if __name__ == "__main__":
     # --- Instantiate environment ---
     env = catcher_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=False)
     
-    # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    # --- Instantiate learning algorithm ---
+    learning_algo = CRAR(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
@@ -85,12 +85,12 @@ if __name__ == "__main__":
         high_int_dim=HIGH_INT_DIM,
         internal_dim=3)
     
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.1)#1.)
+    test_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 0.1)#1.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
-        qnetwork,
+        learning_algo,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
@@ -178,12 +178,12 @@ if __name__ == "__main__":
     ###
     # TRANSFER
     ###
-    optimized_params=qnetwork.getAllParams()
+    optimized_params=learning_algo.getAllParams()
     print "optimized_params"
     print optimized_params
 
-    # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    # --- Instantiate learning_algo ---
+    learning_algo = CRAR(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         double_Q=True,
         high_int_dim=HIGH_INT_DIM,
         internal_dim=3)
-    qnetwork.setAllParams(optimized_params)
+    learning_algo.setAllParams(optimized_params)
 
     samples_transfer=500
     rand_ind=np.random.random_integers(0,20000,samples_transfer)
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     print original[0][0:10], transfer[0][0:10]
 
     # Transfer between the two repr
-    qnetwork.transfer(original, transfer, 5000)
+    learning_algo.transfer(original, transfer, 5000)
 
     
     # --- Instantiate environment with reverse=True ---
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # --- Re instantiate agent ---
     agent = NeuralAgent(
         env,
-        qnetwork,
+        learning_algo,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,

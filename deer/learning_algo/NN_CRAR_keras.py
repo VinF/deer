@@ -1,6 +1,6 @@
 """
-Neural network using Keras (called by q_net_keras)
-.. Author: Vincent Francois-Lavet
+CRAR Neural network using Keras
+
 """
 
 import numpy as np

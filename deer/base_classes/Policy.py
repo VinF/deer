@@ -6,14 +6,14 @@ class Policy(object):
 
     Parameters
     -----------
-    q_network : object from class QNetwork
+    learning_algo : object from class LearningALgo
     n_actions : int or list
         Definition of the action space provided by Environment.nActions()
     random_state : numpy random number generator
     """
 
-    def __init__(self, q_network, n_actions,random_state):
-        self.q_network = q_network
+    def __init__(self, learning_algo, n_actions,random_state):
+        self.learning_algo = learning_algo
         self.n_actions = n_actions
         self.random_state = random_state
 
@@ -22,7 +22,7 @@ class Policy(object):
     def bestAction(self, state, mode=None):
         """ Returns the best Action for the given state. This is an additional encapsulation for q-network.
         """
-        action,V = self.q_network.chooseBestAction(state, mode)
+        action,V = self.learning_algo.chooseBestAction(state, mode)
         return action, V
 
     def randomAction(self):

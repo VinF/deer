@@ -16,7 +16,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algo.q_net_keras import MyQNetwork
 from MG_two_storages_env import MyEnv as MG_two_storages_env
 import deer.experiment.base_controllers as bc
 

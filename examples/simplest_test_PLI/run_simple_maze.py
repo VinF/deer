@@ -1,6 +1,5 @@
 """Simple maze launcher
 
-Authors: Vincent Francois-Lavet
 """
 
 import sys
@@ -11,7 +10,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.learning_algo.CRAR_keras import CRAR
 from simple_maze_env import MyEnv as simple_maze_env
 import deer.experiment.base_controllers as bc
 
@@ -70,8 +69,8 @@ if __name__ == "__main__":
     # --- Instantiate environment ---
     env = simple_maze_env(rng, higher_dim_obs=False)
     
-    # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    # --- Instantiate learning_algo ---
+    learning_algo = CRAR(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
@@ -84,12 +83,12 @@ if __name__ == "__main__":
         high_int_dim=False,
         internal_dim=2)
     
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
+    test_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 1.)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
-        qnetwork,
+        learning_algo,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,

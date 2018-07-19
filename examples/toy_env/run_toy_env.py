@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algo.q_net_keras import MyQNetwork
 from Toy_env import MyEnv as Toy_env
 import deer.experiment.base_controllers as bc
 from deer.policies import EpsilonGreedyPolicy

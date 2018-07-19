@@ -11,7 +11,7 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algo.q_net_keras import MyQNetwork
 from mountain_car_env import MyEnv as mountain_car_env
 
 class Defaults:

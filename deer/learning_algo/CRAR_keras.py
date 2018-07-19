@@ -1,15 +1,14 @@
 """
-Code for general deep Q-learning using Keras that can take as inputs scalars, vectors and matrices
+Code for the CRAR agent using Keras
 
-.. Author: Vincent Francois-Lavet
 """
 
 import numpy as np
 np.set_printoptions(threshold=np.nan)
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
-from ..base_classes import QNetwork
-from .NN_keras_lp_high_int_dim import NN # Default Neural network used
+from ..base_classes import LearningAlgo
+from .NN_CRAR_keras import NN # Default Neural network used
 import tensorflow as tf
 config = tf.ConfigProto()
 config.gpu_options.allow_growth=True
@@ -38,9 +37,9 @@ def cosine_proximity2(y_true, y_pred):
 def loss_diff_s_s_(y_true, y_pred):
     return K.square(   1.    -    K.sqrt(  K.clip( K.sum(y_pred,axis=-1,keepdims=True), 0.000001 , 1. )  )     ) # tend to increase y_pred --> loss -1
 
-class MyQNetwork(QNetwork):
+class CRAR(LearningAlgo):
     """
-    Deep Q-learning network using Keras (with any backend)
+    Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
     
     Parameters
     -----------
