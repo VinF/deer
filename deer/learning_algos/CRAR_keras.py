@@ -95,7 +95,6 @@ class CRAR(LearningAlgo):
         self.Q = self.learn_and_plan.Q_model()
         self.gamma = self.learn_and_plan.R_model()
         self.transition = self.learn_and_plan.transition_model()
-#        self.transition2 = self.learn_and_plan.transition_model2()
 
         self.full_Q=self.learn_and_plan.full_Q_model(self.encoder,self.Q,0,self._df)
         
@@ -363,52 +362,6 @@ class CRAR(LearningAlgo):
         return np.sqrt(loss),loss_ind
 
 
-#    def train_model(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
-#        """
-#        Train the model based part
-#
-#        1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
-#        2. perform batch training
-#
-#        Parameters
-#        -----------
-#        states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-#        actions_val : b x 1 numpy array of integers
-#        rewards_val : b x 1 numpy array
-#        next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-#        terminals_val : b x 1 numpy boolean array
-#
-#        Returns
-#        -------
-#        Average loss of the batch training (RMSE)
-#        Individual (square) losses for each tuple
-#        """
-#
-#        onehot_actions = np.zeros((self._batch_size, self._n_actions))
-#        onehot_actions[np.arange(self._batch_size), actions_val[:,0]] = 1
-#        Es_=self.encoder.predict([next_states_val[0]])
-#        Es=self.encoder.predict([states_val[0]])
-#        ETs=self.transition.predict([Es,onehot_actions])
-#
-##        if(self.update_counter>3000):
-#        self.loss_T2=self.transition2.train_on_batch([Es,onehot_actions], Es_)
-##        if(self.update_counter%100==0):
-##            loss=0.
-##            for i in range (100):
-##                loss+=self.transition2.train_on_batch([Es,onehot_actions], Es_)
-##                if(i%10==0):
-##                    print "loss/(i+1)"
-##                    print loss/(i+1)
-##            print "loss/100."
-##            print loss/100.
-#            #print K.get_value(self.transition2.optimizer.lr)
-#            #print [ K.get_value(param)
-#            #        for layer in self.encoder.layers
-#            #        for param in layer.trainable_weights ][0][0]
-#        return self.loss_T2
-
-
-
     def qValues(self, state_val):
         """ Get the q values for one belief state (without planning)
 
@@ -630,8 +583,7 @@ class CRAR(LearningAlgo):
         self.full_Q.compile(optimizer=optimizer, loss='mse')
 
         optimizer1=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # Different optimizers for each network; otherwise not possible to modify each
-        optimizer2=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # separately (e.g. lr)
-        optimizer3=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
+        optimizer3=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # separately (e.g. lr)
         optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
         optimizer5=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
         optimizer6=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
@@ -639,7 +591,6 @@ class CRAR(LearningAlgo):
         optimizer8=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
 
         self.diff_Tx_x_.compile(optimizer=optimizer1, loss='mse') # Fit transitions
-        #self.transition2.compile(optimizer=optimizer2, loss='mse') # Fit accurate transitions without encoders
         self.full_R.compile(optimizer=optimizer3, loss='mse') # Fit rewards
         self.full_gamma.compile(optimizer=optimizer3, loss='mse') # Fit discount
 
