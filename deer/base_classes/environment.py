@@ -55,14 +55,14 @@ class Environment(object):
     def inputDimensions(self):
         """Gets the shape of the input space for this environment.
         
-        This returns a list whose length is the number of subjects observed on the environment. Each element of the 
-        list is a tuple: the first integer is always the history size considered for this subject and the rest describes 
-        the shape of a single observation on this subject:
-        - () or (1,) means each observation on this subject is a single number and the history size is 1 (= only current 
+        This returns a list whose length is the number of observations in the environment. Each element of the 
+        list is a tuple: the first integer is always the history size considered for this observation and the rest describes 
+        the shape of the observation at a given time step:
+        - () or (1,) means each observation at a given time step is a single scalar and the history size is 1 (= only current 
         observation)
-        - (N,) means each observation on this subject is a single number and the history size is N
-        - (N, M) means each observation on this subject is a vector of length M  and the history size is N
-        - (N, M1, M2) means each observation on this subject is a matrix with M1 rows and M2 columns and the history 
+        - (N,) means each observation at a given time step is a single scalar and the history size is N
+        - (N, M) means each observation at a given time step is a vector of length M and the history size is N
+        - (N, M1, M2) means each observation at a given time step is a 2D matrix with M1 rows and M2 columns and the history 
         size is N
         """
 
@@ -104,7 +104,7 @@ class Environment(object):
 
         raise NotImplementedError()
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         """Optional hook that can be used to show a summary of the performance of the agent on the
         environment in the current mode.
 

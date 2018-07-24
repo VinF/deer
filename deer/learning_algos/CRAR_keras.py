@@ -165,11 +165,18 @@ class CRAR(LearningAlgo):
 
         Parameters
         -----------
-        states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        actions_val : b x 1 numpy array of integers
-        rewards_val : b x 1 numpy array
-        next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val : b x 1 numpy boolean array
+        states_val : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        actions_val : numpy array of integers with size [self._batch_size]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards_val : numpy array of floats with size [self._batch_size]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states_val : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals_val : numpy array of booleans with size [self._batch_size]
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
 
         Returns
         -------
@@ -178,7 +185,7 @@ class CRAR(LearningAlgo):
         """
         
         onehot_actions = np.zeros((self._batch_size, self._n_actions))
-        onehot_actions[np.arange(self._batch_size), actions_val[:,0]] = 1
+        onehot_actions[np.arange(self._batch_size), actions_val] = 1
         onehot_actions_rand = np.zeros((self._batch_size, self._n_actions))
         onehot_actions_rand[np.arange(self._batch_size), np.random.randint(0,2,(32))] = 1
         states_val=list(states_val)
@@ -303,16 +310,13 @@ class CRAR(LearningAlgo):
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
             
-            print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
-            print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
-            print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
+            #print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
+            #print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
+            #print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
 
             print "self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,self.learn_and_plan.internal_dim)))"
             print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((32,self.learn_and_plan.internal_dim)))
             print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((32,self.learn_and_plan.internal_dim)))
-
-            print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
-            print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
 
 
         if self.update_counter % self._freeze_interval == 0:
@@ -335,11 +339,11 @@ class CRAR(LearningAlgo):
         q_vals=self.full_Q.predict([states_val[0]])
         
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
-        q_val=q_vals[np.arange(self._batch_size), actions_val.reshape((-1,))]#.reshape((-1, 1))        
+        q_val=q_vals[np.arange(self._batch_size), actions_val]#.reshape((-1, 1))        
         diff = - q_val + target 
         loss_ind=pow(diff,2)
                 
-        q_vals[  np.arange(self._batch_size), actions_val.reshape((-1,))  ] = target
+        q_vals[  np.arange(self._batch_size), actions_val  ] = target
                 
         # Is it possible to use something more flexible than this? 
         # Only some elements of next_q_vals are actual value that I target. 

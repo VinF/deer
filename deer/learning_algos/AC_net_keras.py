@@ -127,11 +127,18 @@ class MyACNetwork(ACNetwork):
 
         Parameters
         -----------
-        states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        actions_val : b x 1 numpy array of objects (lists of floats)
-        rewards_val : b x 1 numpy array
-        next_states_val : list of batch_size * [list of max_num_elements* [list of k * [element 2D,1D or scalar]])
-        terminals_val : b x 1 numpy boolean array (currently ignored)
+        states_val : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        actions_val : numpy array of integers with size [self._batch_size]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards_val : numpy array of floats with size [self._batch_size]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states_val : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals_val : numpy array of booleans with size [self._batch_size]
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
 
 
         Returns
@@ -206,7 +213,7 @@ class MyACNetwork(ACNetwork):
         
         return out
 
-    def chooseBestAction(self, state):
+    def chooseBestAction(self, state, *args, **kwargs):
         """ Get the best action for a pseudo-state
 
         Arguments

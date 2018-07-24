@@ -24,7 +24,8 @@ class LearningAlgo(object):
         self._batch_size = batch_size
 
     def train(self, states, actions, rewards, nextStates, terminals):
-        """ This method performs the Bellman iteration for one batch of tuples.
+        """ This method performs the training step (e.g. using Bellman iteration in a deep Q-network) 
+        for one batch of tuples.
         """
         raise NotImplementedError()
 

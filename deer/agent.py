@@ -486,42 +486,39 @@ class DataSet(object):
         for i in range( len(rndValidIndices) ):
             self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
-    def randomBatch(self, size, use_priority):
-        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly
+    def randomBatch(self, batch_size, use_priority):
+        """Returns a batch of states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
-        each subject s.
+        each s.
         
         Parameters
         -----------
-        size : int
+        batch_size : int
             Number of transitions to return.
         use_priority : Boolean
             Whether to use prioritized replay or not
 
         Returns
         -------
-        states : ndarray
-            An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
-            size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in
-            the data with the only constraint that they are complete regarding the histories for each observed
-            subject.
-        actions : ndarray
-            An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after
-            having observed states[:][i].
-        rewards : ndarray
-            An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for
-            taking actions[i-1].
-        next_states : ndarray
-            Same structure than states, but next_states[s][i] is guaranteed to be the information
-            concerning the state following the one described by states[s][i] for each subject s.
-        terminals : ndarray
-            An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
-            to terminal states and False otherwise
+        states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+            States are taken randomly in the data with the only constraint that they are complete regarding the history size 
+            for each observation.
+        actions : numpy array of integers [batch_size]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards : numpy array of floats [batch_size]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals : numpy array of booleans [batch_size] 
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
 
         Throws
         -------
             SliceError
-                If a batch of this size could not be built based on current data set (not enough data or all
+                If a batch of this batch_size could not be built based on current data set (not enough data or all
                 trajectories are too short).
         """
 
@@ -533,20 +530,20 @@ class DataSet(object):
 
         if (self._use_priority):
             #FIXME : take into account the case where self._only_full_history is false
-            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
-            rndValidIndices = np.zeros(size, dtype='int32')
+            rndValidIndices = np.zeros(batch_size, dtype='int32')
             if (self._only_full_history):
-                for i in range(size): # TODO: multithread this loop?
+                for i in range(batch_size): # TODO: multithread this loop?
                     rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action-1)
             else:
-                for i in range(size): # TODO: multithread this loop?
+                for i in range(batch_size): # TODO: multithread this loop?
                     rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action)
                 
 
-        actions   = np.vstack( self._actions.getSliceBySeq(rndValidIndices) )
+        actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     
@@ -564,9 +561,9 @@ class DataSet(object):
             first_terminals.append(first_terminal)
             
         for input in range(len(self._batch_dimensions)):
-            states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
+            states[input] = np.zeros((batch_size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
-            for i in range(size):
+            for i in range(batch_size):
                 slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action+2-min(self._batch_dimensions[input][0],first_terminals[i]+self.sticky_action-1), rndValidIndices[i]+1)
                 if (len(slice)==len(states[input][i])):
                     states[input][i] = slice
@@ -590,15 +587,15 @@ class DataSet(object):
         else:
             return states, actions, rewards, next_states, terminals, rndValidIndices
 
-    def randomBatch_nstep(self, size, nstep, use_priority):
-        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly
+    def randomBatch_nstep(self, batch_size, nstep, use_priority):
+        """Return corresponding states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
-        each subject s.
+        each s.
         
         Parameters
         -----------
-        size : int
-            Batch size
+        batch_size : int
+            Number of transitions to return.
         nstep : int
             Number of transitions to be considered for each element
         use_priority : Boolean
@@ -606,23 +603,20 @@ class DataSet(object):
 
         Returns
         -------
-        states : ndarray
-            An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
-            size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in
-            the data with the only constraint that they are complete regarding the histories for each observed
-            subject.
-        actions : ndarray
-            An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after
-            having observed states[:][i].
-        rewards : ndarray
-            An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for
-            taking actions[i-1].
-        next_states : ndarray
-            Same structure than states, but next_states[s][i] is guaranteed to be the information
-            concerning the state following the one described by states[s][i] for each subject s.
-        terminals : ndarray
-            An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
-            to terminal states and False otherwise
+        states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * (history size+nstep-1) * size of punctual observation (which is 2D,1D or scalar)]).
+            States are taken randomly in the data with the only constraint that they are complete regarding the history size 
+            for each observation.
+        actions : numpy array of integers [batch_size, nstep]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards : numpy array of floats [batch_size, nstep]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * (history size+nstep-1) * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals : numpy array of booleans [batch_size, nstep] 
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
 
         Throws
         -------
@@ -639,23 +633,23 @@ class DataSet(object):
 
         if (self._use_priority):
             #FIXME : take into account the case where self._only_full_history is false
-            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
-            rndValidIndices = np.zeros(size, dtype='int32')
+            rndValidIndices = np.zeros(batch_size, dtype='int32')
             if (self._only_full_history):
-                for i in range(size): # TODO: multithread this loop?
+                for i in range(batch_size): # TODO: multithread this loop?
                     rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action*nstep-1)
             else:
-                for i in range(size): # TODO: multithread this loop?
+                for i in range(batch_size): # TODO: multithread this loop?
                     rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action*nstep)
                 
 
-        actions=np.zeros((size,(nstep)*self.sticky_action), dtype=int)
-        rewards=np.zeros((size,(nstep)*self.sticky_action))
-        terminals=np.zeros((size,(nstep)*self.sticky_action))
-        for i in range(size):
+        actions=np.zeros((batch_size,(nstep)*self.sticky_action), dtype=int)
+        rewards=np.zeros((batch_size,(nstep)*self.sticky_action))
+        terminals=np.zeros((batch_size,(nstep)*self.sticky_action))
+        for i in range(batch_size):
             actions[i] = self._actions.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
             rewards[i] = self._rewards.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
             terminals[i] = self._terminals.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
@@ -675,8 +669,8 @@ class DataSet(object):
         batch_dimensions=copy.deepcopy(self._batch_dimensions)
         for input in range(len(self._batch_dimensions)):
             batch_dimensions[input]=tuple( x + y for x, y in zip(self._batch_dimensions[input],(self.sticky_action*(nstep+1)-1,0,0)) )
-            observations[input] = np.zeros((size,) + batch_dimensions[input], dtype=self._observations[input].dtype)
-            for i in range(size):
+            observations[input] = np.zeros((batch_size,) + batch_dimensions[input], dtype=self._observations[input].dtype)
+            for i in range(batch_size):
                 slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action*nstep+2-min(self._batch_dimensions[input][0],first_terminals[i]-self.sticky_action*nstep+1), rndValidIndices[i]+self.sticky_action+1)
                 if (len(slice)==len(observations[input][i])):
                     observations[input][i] = slice
@@ -726,9 +720,8 @@ class DataSet(object):
                 # else index was ok according to terminals
                 return index
     
-    def _randomPrioritizedBatch(self, size):
-        indices_tree = self._prioritiy_tree.getBatch(
-            size, self._random_state, self)
+    def _randomPrioritizedBatch(self, batch_size):
+        indices_tree = self._prioritiy_tree.getBatch(batch_size, self._random_state, self)
         indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
         for i in range(len(indices_tree)):
             indices_replay_mem[i]= int(self._translation_array[indices_tree[i]] \

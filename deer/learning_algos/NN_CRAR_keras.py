@@ -57,8 +57,6 @@ class NN():
 
         for i, dim in enumerate(self._input_dimensions):
             # - observation[i] is a FRAME
-            print "dim enc"
-            print dim
             if len(dim) == 3 or len(dim) == 4:
                 input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
@@ -210,8 +208,6 @@ class NN():
         if(self._high_int_dim==True):
             dim=self._input_dimensions[0] #FIXME
             inputs = [ Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
-            print inputs[0]._keras_shape
-            print inputs[1]._keras_shape
             
             layers_action=inputs[1]
             layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[-2]*dim[-1],axis=1)
@@ -281,11 +277,7 @@ class NN():
         for d in range(plan_depth+1):
             inputs.append(Input(shape=(self._n_actions,)))
             Tx= transition_model([Tx,inputs[-1]])
-                
-        print "Tx._keras_shape"
-        print Tx._keras_shape
-        print enc_x_._keras_shape
-        
+                        
         x = Subtract()([Tx,enc_x_])
 
         input = Input(shape=(1,)) # 1-terminals (0 if transition is terminal)
@@ -332,9 +324,6 @@ class NN():
             inputs.append(Input(shape=(self._n_actions,)))
             Tx= transition_model([Tx,inputs[-1]])
         
-        print "Tx._keras_shape"
-        print Tx._keras_shape
-                    
         diff_features = Subtract()([Tx,enc_x]) # Modification of the features after (sequence of) action(s)
         
         model = Model(inputs=inputs, outputs=diff_features )
@@ -432,11 +421,6 @@ class NN():
             x = Subtract()([Tx,rand_Tx])
         else:
             x = Subtract()([Tx,rand_Tx])
-        print "x._keras_shape"
-        print x._keras_shape
-        #x = Dot(axes=-1, normalize=False)([x,x])
-        #print "x._keras_shape"
-        #print x._keras_shape
         
         model = Model(inputs=inputs, outputs=x )
         
@@ -493,10 +477,8 @@ class NN():
             
             layers_action=inputs[1]
             layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)
-            print layers_action._keras_shape
             layers_action=Reshape((self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)
             layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
-            print layers_action._keras_shape
 
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
@@ -575,14 +557,11 @@ class NN():
             outs_conv=[]
             for i, dim in enumerate(self._input_dimensions):
                 # - observation[i] is a FRAME
-                print "dim Q mod"
-                print dim
                 if len(dim) == 3 or len(dim) == 4:
                     input = Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)) #data_format is already 'channels_last'
                     inputs.append(input)
                     #reshaped=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)
                     x = input     #data_format is already 'channels_last'
-                    print x._keras_shape
             
                     x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
                     x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
@@ -614,16 +593,6 @@ class NN():
         else:
             inputs = [ Input( shape=(self.internal_dim,) ) ] #x
             x = Dense(20, activation='tanh')(inputs[0])
-
-        
-        #if (self._action_as_input==True):
-        #    if ( isinstance(self._n_actions,int)):
-        #        print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
-        #    else:
-        #        input = Input(shape=(len(self._n_actions),))
-        #        inputs.append(input)
-                
-        #x = Add()([x,inputs[-1]]) #????
         
         # we stack a deep fully-connected network on top
         x = Dense(50, activation='tanh')(x)
