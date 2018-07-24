@@ -25,7 +25,7 @@ DeeR is a python library for Deep Reinforcement. It is build with modularity in 
 Dependencies
 ============
 
-This framework is tested to work under Python 2.7, and Python 3.5. It should also work with Python 3.3 and 3.4.
+This framework is tested to work under Python 2.7, and Python 3.5.
 
 The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need Keras>=2.1.
 

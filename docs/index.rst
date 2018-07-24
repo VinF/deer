@@ -13,7 +13,14 @@ In addition, the framework is made in such a way that it is easy to
 
 * build any environment
 * modify any part of the learning process
-* use your favorite python-based framework to code your own neural network architecture. The provided neural network architectures are based on Keras (or pure Theano) but you may easily use others.
+* use your favorite python-based framework to code your own learning algorithm or neural network architecture. The provided learning algorithms and neural network architectures are based on Keras.
+
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/schema_deer.png
+   :scale: 50 %
+   :alt: alternate text
+   :align: right
+
+:Figure: General schema of the different elements implement in DeeR.
 
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
