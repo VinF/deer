@@ -553,7 +553,7 @@ class CRAR(LearningAlgo):
             next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
             return r_vals_d0+gamma_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor[0]),axis=1).flatten()
 
-    def chooseBestAction(self, state, mode):
+    def chooseBestAction(self, state, mode, *args, **kwargs):
         """ Get the best action for a belief state
 
         Arguments

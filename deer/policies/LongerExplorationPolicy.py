@@ -26,7 +26,7 @@ class LongerExplorationPolicy(Policy):
         self._count_down = -1
         self._action_sequence = []
 
-    def action(self, state):
+    def action(self, state, mode=None, *args, **kwargs):
         if self._count_down >= 0:
             # Take the next exploration action in the sequence
             V = 0
@@ -42,7 +42,7 @@ class LongerExplorationPolicy(Policy):
                 self._count_down -= 1
             else:
                 # Simply act greedily with respect to what is currently believed to be the best action
-                action, V = self.bestAction(state)
+                action, V = self.bestAction(state, mode, args, kwargs)
         
         return np.array(action), V
 

@@ -87,14 +87,14 @@ class MyQNetwork(QNetwork):
         -----------
         states_val : numpy array of objects
             Each object is a numpy array that relates to one of the observations
-            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)].
         actions_val : numpy array of integers with size [self._batch_size]
             actions[i] is the action taken after having observed states[:][i].
         rewards_val : numpy array of floats with size [self._batch_size]
             rewards[i] is the reward obtained for taking actions[i-1].
         next_states_val : numpy array of objects
             Each object is a numpy array that relates to one of the observations
-            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)].
         terminals_val : numpy array of booleans with size [self._batch_size]
             terminals[i] is True if the transition leads to a terminal state and False otherwise
 
