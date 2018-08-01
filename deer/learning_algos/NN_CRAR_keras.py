@@ -125,14 +125,6 @@ class NN():
                     out=input
                     
             outs_conv.append(out)
-
-        if (self._high_int_dim==True):
-            if ( isinstance(self._n_actions,int)):
-                print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
-            else:
-                input = Input(shape=(len(self._n_actions),))
-                inputs.append(input)
-                outs_conv.append(input)
         
         if(self._high_int_dim==False):
             if len(outs_conv)>1:

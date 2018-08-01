@@ -79,11 +79,9 @@ class CRAR(LearningAlgo):
         self._internal_dim = kwargs.get('internal_dim',2)
         self.loss_interpret=0
         self.loss_T=0
-        self.loss_T2=0
-        self.loss_disentangle_t=0
-        self.loss_disentangle_a=0
         self.lossR=0
         self.loss_Q=0
+        self.loss_disentangle_t=0
         self.loss_disambiguate1=0
         self.loss_disambiguate2=0
         self.loss_gamma=0
@@ -107,7 +105,7 @@ class CRAR(LearningAlgo):
         self.full_gamma = self.learn_and_plan.full_R_model(self.encoder,self.gamma)
         
         # used to fit transitions
-        self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)#full_transition_model(self.encoder,self.transition)
+        self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)
         
         # used to force features variations
         if(self._high_int_dim==False):
@@ -219,8 +217,7 @@ class CRAR(LearningAlgo):
             print (R[0])
             
         # Fit transition
-        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es))
-        self.loss_T+=l
+        self.loss_T+=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es))
         
         # Interpretable AI
         if(self._high_int_dim==False):
@@ -261,17 +258,11 @@ class CRAR(LearningAlgo):
 
         self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
 
-#
-#        # Loss to have all s' following s,a with a to a distance 1 of s,a)
-#        tiled_x=np.tile(Es,(self._n_actions,1))
-#        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
-#        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
-
 
         
         if(self.update_counter%500==0):
-            print ("self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.")
-            print (self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.)
+            print ("self.loss_T/100., self.lossR/100., self.loss_gamma/100., self.loss_Q/100., self.loss_disentangle_t/100., self.loss_disambiguate1/100., self.loss_disambiguate2/100.")
+            print (self.loss_T/100., self.lossR/100.,self.loss_gamma/100., self.loss_Q/100., self.loss_disentangle_t/100., self.loss_disambiguate1/100., self.loss_disambiguate2/100.)
             
             if(self._high_int_dim==False):
                 print ("self.loss_interpret/100.")
@@ -284,8 +275,6 @@ class CRAR(LearningAlgo):
             self.loss_interpret=0
 
             self.loss_disentangle_t=0
-            self.loss_disentangle_a=0
-            
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
             
@@ -343,9 +332,8 @@ class CRAR(LearningAlgo):
         -------
         The q values for the provided belief state
         """ 
-        copy_state=copy.deepcopy(state_val) #Required because of the "hack" below
+        copy_state=copy.deepcopy(state_val) #Required!
 
-        #return self.full_Q.predict([np.expand_dims(state,axis=0) for state in state_val]+[np.zeros((self._batch_size,self.learn_and_plan.internal_dim))])[0]
         return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state])[0]
 
     def qValues_planning(self, state_val, R, gamma, T, Q, d=5):
@@ -353,8 +341,15 @@ class CRAR(LearningAlgo):
 
         Arguments
         ---------
-        state_val : one pseudo state
-        d : planning depth
+        state_val : array of objects (or list of objects)
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        R : R_model
+        gamma : discount_model
+        T : transition_model
+        Q : Q_model
+        d : int
+            planning depth
 
         Returns
         -------
@@ -537,6 +532,8 @@ class CRAR(LearningAlgo):
                   loss=exp_dec_error)
 
     def _resetQHat(self):
+        """ Set the target Q-network weights equal to the main Q-network weights
+        """
         for i,(param,next_param) in enumerate(zip(self.params, self.params_target)):
             K.set_value(next_param,K.get_value(param))
 

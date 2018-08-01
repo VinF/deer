@@ -180,8 +180,9 @@ class MyQNetwork(QNetwork):
         return np.argmax(q_vals),np.max(q_vals)
         
     def _compile(self):
-        """ compile self.q_vals
+        """ Compile self.q_vals
         """
+        
         if (self._update_rule=="sgd"):
             optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
         elif (self._update_rule=="rmsprop"):
@@ -192,6 +193,9 @@ class MyQNetwork(QNetwork):
         self.q_vals.compile(optimizer=optimizer, loss='mse')
 
     def _resetQHat(self):
+        """ Set the target Q-network weights equal to the main Q-network weights
+        """
+        
         for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
             K.set_value(next_param,K.get_value(param))
 
