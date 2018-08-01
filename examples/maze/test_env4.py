@@ -1,15 +1,6 @@
 """ Interface with the test environment
 
 Author: Vincent Francois-Lavet
-
-def encoder_model(self):
-
-def transition_model(self):
-    x = Dense(10, activation='tanh')(x) #5,15
-    x = Dense(30, activation='tanh')(x) # ,30
-    x = Dense(30, activation='tanh')(x) # ,30
-    x = Dense(10, activation='tanh')(x) # ,30
-
 """
 import numpy as np
 import cv2
@@ -108,8 +99,7 @@ class MyEnv(Environment):
             else:
                 self._mode_episode_count += 1
                     
-        print "reset mode"
-        print mode
+        #print ("reset mode:"+str(mode)+".")
         #print "self._pos_agent,self._pos_walls,self._pos_rewards"
         #print self._pos_agent,self._pos_walls,self._pos_rewards
                 
@@ -125,23 +115,15 @@ class MyEnv(Environment):
         if(action==0):
             if([self._pos_agent[0]+1,self._pos_agent[1]] not in self._pos_walls):
                 self._pos_agent[0]=self._pos_agent[0]+1
-            #else:
-            #    self.reward=-0.1
         elif(action==1):        
             if([self._pos_agent[0],self._pos_agent[1]+1] not in self._pos_walls):
                 self._pos_agent[1]=self._pos_agent[1]+1
-            #else:
-            #    self.reward=-0.1
         elif(action==2):        
             if([self._pos_agent[0]-1,self._pos_agent[1]] not in self._pos_walls):
                 self._pos_agent[0]=self._pos_agent[0]-1
-            #else:
-            #    self.reward=-0.1
         elif(action==3):        
             if([self._pos_agent[0],self._pos_agent[1]-1] not in self._pos_walls):
                 self._pos_agent[1]=self._pos_agent[1]-1
-            #else:
-            #    self.reward=-0.1
         
         if (self._pos_agent in self._pos_rewards):
             self.reward = 1
@@ -152,11 +134,10 @@ class MyEnv(Environment):
 
 
     def summarizePerformance(self, test_data_set, learning_algo):
-        print "test_data_set.observations.shape"
-        print test_data_set.observations()[0][0:1]
+        print ("test_data_set.observations.shape")
+        print (test_data_set.observations()[0][0:1])
         
-        print "self._mode_score"
-        print self._mode_score
+        print ("self._mode_score:"+str(self._mode_score)+".")
         
 
     def inputDimensions(self):
@@ -248,15 +229,9 @@ if __name__ == "__main__":
         one_laby=env.observe()[0]
         
         # Hashing the labyrinths to be able to find duplicates in O(1)
-        #print str(one_laby)
-        #second_laby=copy.deepcopy(one_laby)
-        one_laby=int(hashlib.sha1(str(one_laby)).hexdigest(), 16) % (10 ** 8)
-        #print one_laby
-        #print int(hashlib.sha1(str(second_laby)).hexdigest(), 16) % (10 ** 8)
+        one_laby=int(hashlib.sha1(str(one_laby).encode('utf-8')).hexdigest(), 16) % (10 ** 8)
         
         # TESTING ADDING DUPLICATION
-        #if i%1000==0:
-        #    maps.append(one_laby)
         if i%1000==0:
             env.reset(0)
         if i%1000==500:
@@ -270,34 +245,23 @@ if __name__ == "__main__":
         one_laby=env.observe()[0]
         
         # Hashing the labyrinths to be able to find duplicates in O(1)
-        #print str(one_laby)
-        #second_laby=copy.deepcopy(one_laby)
-        one_laby=int(hashlib.sha1(str(one_laby)).hexdigest(), 16) % (10 ** 8)
-        #print one_laby
-        #print int(hashlib.sha1(str(second_laby)).hexdigest(), 16) % (10 ** 8)
+        one_laby=int(hashlib.sha1(str(one_laby).encode('utf-8')).hexdigest(), 16) % (10 ** 8)
         
         # TESTING ADDING DUPLICATION
         #if i%1000==0:
         #    maps.append(one_laby)
+
         # TESTING WITH RESETS
         if i%1000==0:
             env.reset(0)
         if i%1000==500:
             env.reset(1)
 
-        #print maps,one_laby
-        #print maps.count(one_laby)
         duplicate=min(maps.count(one_laby),1)
-        #duplicate=0
-        #for a in maps:
-        #    if(a==one_laby):
-        #        duplicate=1
-        #        break
         duplicate_laby+=duplicate
         
         if i%1000==0:
-            print "duplicate_laby"
-            print duplicate_laby
+            print ("Number of duplicate labyrinths:"+str(duplicate_laby)+".")
     
     
     

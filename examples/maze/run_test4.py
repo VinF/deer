@@ -11,7 +11,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_keras_lp import MyQNetwork
+from deer.learning_algos.CRAR_keras import CRAR
 from test_env4 import MyEnv as test_env
 import deer.experiment.base_controllers as bc
 
@@ -44,7 +44,7 @@ class Defaults:
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = 1.0
     EPSILON_DECAY = 10000
@@ -73,13 +73,13 @@ if __name__ == "__main__":
     # --- Instantiate environment ---
     env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS)
     
-    # --- Instantiate qnetwork ---
-    qnetwork = MyQNetwork(
+    # --- Instantiate learning_algo ---
+    learning_algo = CRAR(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
@@ -88,13 +88,13 @@ if __name__ == "__main__":
         high_int_dim=HIGH_INT_DIM,
         internal_dim=3)
     
-    train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
-    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.1)
+    train_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 1.)
+    test_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 0.1)
 
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
-        qnetwork,
+        learning_algo,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
@@ -142,8 +142,8 @@ if __name__ == "__main__":
         reset_every='none'))
 
     agent.run(1, N_SAMPLES)
-    print agent._dataset._rewards._data[0:500]
-    print agent._dataset._terminals._data[0:500]
+    #print (agent._dataset._rewards._data[0:500])
+    #print (agent._dataset._terminals._data[0:500])
     print("end gathering data")
     old_rewards=agent._dataset._rewards._data
     old_terminals=agent._dataset._terminals._data
@@ -226,12 +226,12 @@ if __name__ == "__main__":
     ###
     # TRANSFER
     ###
-    optimized_params=qnetwork.getAllParams()
-    print "optimized_params"
-    print optimized_params
+    optimized_params=learning_algo.getAllParams()
+    print ("optimized_params")
+    print (optimized_params)
 
-    # --- Instantiate qnetwork ---
-#    qnetwork = MyQNetwork(
+    # --- Instantiate learning_algo ---
+#    learning_algo = CRAR(
 #        env,
 #        parameters.rms_decay,
 #        parameters.rms_epsilon,
@@ -244,17 +244,17 @@ if __name__ == "__main__":
 #        double_Q=True,
 #        high_int_dim=HIGH_INT_DIM,
 #        internal_dim=3)
-#    qnetwork.setAllParams(optimized_params)
+#    learning_algo.setAllParams(optimized_params)
 
     rand_ind=np.random.random_integers(0,20000,samples_transfer)
     original=[np.array([[agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
     transfer=[np.array([[-agent._dataset._observations[o]._data[rand_ind[n]+l] for l in range(1)] for n in range(samples_transfer)]) for o in range(1)]
 
-    print "original[0][0:10], transfer[0][0:10]"
-    print original[0][0:10], transfer[0][0:10]
+    print ("original[0][0:10], transfer[0][0:10]")
+    print (original[0][0:10], transfer[0][0:10])
 
     # Transfer between the two repr
-    #qnetwork.transfer(original, transfer, 5000000/samples_transfer)
+    #learning_algo.transfer(original, transfer, 5000000/samples_transfer)
 
     
     # --- Re instantiate environment with reverse=True ---
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     # --- Re instantiate agent ---
     agent = NeuralAgent(
         env,
-        qnetwork,
+        learning_algo,
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
@@ -304,8 +304,8 @@ if __name__ == "__main__":
         reset_every='none'))
 
     agent.run(1, N_SAMPLES)
-    print agent._dataset._rewards._data[0:500]
-    print agent._dataset._terminals._data[0:500]
+    #print (agent._dataset._rewards._data[0:500])
+    #print (agent._dataset._terminals._data[0:500])
     print("end gathering data")
     # Setting the dataset to be the same than the old one (but modif for the observations)
     agent._dataset._rewards._data=old_rewards
