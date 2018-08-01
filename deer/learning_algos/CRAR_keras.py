@@ -1,5 +1,5 @@
 """
-Code for the CRAR agent using Keras
+Code for the CRAR learning algorithm using Keras
 
 """
 
@@ -322,15 +322,17 @@ class CRAR(LearningAlgo):
 
 
     def qValues(self, state_val):
-        """ Get the q values for one belief state (without planning)
+        """ Get the q values for one pseudo state (without planning)
 
         Arguments
         ---------
-        state_val : one pseudo state
+        state_val : array of objects (or list of objects)
+            Each object is a numpy array that relates to one of the observations
+            with size [1 * history size * size of punctual observation (which is 2D,1D or scalar)]).
 
         Returns
         -------
-        The q values for the provided belief state
+        The q values for the provided pseudo state
         """ 
         copy_state=copy.deepcopy(state_val) #Required!
 
@@ -343,7 +345,7 @@ class CRAR(LearningAlgo):
         ---------
         state_val : array of objects (or list of objects)
             Each object is a numpy array that relates to one of the observations
-            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+            with size [1 * history size * size of punctual observation (which is 2D,1D or scalar)]).
         R : R_model
         gamma : discount_model
         T : transition_model
