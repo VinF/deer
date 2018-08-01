@@ -136,28 +136,6 @@ if __name__ == "__main__":
 
     agent.run(10, 100)  #(5, 50)
     print("end gathering data")
-    #print "agent.DataSet.self._terminals"
-    #print "agent._dataset.terminals()"
-    #print agent._dataset.terminals()
-    #print agent._dataset._terminals._data[0:2000]
-    #print agent._dataset._actions._data[0:2000]
-#    r=agent._dataset._rewards._data[0:2000]
-#    print "r before"
-#    print r
-#    #print agent._dataset._observations[0]._data[0:10]
-#    ind=np.argwhere(r>0)
-#    print "agent._dataset._observations[0]._data[ind[0]]"
-#    print agent._dataset._observations[0]._data[ind[0]]
-#    print ind
-#    agent._dataset._rewards._data=np.delete(agent._dataset._rewards._data,ind)
-#    agent._dataset._terminals._data=np.delete(agent._dataset._terminals._data,ind)
-#    agent._dataset._actions._data=np.delete(agent._dataset._actions._data,ind)
-#    agent._dataset._observations[0]._data=np.delete(agent._dataset._observations[0]._data,ind,axis=0)
-#    r=agent._dataset._rewards._data[0:2000]
-#    print "r after"
-#    print r
-#    print "agent._dataset._observations[0]._data[ind[0]] after"
-#    print agent._dataset._observations[0]._data[ind[0]]
 
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman

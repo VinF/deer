@@ -203,20 +203,20 @@ class CRAR(LearningAlgo):
         R=self.R.predict([Es,onehot_actions])
                    
         if(self.update_counter%500==0):
-            print states_val[0][0]
-            print "len(states_val)"
-            print len(states_val)
-            print "next_states_val[0][0]"
-            print next_states_val[0][0]
-            print "actions_val[0], rewards_val[0], terminals_val[0]"
-            print actions_val[0], rewards_val[0], terminals_val[0]
-            print "Es[0],ETs[0],Es_[0]"
+            print ("Printing a few elements useful for debugging:")
+            print ("states_val[0][0]")
+            print (states_val[0][0])
+            print ("next_states_val[0][0]")
+            print (next_states_val[0][0])
+            print ("actions_val[0], rewards_val[0], terminals_val[0]")
+            print (actions_val[0], rewards_val[0], terminals_val[0])
+            print ("Es[0],ETs[0],Es_[0]")
             if(Es.ndim==4):
-                print np.transpose(Es, (0, 3, 1, 2))[0],np.transpose(ETs, (0, 3, 1, 2))[0],np.transpose(Es_, (0, 3, 1, 2))[0]    # data_format='channels_last' --> 'channels_first'
+                print (np.transpose(Es, (0, 3, 1, 2))[0],np.transpose(ETs, (0, 3, 1, 2))[0],np.transpose(Es_, (0, 3, 1, 2))[0])    # data_format='channels_last' --> 'channels_first'
             else:
-                print Es[0],ETs[0],Es_[0]
-            print "R[0]"
-            print R[0]
+                print (Es[0],ETs[0],Es_[0])
+            print ("R[0]")
+            print (R[0])
             
         # Fit transition
         l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es))
@@ -270,14 +270,12 @@ class CRAR(LearningAlgo):
 
         
         if(self.update_counter%500==0):
-            print "self.loss_Q"
-            print self.loss_Q
-            print "self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100."
-            print self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.
+            print ("self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.")
+            print (self.loss_T/100.,self.lossR/100.,self.loss_gamma/100.,self.loss_Q/100.,self.loss_disentangle_t/100.,self.loss_disentangle_a/100.,self.loss_disambiguate1/100.,self.loss_disambiguate2/100.)
             
             if(self._high_int_dim==False):
-                print "self.loss_interpret/100."
-                print self.loss_interpret/100.
+                print ("self.loss_interpret/100.")
+                print (self.loss_interpret/100.)
 
             self.lossR=0
             self.loss_gamma=0
@@ -291,10 +289,6 @@ class CRAR(LearningAlgo):
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
             
-            print "self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,self.learn_and_plan.internal_dim)))"
-            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
-            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
-
 
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
@@ -366,11 +360,11 @@ class CRAR(LearningAlgo):
         -------
         The q values with planning depth d for the provided belief state
         """
-        print "self.full_Q.predict(state_val)[0]"
-        print self.full_Q.predict(state_val)[0]
         encoded_x = self.encoder.predict(state_val)
 
 #        ## DEBUG PURPOSES
+#        print ( "self.full_Q.predict(state_val)[0]" )
+#        print ( self.full_Q.predict(state_val)[0] )
 #        identity_matrix = np.diag(np.ones(self._n_actions))
 #        if(encoded_x.ndim==2):
 #            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1))
@@ -403,13 +397,13 @@ class CRAR(LearningAlgo):
         QD_plan=0
         for i in range(d+1):
             Qd=self.qValues_planning_abstr(encoded_x, R, gamma, T, Q, d=i, branching_factor=[self._n_actions,2,2,2,2,2,2,2]).reshape(len(encoded_x),-1)
-            print "Qd,i"
-            print Qd,i
+            print ("Qd,i")
+            print (Qd,i)
             QD_plan+=Qd
         QD_plan=QD_plan/(d+1)
         
-        print "QD_plan"
-        print QD_plan
+        print ("QD_plan")
+        print (QD_plan)
 
         return QD_plan
   
@@ -580,14 +574,14 @@ class CRAR(LearningAlgo):
         
         # Then, train the encoder such that the original and transfer states are mapped into the same abstract representation
         x_original=self.encoder.predict(original)#[0]
-        print "x_original[0:10]"
-        print x_original[0:10]
+        print ("x_original[0:10]")
+        print (x_original[0:10])
         for i in range(epochs):
             size = original[0].shape[0]
-            print "train"
-            print self.encoder.train_on_batch(transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] )
-            print "validation"
-            print self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):])
+            print ( "train" )
+            print ( self.encoder.train_on_batch(transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] ) )
+            print ( "validation" )
+            print ( self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):]) )
          
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)

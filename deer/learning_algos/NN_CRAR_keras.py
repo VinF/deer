@@ -180,7 +180,7 @@ class NN():
                     input = Input(shape=(dim[-3],))
                     inputs.append(input)
         
-        half = len(inputs)/2
+        half = len(inputs)//2
         x1 = encoder_model(inputs[:half])
         x2 = encoder_model(inputs[half:])
         
@@ -269,7 +269,7 @@ class NN():
                     input = Input(shape=(dim[-3],))
                     inputs.append(input)
 
-        half = len(inputs)/2
+        half = len(inputs)//2
         enc_x = encoder_model(inputs[:half]) #s --> x
         enc_x_ = encoder_model(inputs[half:]) #s --> x
 
@@ -362,7 +362,7 @@ class NN():
 #                    input = Input(shape=(dim[-3],))
 #                    inputs.append(input)
 #        
-#        half = len(inputs)/2
+#        half = len(inputs)//2
 #        enc_x = encoder_model(inputs[:half]) #s --> x #FIXME
 #        enc_x_ = encoder_model(inputs[half:]) #s --> x
 #        
@@ -614,7 +614,6 @@ class NN():
         disc_rewards=[]
         for d in range(plan_depth):
             inputs.append(Input(shape=(self._n_actions,)))
-            print inputs[-1:]
             reward=R_model([out]+inputs[-1:])
             if(disc_plan == None):
                 disc_rewards.append(reward)

@@ -23,7 +23,6 @@ class MyEnv(Environment):
         self._mode_score = 0.0
         self._mode_episode_count = 0
 
-        self._actions = [0,1]
         self._height=10#15
         self._width=10 #preferably an odd number so that it's symmetrical
         self._width_paddle=1
@@ -62,8 +61,15 @@ class MyEnv(Environment):
         
         
     def act(self, action):
-        action = self._actions[action]
-        
+        """Applies the agent action [action] on the environment.
+
+        Parameters
+        -----------
+        action : int
+            The action selected by the agent to operate on the environment. Should be an identifier 
+            included between 0 included and nActions() excluded.
+        """
+
         if(action==0):        
             self.x = max(self.x-1,0)
         if(action==1):        
@@ -82,8 +88,8 @@ class MyEnv(Environment):
         return self.reward
 
     def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
-        #print "test_data_set.observations.shape"
-        #print test_data_set.observations()[0][0:1]
+        """ Plot of the low-dimensional representation of the environment built by the model
+        """
         
         all_possib_inp=[]
         for x_b in range(self._nx_block):#[1]:#range(self._nx_block):
@@ -93,44 +99,15 @@ class MyEnv(Environment):
                     all_possib_inp.append(state)
 
         all_possib_inp=np.expand_dims(all_possib_inp,axis=1)
-        print "all_possib_inp"
-        print all_possib_inp[0]
-        print all_possib_inp[self._height*(self._width-self._width_paddle+1)-1]
-        print all_possib_inp[self._height*(self._width-self._width_paddle+1)]
-        print all_possib_inp[2*self._height*(self._width-self._width_paddle+1)-1]
-        #print all_possib_inp[2*self._height*(self._width-self._width_paddle+1)]
-        #print all_possib_inp[3*self._height*(self._width-self._width_paddle+1)-1]
-        print "all_possib_inp.shape"
-        print all_possib_inp.shape
-        #print all_possib_inp[self._height*self._width]
-        #print "all_possib_inp[2*self._height*self._width]"
-        #print all_possib_inp[2*self._height*self._width]
-        #print all_possib_inp[2*self._height*self._width-1]
         all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp)
-        print "learning_algo.encoder.predict(all_possib_inp)"
-        print all_possib_abs_states
         
-        #print "print test_data_set.observations()"
-        #print test_data_set.observations()
         n=self._height-1
         historics=[]
         for i,observ in enumerate(test_data_set.observations()[0][0:n]):
             historics.append(np.expand_dims(observ,axis=0))
         historics=np.array(historics)
-        print "historics"
-        print historics
         abs_states=learning_algo.encoder.predict(historics)
-        print "abs_states"
-        print abs_states
         actions=test_data_set.actions()[0:n]
-        print "actions"
-        print actions
-
-        print actions
-        print "test_data_set.rewards()[0:n]"
-        print test_data_set.rewards()[0:n]
-        print "test_data_set.terminals()[0:n]"
-        print test_data_set.terminals()[0:n]
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / (self._mode_episode_count+0.0001), self._mode_episode_count))
@@ -145,10 +122,6 @@ class MyEnv(Environment):
         y = np.array(abs_states)[:,1]
         z = np.array(abs_states)[:,2]
         
-        #Colors
-        #onehot_actions = np.zeros((n, 4))
-        #onehot_actions[np.arange(n), actions] = 1
-        
         fig = plt.figure()
         ax = fig.add_subplot(111,projection='3d')
         ax.set_xlabel(r'$X_1$')
@@ -157,7 +130,7 @@ class MyEnv(Environment):
 
         for j in range(3):
             # Plot the trajectory
-            for i in xrange(30):#(n-1):
+            for i in range(30):#(n-1):
                 ax.plot(x[j*24+i:j*24+i+2], y[j*24+i:j*24+i+2], z[j*24+i:j*24+i+2], color=plt.cm.cool(255*i/n), alpha=0.5)
 
         # Plot the estimated transitions
@@ -165,16 +138,7 @@ class MyEnv(Environment):
             predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0]])])
             predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1]])])
             ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), np.concatenate([z[i:i+1],predicted1[0,2:3]]), color="0.75", alpha=0.75)
-            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.75)
-
-#        for xx in np.arange(self._width)-self._width//2:
-#            for yy in np.arange(self._width)-self._width//2:
-#                for zz in np.arange(self._width)-self._width//2:
-#                    predicted1=learning_algo.transition.predict([np.array([[xx,yy,zz]]),np.array([[1,0]])])
-#                    predicted2=learning_algo.transition.predict([np.array([[xx,yy,zz]]),np.array([[0,1]])])
-#                    ax.plot(np.concatenate([np.array([xx]),predicted1[0,:1]]), np.concatenate([np.array([yy]),predicted1[0,1:2]]), np.concatenate([np.array([zz]),predicted1[0,2:]]), color="1", alpha=0.5)
-#                    ax.plot(np.concatenate([np.array([xx]),predicted2[0,:1]]), np.concatenate([np.array([yy]),predicted2[0,1:2]]), np.concatenate([np.array([zz]),predicted2[0,2:]]), color="0.5", alpha=0.5)
-        
+            ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), np.concatenate([z[i:i+1],predicted2[0,2:3]]), color="0.25", alpha=0.75)        
 
         # Plot the colorbar for the trajectory
         fig.subplots_adjust(right=0.7)
@@ -259,10 +223,6 @@ class MyEnv(Environment):
 
         # Plot the Q_vals
         c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
-        #print "actions,C"
-        #print actions
-        #print c
-        #c=np.max(c,axis=1)
         m1=ax.scatter(x, y, z+zrange/20, c=c[:,0], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
         m2=ax.scatter(x, y, z+3*zrange/40, c=c[:,1], vmin=-1., vmax=1., cmap=plt.cm.RdYlGn)
         
@@ -280,7 +240,7 @@ class MyEnv(Environment):
         cb1.set_label('Estimated expected return')
 
         plt.show()
-        for ii in xrange(-15,345,30):
+        for ii in range(-15,345,30):
             ax.view_init(elev=20., azim=ii)
             plt.savefig('fig_w_V_div5_'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
@@ -295,11 +255,8 @@ class MyEnv(Environment):
 
         c = learning_algo.Q.predict(np.concatenate((np.expand_dims(x,axis=1),np.expand_dims(y,axis=1),np.expand_dims(z,axis=1)),axis=1))
         c=np.max(c,axis=1)
-        #print "c"
-        #print c
         
         m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
-        #plt.colorbar(m)
         fig.subplots_adjust(right=0.8)
         ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
         cmap = matplotlib.cm.hot
@@ -332,13 +289,8 @@ class MyEnv(Environment):
 
         c = learning_algo.R.predict([repeat_nactions_coord,tile_identity_matrix])
         c=np.max(np.reshape(c,(125,self.nActions())),axis=1)
-        #print "c"
-        #print c
-        #mini=np.min(c)
-        #maxi=np.max(c)
         
         m=ax.scatter(x, y, z, c=c, vmin=-1., vmax=1., cmap=plt.hot())
-        #plt.colorbar(m)
         fig.subplots_adjust(right=0.8)
         ax2 = fig.add_axes([0.875, 0.15, 0.025, 0.7])
         cmap = matplotlib.cm.hot
@@ -368,7 +320,7 @@ class MyEnv(Environment):
         return np.float32
 
     def nActions(self):
-        return len(self._actions)
+        return 2
 
     def observe(self):
         obs=self.get_observation(self.y,self._x_block,self.x)
