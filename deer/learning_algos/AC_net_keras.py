@@ -30,9 +30,9 @@ class MyACNetwork(ACNetwork):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Default : 0
-    clip_delta : float
-        Not implemented.
+        Momentum for SGD. Default : 0
+    clip_norm : float
+        The gradient tensor will be clipped to a maximum L2 norm given by this value.
     freeze_interval : int
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
@@ -51,7 +51,7 @@ class MyACNetwork(ACNetwork):
         default is deer.learning_algos.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network_critic=NN, neural_network_actor=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network_critic=NN, neural_network_actor=NN):
         """ Initialize environment
         
         """
@@ -60,6 +60,7 @@ class MyACNetwork(ACNetwork):
         self._rho = rho
         self._rms_epsilon = rms_epsilon
         self._momentum = momentum
+        self._clip_norm = clip_norm
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
@@ -74,9 +75,9 @@ class MyACNetwork(ACNetwork):
         self.q_vals, self.params, self.inputsQ = Q_net._buildDQN()
         
         if (update_rule=="sgd"):
-            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False)
+            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
         elif (update_rule=="rmsprop"):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
+            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
         else:
             raise Exception('The update_rule '+update_rule+ 'is not implemented.')
         
@@ -104,6 +105,12 @@ class MyACNetwork(ACNetwork):
 
 
     def getAllParams(self):
+        """ Get all parameters used by the learning algorithm
+
+        Returns
+        -------
+        Values of the parameters: list of numpy arrays
+        """
         params_value=[]
         for i,p in enumerate(self.params):
             params_value.append(K.get_value(p))
@@ -113,6 +120,13 @@ class MyACNetwork(ACNetwork):
         return params_value
 
     def setAllParams(self, list_of_values):
+        """ Set all parameters used by the learning algorithm
+
+        Arguments
+        ---------
+        list_of_values : list of numpy arrays
+             list of the parameters to be set (same order than given by getAllParams()).
+        """
         for i,p in enumerate(self.params):
             K.set_value(p,list_of_values[i])
         for j,p in enumerate(self.params_policy):
@@ -120,10 +134,7 @@ class MyACNetwork(ACNetwork):
 
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
-        Train one batch.
-
-        1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
-        2. perform batch training
+        Train the actor-critic algorithm from one batch of data.
 
         Parameters
         -----------

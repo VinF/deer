@@ -426,37 +426,6 @@ class NN():
         
         return model
 
-    def diff_Tx(self,transition_model):
-        """
-    
-        Parameters
-        -----------
-        x
-        a
-        x
-        a
-    
-        Returns
-        -------
-        model with output Tx (= model estimate of x')
-    
-        """
-        inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ), Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) )] #x,a,x,a
-        
-        #identity_mat=inputs[2]#K.constant(np.diag(np.ones(self._n_actions)), name="identity_mat")
-        Tx = transition_model(inputs[:2])
-        Tx2 = transition_model(inputs[2:])
-        
-        #tile_x=K.tile(inputs[0],(self._n_actions,1))        
-        #Tx_ = transition_model([tile_x]+[identity_mat])
-        
-        x = Subtract()([Tx,Tx2])
-        x = Dot(axes=-1, normalize=False)([x,x])
-        
-        model = Model(inputs=inputs, outputs=x )
-        
-        return model
-
     def R_model(self):
         """
         Build a network consistent with each type of inputs

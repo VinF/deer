@@ -43,7 +43,7 @@ class Defaults:
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = 1.0
     EPSILON_DECAY = 10000
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,

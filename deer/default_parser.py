@@ -50,9 +50,9 @@ def process_args(args, defaults):
     parser.add_argument('--momentum', type=float, default=defaults.MOMENTUM,
                         help=('Momentum term for Nesterov momentum. '+
                               '(default: %(default)s)'))
-    parser.add_argument('--clip-delta', dest="clip_delta", type=float,
-                        default=defaults.CLIP_DELTA,
-                        help=('Max absolute value for Q-update delta value. ' +
+    parser.add_argument('--clip-norm', dest="clip_norm", type=float,
+                        default=defaults.CLIP_NORM,
+                        help=('Max L2 norm for the gradient. ' +
                               '(default: %(default)s)'))
     parser.add_argument('--discount', type=float, default=defaults.DISCOUNT,
                         help='Discount rate init')

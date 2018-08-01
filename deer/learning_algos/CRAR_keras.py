@@ -16,6 +16,8 @@ sess = tf.Session(config=config)
 import copy
 
 def mean_squared_error_p(y_true, y_pred):
+    """ Modified mean square error that clips
+    """
     return K.clip(K.max(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)     # = modified mse error L_inf
     #return K.clip(K.mean(  K.square( y_pred - y_true )  ,  axis=-1  )-1,0.,100.)   # = modified mse error L_2
 
@@ -41,9 +43,9 @@ class CRAR(LearningAlgo):
     rms_epsilon : float
         Parameter for rmsprop. Default : 0.0001
     momentum : float
-        Default : 0
-    clip_delta : float
-        Not implemented.
+        Momentum for SGD. Default : 0
+    clip_norm : float
+        The gradient tensor will be clipped to a maximum L2 norm given by this value.
     freeze_interval : int
         Period during which the target network is freezed and after which the target network is updated. Default : 1000
     batch_size : int
@@ -58,8 +60,8 @@ class CRAR(LearningAlgo):
         default is deer.learning_algos.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_delta=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN, **kwargs):
-        """ Initialize environment
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN, **kwargs):
+        """ Initialize the environment
         
         """
         LearningAlgo.__init__(self,environment, batch_size)
@@ -67,6 +69,7 @@ class CRAR(LearningAlgo):
         self._rho = rho
         self._rms_epsilon = rms_epsilon
         self._momentum = momentum
+        self._clip_norm = clip_norm
         self._update_rule = update_rule
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
@@ -84,7 +87,6 @@ class CRAR(LearningAlgo):
         self.loss_disambiguate1=0
         self.loss_disambiguate2=0
         self.loss_gamma=0
-
         
         self.learn_and_plan = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim, internal_dim=self._internal_dim)
 
@@ -113,11 +115,7 @@ class CRAR(LearningAlgo):
                 
         # constraint on consecutive t
         self.diff_s_s_ = self.learn_and_plan.encoder_diff_model(self.encoder)
-#        self.diff_Tx = self.learn_and_plan.diff_Tx(self.transition)
 
-        # used to disentangle actions
-        self.diff_sa_sa = self.learn_and_plan.diff_sa_sa(self.encoder,self.transition)
-                
         layers=self.encoder.layers+self.Q.layers+self.R.layers+self.gamma.layers+self.transition.layers
         # Grab all the parameters together.
         self.params = [ param
@@ -146,6 +144,10 @@ class CRAR(LearningAlgo):
 
     def getAllParams(self):
         """ Provides all parameters used by the learning algorithm
+
+        Returns
+        -------
+        Values of the parameters: list of numpy arrays
         """
         params_value=[]
         for i,p in enumerate(self.params):
@@ -153,15 +155,19 @@ class CRAR(LearningAlgo):
         return params_value
 
     def setAllParams(self, list_of_values):
+        """ Set all parameters used by the learning algorithm
+
+        Arguments
+        ---------
+        list_of_values : list of numpy arrays
+             list of the parameters to be set (same order than given by getAllParams()).
+        """
         for i,p in enumerate(self.params):
             K.set_value(p,list_of_values[i])
 
     def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
         """
-        Train one batch.
-
-        1. Set shared variable in states_shared, next_states_shared, actions_shared, rewards_shared, terminals_shared         
-        2. perform batch training
+        Train CRAR from one batch of data.
 
         Parameters
         -----------
@@ -180,8 +186,8 @@ class CRAR(LearningAlgo):
 
         Returns
         -------
-        Average loss of the batch training (RMSE)
-        Individual (square) losses for each tuple
+        Average loss of the batch training for the Q-values (RMSE)
+        Individual (square) losses for the Q-values for each tuple
         """
         
         onehot_actions = np.zeros((self._batch_size, self._n_actions))
@@ -213,11 +219,7 @@ class CRAR(LearningAlgo):
             print R[0]
             
         # Fit transition
-        #print "states_val+next_states_val+[onehot_actions]+[(1-terminals_val)]"
-        #print states_val+next_states_val+[onehot_actions]+[(1-terminals_val)]
-        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim))
-        #print "l"
-        #print l
+        l=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es))
         self.loss_T+=l
         
         # Interpretable AI
@@ -250,41 +252,20 @@ class CRAR(LearningAlgo):
 
         # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
         # reduce the squared value of the abstract features
-        #print "states_val[0][0:2]"
-        #print states_val[0][0:2]
-        #print "self.encoder.predict(states_val)"
-        #print self.encoder.predict(states_val)
-        l=self.encoder.train_on_batch(states_val,np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
-        #print l
-        self.loss_disambiguate1+=l
+        self.loss_disambiguate1+=self.encoder.train_on_batch(states_val,np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
         
         # Increase the entropy in the abstract features of two states
         # This is done only when states_val is made up of only one observation --> FIXME
         rolled=np.roll(states_val[0],1,axis=0)
-#        for i in range(self._batch_size):
-#            j=0
-#            l=0
-#            while((states_val[0][i]==rolled[i+j-l]).all()):
-#                if(i+j==31):
-#                    l=self._batch_size
-#                if(j==31):
-#                    break
-#                j=j+1
-#            rolled[i]=rolled[i+j-l]
-        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
+        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
 
-
-        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))#np.ones(self._batch_size)) #np.ones((self._batch_size,3))*2) 
-
-        # Disentangle actions
-        self.loss_disentangle_a+=self.diff_sa_sa.train_on_batch(states_val+[onehot_actions,onehot_actions_rand], np.reshape(np.zeros_like(Es),(self._batch_size,-1)))#np.ones(self._batch_size))
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
 
 #
 #        # Loss to have all s' following s,a with a to a distance 1 of s,a)
 #        tiled_x=np.tile(Es,(self._n_actions,1))
 #        tiled_onehot_actions=np.tile(onehot_actions,(self._n_actions,1))
 #        tiled_onehot_actions2=np.repeat(np.diag(np.ones(self._n_actions)),self._batch_size,axis=0)
-#        #self.loss_disentangle_a+=self.diff_Tx.train_on_batch([tiled_x,tiled_onehot_actions,tiled_x,tiled_onehot_actions2], np.ones(self._batch_size*self._n_actions)) 
 
 
         
@@ -310,13 +291,9 @@ class CRAR(LearningAlgo):
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
             
-            #print "self.encoder.train_on_batch([states_val[0]],np.zeros((32,self.learn_and_plan.internal_dim)))"
-            #print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
-            #print self.encoder.train_on_batch([states_val[0]],np.zeros_like(Es)) #np.zeros((32,self.learn_and_plan.internal_dim)))
-
             print "self.encoder_diff.train_on_batch([states_val[0],np.roll(states_val[0],1,axis=0)],np.zeros((32,self.learn_and_plan.internal_dim)))"
-            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((32,self.learn_and_plan.internal_dim)))
-            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1))) #np.zeros((32,self.learn_and_plan.internal_dim)))
+            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
+            print self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
 
 
         if self.update_counter % self._freeze_interval == 0:
@@ -325,7 +302,6 @@ class CRAR(LearningAlgo):
         next_q_vals = self.full_Q_target.predict(next_states_val)
         
         if(self._double_Q==True):
-            #next_q_vals_current_qnet=self.full_Q.predict(next_states_val+[np.zeros_like(Es)])
             next_q_vals_current_qnet=self.full_Q.predict(next_states_val)
             argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
             max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
@@ -349,20 +325,16 @@ class CRAR(LearningAlgo):
         # Only some elements of next_q_vals are actual value that I target. 
         # My loss should only take these into account.
         # Workaround here is that many values are already "exact" in this update
-        #if (self.update_counter<10000):
-        noise_to_be_robust=np.zeros_like(Es) #np.random.normal(size=(self._batch_size,self.learn_and_plan.internal_dim))*0.#25
 
         loss=0
-        #loss=self.full_Q.train_on_batch([states_val[0],noise_to_be_robust] , q_vals ) 
         loss=self.full_Q.train_on_batch(states_val , q_vals ) 
         self.loss_Q+=loss
 
         if(self.update_counter%100==0):
-            print self.update_counter
+            print ("Number of training steps:"+str(self.update_counter)+".")
         
         self.update_counter += 1        
 
-        # loss*self._n_actions = np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
 
@@ -371,7 +343,7 @@ class CRAR(LearningAlgo):
 
         Arguments
         ---------
-        state_val : one belief state
+        state_val : one pseudo state
 
         Returns
         -------
@@ -387,58 +359,49 @@ class CRAR(LearningAlgo):
 
         Arguments
         ---------
-        state_val : one belief state
+        state_val : one pseudo state
         d : planning depth
 
         Returns
         -------
         The q values with planning depth d for the provided belief state
         """
-        #print "state_val[0]"
-        #print state_val[0]
-        #print len(state_val)
-#        print "state_val[0][0]"
-#        print state_val[0][0]
-#        print state_val[0].shape
         print "self.full_Q.predict(state_val)[0]"
         print self.full_Q.predict(state_val)[0]
         encoded_x = self.encoder.predict(state_val)
-        ## DEBUG PURPOSES
-#        print "encoded_x[0]"
-#        print encoded_x[0]
-        
-        identity_matrix = np.diag(np.ones(self._n_actions))
-        if(encoded_x.ndim==2):
-            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1))
-        elif(encoded_x.ndim==4):
-            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1,1,1))
-        else:
-            print ("error")
-        
-        repeat_identity=np.repeat(identity_matrix,len(encoded_x),axis=0)
-        ##print tile3_encoded_x
-        ##print repeat_identity
-        r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity]))
-        #print "r_vals_d0"
-        #print r_vals_d0
-        r_vals_d0=r_vals_d0.flatten()
-        print "r_vals_d0"
-        print r_vals_d0
-        next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
-        #print "next_x_predicted"
-        #print next_x_predicted
-        one_hot_first_action=np.zeros((1,self._n_actions))
-        one_hot_first_action[0]=1
-        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
-        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
-        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
-        #print "next_x_predicted action 0 t4"
-        #print next_x_predicted
-        ## END DEBUG PURPOSES
+
+#        ## DEBUG PURPOSES
+#        identity_matrix = np.diag(np.ones(self._n_actions))
+#        if(encoded_x.ndim==2):
+#            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1))
+#        elif(encoded_x.ndim==4):
+#            tile3_encoded_x=np.tile(encoded_x,(self._n_actions,1,1,1))
+#        else:
+#            print ("error")
+#        
+#        repeat_identity=np.repeat(identity_matrix,len(encoded_x),axis=0)
+#        ##print tile3_encoded_x
+#        ##print repeat_identity
+#        r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity]))
+#        #print "r_vals_d0"
+#        #print r_vals_d0
+#        r_vals_d0=r_vals_d0.flatten()
+#        print "r_vals_d0"
+#        print r_vals_d0
+#        next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
+#        #print "next_x_predicted"
+#        #print next_x_predicted
+#        one_hot_first_action=np.zeros((1,self._n_actions))
+#        one_hot_first_action[0]=1
+#        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
+#        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
+#        next_x_predicted=T.predict([next_x_predicted[0:1],one_hot_first_action])
+#        #print "next_x_predicted action 0 t4"
+#        #print next_x_predicted
+#        ## END DEBUG PURPOSES
 
         QD_plan=0
-        for i in range(d+1): #TO DO: improve planning algorithm
-            #print encoded_x
+        for i in range(d+1):
             Qd=self.qValues_planning_abstr(encoded_x, R, gamma, T, Q, d=i, branching_factor=[self._n_actions,2,2,2,2,2,2,2]).reshape(len(encoded_x),-1)
             print "Qd,i"
             print Qd,i
@@ -449,43 +412,6 @@ class CRAR(LearningAlgo):
         print QD_plan
 
         return QD_plan
-
-#    def qValues_planning_abstr(self, state_abstr_val, R, gamma, T, Q, d, branching_factor=None):
-#        """ 
-#        """
-#        branching_factor=self._n_actions #TO IMPROVE, use MCTS, etc...
-#        n=len(state_abstr_val)
-#        identity_matrix = np.diag(np.ones(self._n_actions))
-#        
-#        this_branching_factor=branching_factor
-#                         
-#        if (d==0):
-#            return Q.predict([state_abstr_val]) # no change in the order of the actions
-#        else:
-#            # All actions are considered in the tree
-#            repeat_identity=np.repeat(identity_matrix,len(state_abstr_val),axis=0) # no change in the order of the actions
-#            if(state_abstr_val.ndim==2):
-#                tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1))
-#            elif(state_abstr_val.ndim==4):
-#                tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1,1,1))
-#            else:
-#                print ("error")
-#            
-#            #print tile3_encoded_x
-#            #print repeat_identity
-#            r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity]))
-#            #print "r_vals_d0"
-#            #print r_vals_d0
-#            r_vals_d0=r_vals_d0.flatten()
-#            
-#            gamma_vals_d0=np.array(gamma.predict([tile3_encoded_x,repeat_identity]))
-#            #print "r_vals_d0"
-#            #print r_vals_d0
-#            gamma_vals_vals_d0=gamma_vals_d0.flatten()
-#
-#            next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
-#            return r_vals_d0+gamma_vals_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor),axis=1).flatten()
-  
   
     def qValues_planning_abstr(self, state_abstr_val, R, gamma, T, Q, d, branching_factor=None):
         """ 
@@ -575,49 +501,46 @@ class CRAR(LearningAlgo):
         return np.argmax(q_vals),np.max(q_vals)
         
     def _compile(self):
-        """ compile self.q_vals
+        """ Compile all the optimizers for the different losses
         """
         if (self._update_rule=="sgd"):
-            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False)
+            optimizer=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer1=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # Different optimizers for each network; 
+            optimizer3=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # to possibly modify them separately
+            optimizer4=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer5=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer6=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer7=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
         elif (self._update_rule=="rmsprop"):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon)
+            optimizer=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer1=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # Different optimizers for each network; 
+            optimizer3=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # to possibly modify them separately
+            optimizer4=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer5=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer6=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer7=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+
         else:
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
         self.full_Q.compile(optimizer=optimizer, loss='mse')
 
-        optimizer1=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # Different optimizers for each network; otherwise not possible to modify each
-        optimizer3=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06) # separately (e.g. lr)
-        optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
-        optimizer5=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
-        optimizer6=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
-        optimizer7=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
-        optimizer8=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
 
         self.diff_Tx_x_.compile(optimizer=optimizer1, loss='mse') # Fit transitions
         self.full_R.compile(optimizer=optimizer3, loss='mse') # Fit rewards
         self.full_gamma.compile(optimizer=optimizer3, loss='mse') # Fit discount
 
         if(self._high_int_dim==False):
-            self.force_features.compile(optimizer=optimizer8,
+            self.force_features.compile(optimizer=optimizer7,
                   loss=cosine_proximity2)
 
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)
         self.encoder_diff.compile(optimizer=optimizer5,
                   loss=exp_dec_error)
-                  #metrics=['accuracy'])
 
         self.diff_s_s_.compile(optimizer=optimizer6,
-                  loss=exp_dec_error)#'mse')#loss_diff_s_s_)
-                  #metrics=['accuracy'])
-
-        self.diff_sa_sa.compile(optimizer=optimizer7,
-                  loss=exp_dec_error)#loss_diff_s_s_)
-
-#        self.diff_Tx.compile(optimizer=optimizer,
-#                  loss=mean_squared_error)
-#                  #metrics=['accuracy'])
+                  loss=exp_dec_error)
 
     def _resetQHat(self):
         for i,(param,next_param) in enumerate(zip(self.params, self.params_target)):
@@ -632,7 +555,7 @@ class CRAR(LearningAlgo):
             The learning rate that has to be set
         """
         self._lr = lr
-        print "modif lr"
+        print ("New learning rate set to "+str(self._lr)+".")
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
         K.set_value(self.full_Q.optimizer.lr, self._lr)
 
@@ -647,8 +570,6 @@ class CRAR(LearningAlgo):
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
         K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
-        K.set_value(self.diff_sa_sa.optimizer.lr, 0) # 0 !
-#        K.set_value(self.diff_Tx.optimizer.lr, self._lr/10.)
 
     def transfer(self, original, transfer, epochs=1):
         # First, make sure that the target network and the current network are the same
@@ -663,14 +584,10 @@ class CRAR(LearningAlgo):
         print x_original[0:10]
         for i in range(epochs):
             size = original[0].shape[0]
-            #print size
-            #print transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)]
             print "train"
             print self.encoder.train_on_batch(transfer[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] )
-            #print self.encoder.train_on_batch(original[0][0:int(size*0.8)] , x_original[0:int(size*0.8)] )
             print "validation"
             print self.encoder.test_on_batch(transfer[0][int(size*0.8):] , x_original[int(size*0.8):])
-            #print self.encoder.test_on_batch(original[0][int(size*0.8):] , x_original[int(size*0.8):] )
          
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)
