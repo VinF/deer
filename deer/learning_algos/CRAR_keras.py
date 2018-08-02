@@ -408,7 +408,8 @@ class CRAR(LearningAlgo):
         return QD_plan
   
     def qValues_planning_abstr(self, state_abstr_val, R, gamma, T, Q, d, branching_factor=None):
-        """ Get the q values for one pseudo-state with a planning depth d
+        """ Get the q values for pseudo-state(s) with a planning depth d. 
+        This function is called recursively by decreasing the depth d at every step.
 
         Arguments
         ---------
@@ -432,7 +433,8 @@ class CRAR(LearningAlgo):
         
         this_branching_factor=branching_factor.pop(0)
         if (n==1):
-            # We require that the first branching factor is self._n_actions so that QD_plan has the right dimension
+            # We require that the first branching factor is self._n_actions so that this function return values 
+            # with the right dimension (=self._n_actions). 
             this_branching_factor=self._n_actions
                          
         if (d==0):
@@ -443,6 +445,8 @@ class CRAR(LearningAlgo):
         else:
             if(this_branching_factor==self._n_actions):
                 # All actions are considered in the tree
+                # NB: For this case, we do not use argpartition because we want to keep the actions in the natural order
+                # That way, this function returns the Q-values for all actions with planning depth d in the right order
                 repeat_identity=np.repeat(identity_matrix,len(state_abstr_val),axis=0)
                 if(state_abstr_val.ndim==2):
                     tile3_encoded_x=np.tile(state_abstr_val,(self._n_actions,1))
@@ -451,30 +455,13 @@ class CRAR(LearningAlgo):
                 else:
                     print ("error")
             else:
-                # A subset of the actions are considered in the tree
+                # A subset of the actions are considered
                 estim_Q_values=Q.predict([state_abstr_val])
-                #print estim_Q_values
                 ind = np.argpartition(estim_Q_values, -this_branching_factor)[:,-this_branching_factor:]
-                #print ind
-                #print identity_matrix[ind]
-                #repeat_identity=np.repeat(identity_matrix[ind],len(state_abstr_val),axis=0)
                 repeat_identity=identity_matrix[ind].reshape(n*this_branching_factor,self._n_actions)
-                #print repeat_identity
-                #if(state_abstr_val.ndim==2):
-                #    tile3_encoded_x=np.tile(state_abstr_val,(this_branching_factor,1))
-                #elif(state_abstr_val.ndim==4):
-                #    tile3_encoded_x=np.tile(state_abstr_val,(this_branching_factor,1,1,1))
-                #else:
-                #    print ("error")
                 tile3_encoded_x=np.repeat(state_abstr_val,this_branching_factor,axis=0)
-                #print "tile3_encoded_x"
-                #print tile3_encoded_x
             
-            #print tile3_encoded_x
-            #print repeat_identity
             r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity]))
-            #print "r_vals_d0"
-            #print r_vals_d0
             r_vals_d0=r_vals_d0.flatten()
             
             gamma_vals_d0=np.array(gamma.predict([tile3_encoded_x,repeat_identity]))
@@ -484,11 +471,12 @@ class CRAR(LearningAlgo):
             return r_vals_d0+gamma_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor[0]),axis=1).flatten()
 
     def chooseBestAction(self, state, mode, *args, **kwargs):
-        """ Get the best action for a belief state
+        """ Get the best action for a pseudo-state
 
         Arguments
         ---------
-        state : one belief state
+        state : one pseudo-state
+        mode : identifier of the mode (-1 is reserved for the training mode)
 
         Returns
         -------
