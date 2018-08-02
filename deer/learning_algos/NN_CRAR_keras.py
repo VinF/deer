@@ -21,17 +21,15 @@ class NN():
     input_dimensions :
     n_actions :
     random_state : numpy random number generator
-    action_as_input : Boolean
-        Whether the action is given as input or as output
     high_int_dim : Boolean
-        Whether the abstract state should be high dimensional in the form of frames/vectors or whether it should be low-dimensional
+        Whether the abstract state should be high dimensional in the form of frames/vectors or whether it should 
+        be low-dimensional
     """
-    def __init__(self, batch_size, input_dimensions, n_actions, random_state, action_as_input=False, **kwargs):
+    def __init__(self, batch_size, input_dimensions, n_actions, random_state, **kwargs):
         self._input_dimensions=input_dimensions
         self._batch_size=batch_size
         self._random_state=random_state
         self._n_actions=n_actions
-        self._action_as_input=action_as_input
         self._high_int_dim=kwargs["high_int_dim"]
         if(self._high_int_dim==True):
             self.n_channels_internal_dim=kwargs["internal_dim"] #dim[-3]
@@ -40,15 +38,20 @@ class NN():
                                                         #3 for catcher
 
     def encoder_model(self):
-        """
-    
+        """ Instantiate a Keras model for the encoder of the CRAR learning algorithm.
+        
+        The model takes the following as input 
+        s : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        
         Parameters
         -----------
-        s
+        
     
         Returns
         -------
-        model with output x (= encoding of s)
+        Keras model with output x (= encoding of s)
     
         """
         layers=[]
@@ -63,22 +66,13 @@ class NN():
                 x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
                 if(dim[-2]>8 and dim[-1]>8):
                     self._pooling_encoder=6
-                    #x = Conv2D(4, (3, 3), padding='same', activation='tanh')(x)
-                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    #x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
                     x = Conv2D(8, (2, 2), padding='same', activation='tanh')(x)
                     x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
                     x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                     x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
                     x = MaxPooling2D(pool_size=(3, 3), strides=None, padding='same')(x)
-                    #x = Conv2D(4, (2, 2), padding='same', activation='tanh')(x)
-                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
-                    #x = Conv2D(16, (4, 4), padding='same', activation='tanh')(x)
-                    #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
                 else:
                     self._pooling_encoder=1
-                    #x = Conv2D(8, (1, 1), padding='same', activation='tanh')(x)
-                    #x = MaxPooling2D(pool_size=(self._pooling_encoder, self._pooling_encoder), strides=None, padding='same')(x)
                     
                 if(self._high_int_dim==True):
                     x = Conv2D(self.n_channels_internal_dim, (1, 1), padding='same')(x)
@@ -126,6 +120,9 @@ class NN():
                     
             outs_conv.append(out)
         
+        if(self._high_int_dim==True):
+            model = Model(inputs=inputs, outputs=outs_conv)
+
         if(self._high_int_dim==False):
             if len(outs_conv)>1:
                 x = merge(outs_conv, mode='concat')
@@ -140,20 +137,28 @@ class NN():
         
             x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
         
-        model = Model(inputs=inputs, outputs=x)
+            model = Model(inputs=inputs, outputs=x)
         
         return model
 
     def encoder_diff_model(self,encoder_model):
-        """
-    
+        """ Instantiate a Keras model that provides the difference between two encoded pseudo-states
+        
+        The model takes the two following inputs:
+        s1 : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        s2 : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        
         Parameters
         -----------
-        s
+        encoder_model: instantiation of a Keras model for the encoder
     
         Returns
         -------
-        model with output x (= encoding of s)
+        model with output the difference between the encoding of s1 and the encoding of s2
     
         """
         inputs=[]
@@ -185,16 +190,19 @@ class NN():
         return model
 
     def transition_model(self):
-        """
+        """  Instantiate a Keras model for the transition between two encoded pseudo-states.
     
+        The model takes as inputs:
+        x : internal state
+        a : int
+            the action considered
+        
         Parameters
         -----------
-        x
-        a
     
         Returns
         -------
-        model with output Tx (= model estimate of x')
+        model that outputs the transition of (x,a)
     
         """
         if(self._high_int_dim==True):
@@ -202,29 +210,28 @@ class NN():
             inputs = [ Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)), Input( shape=(self._n_actions,) ) ]     # data_format='channels_last'
             
             layers_action=inputs[1]
-            layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)#K.repeat_elements(layers_action,rep=dim[-2]*dim[-1],axis=1)
+            layers_action=RepeatVector(-(-dim[-2] // self._pooling_encoder)*-(-dim[-1] // self._pooling_encoder))(layers_action)
             layers_action=Reshape((self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)
             layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
             
-            x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x) # Try to keep locality as much as possible --> FIXME
+            x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x)
             x = Conv2D(32, (2, 2), padding='same', activation='tanh')(x)
             x = Conv2D(64, (3, 3), padding='same', activation='tanh')(x)
             x = Conv2D(32, (2, 2), padding='same', activation='tanh')(x)
             x = Conv2D(16, (1, 1), padding='same', activation='tanh')(x)
-            #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
             x = Conv2D(self.n_channels_internal_dim, (1, 1), padding='same')(x)
             x = Add()([inputs[0],x])
         else:
             inputs = [ Input( shape=(self.internal_dim,) ), Input( shape=(self._n_actions,) ) ]     # x
 
-            x = Concatenate()(inputs)#,axis=-1)
-            x = Dense(10, activation='tanh')(x) #5,15
-            x = Dense(30, activation='tanh')(x) # ,30
-            x = Dense(30, activation='tanh')(x) # ,30
-            x = Dense(10, activation='tanh')(x) # ,30
-            x = Dense(self.internal_dim)(x)#, activity_regularizer=regularizers.l2(0.00001))(x) #, activation='relu'
+            x = Concatenate()(inputs)
+            x = Dense(10, activation='tanh')(x)
+            x = Dense(30, activation='tanh')(x)
+            x = Dense(30, activation='tanh')(x)
+            x = Dense(10, activation='tanh')(x)
+            x = Dense(self.internal_dim)(x)
             x = Add()([inputs[0],x])
         
         model = Model(inputs=inputs, outputs=x)
@@ -232,14 +239,28 @@ class NN():
         return model
 
     def diff_Tx_x_(self,encoder_model,transition_model,plan_depth=0):
-        """
-        Used to fit the transitions
+        """ For plan_depth=0, instantiate a Keras model that provides the difference between T(E(s1),a) and E(s2).
+        Note that it gives 0 if the transition leading to s2 is terminal (we don't need to fit the transition if 
+        it is terminal).
+        
+        For plan_depth=0, the model takes the four following inputs:
+        s1 : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        s2 : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        a : list of ints with length (plan_depth+1)
+            the action(s) considered at s1
+        terminal : boolean
+            Whether the transition leading to s2 is terminal
         
         Parameters
         -----------
-        s
-        a
-        s'
+        encoder_model: instantiation of a Keras model for the encoder (E)
+        transition_model: instantiation of a Keras model for the transition (T)
+        plan_depth: if>1, it provides the possibility to consider a sequence of transitions between s1 and s2 
+        (input a is then a list of actions)
     
         Returns
         -------
@@ -281,18 +302,26 @@ class NN():
         return model
 
     def force_features(self,encoder_model,transition_model,plan_depth=0):
-        """
-        Used to force some transitions'directions
+        """ Instantiate a Keras model that provides the vector of the transition at E(s1). It is calculated as the different between E(s1) and E(T(s1)). 
+        Used to force the directions of the transitions.
+        
+        The model takes the four following inputs:
+        s1 : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        a : list of ints with length (plan_depth+1)
+            the action(s) considered at s1
         
         Parameters
         -----------
-        s
-        a
-        s'
-    
+        encoder_model: instantiation of a Keras model for the encoder (E)
+        transition_model: instantiation of a Keras model for the transition (T)
+        plan_depth: if>1, it provides the possibility to consider a sequence of transitions between s1 and s2 
+        (input a is then a list of actions)
+            
         Returns
         -------
-        model with output Tx (= model estimate of x')
+        model with output E(s1)-T(E(s1))
     
         """
         inputs=[]
@@ -322,18 +351,21 @@ class NN():
         
         return model
 
-    def R_model(self):
-        """
-        Build a network consistent with each type of inputs
-
+    def float_model(self):
+        """ Instantiate a Keras model for fitting a float from x.
+                
+        The model takes the following inputs:
+        x : internal state
+        a : int
+            the action considered at x
+        
         Parameters
         -----------
-        x
-        a
-    
+            
         Returns
         -------
-        r
+        model that outputs a float
+    
         """
         
         if(self._high_int_dim==True):
@@ -351,7 +383,6 @@ class NN():
             x = Conv2D(32, (3, 3), padding='same', activation='tanh')(x)
             x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
             x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
-            #x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='same')(x)
             x = Conv2D(4, (1, 1), padding='same', activation='tanh')(x)
 
             # we stack a deep fully-connected network on top
@@ -371,18 +402,27 @@ class NN():
         
         return model
 
-    def full_R_model(self,encoder_model,R_model,plan_depth=0,transition_model=None):
-        """
-        Maps internal state to immediate rewards
-
+    def full_float_model(self,encoder_model,float_model,plan_depth=0,transition_model=None):
+        """ Instantiate a Keras model for fitting a float from s.
+                
+        The model takes the four following inputs:
+        s : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        a : list of ints with length (plan_depth+1)
+            the action(s) considered at s
+                
         Parameters
         -----------
-        s
-        a
-    
+        encoder_model: instantiation of a Keras model for the encoder (E)
+        float_model: instantiation of a Keras model for fitting a float from x
+        plan_depth: if>1, it provides the possibility to consider a sequence of transitions following s 
+        (input a is then a list of actions)
+        transition_model: instantiation of a Keras model for the transition (T)
+            
         Returns
         -------
-        r
+        model with output the reward r
         """
         
         inputs=[]
@@ -410,13 +450,25 @@ class NN():
         input = Input(shape=(self._n_actions,))
         inputs.append(input)
         
-        out = R_model([Tx]+inputs[-1:])
+        out = float_model([Tx]+inputs[-1:])
 
         model = Model(inputs=inputs, outputs=out)
         
         return model
 
     def Q_model(self):
+        """ Instantiate a  a Keras model for the Q-network from x.
+
+        The model takes the following inputs:
+        x : internal state
+
+        Parameters
+        -----------
+            
+        Returns
+        -------
+        model that outputs the Q-values for each action
+        """
         if(self._high_int_dim==True):
             inputs=[]
             outs_conv=[]
@@ -425,7 +477,6 @@ class NN():
                 if len(dim) == 3 or len(dim) == 4:
                     input = Input(shape=(-(-dim[-2] // self._pooling_encoder),-(-dim[-1] // self._pooling_encoder),self.n_channels_internal_dim)) #data_format is already 'channels_last'
                     inputs.append(input)
-                    #reshaped=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)
                     x = input     #data_format is already 'channels_last'
             
                     x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
@@ -438,14 +489,6 @@ class NN():
                     print ("FIXME")
                         
                 outs_conv.append(out)
-            
-            if (self._action_as_input==True):
-                if ( isinstance(self._n_actions,int)):
-                    print("Error, env.nActions() must be a continuous set when using actions as inputs in the NN")
-                else:
-                    input = Input(shape=(len(self._n_actions),))
-                    inputs.append(input)
-                    outs_conv.append(input)
             
             if len(outs_conv)>1:
                 x = merge(outs_conv, mode='concat')
@@ -463,13 +506,7 @@ class NN():
         x = Dense(50, activation='tanh')(x)
         x = Dense(20, activation='tanh')(x)
         
-        #if (self._action_as_input==False):
-        #    if ( isinstance(self._n_actions,int)):
         out = Dense(self._n_actions)(x)
-        #    else:
-        #        out = Dense(len(self._n_actions))(x)
-        #else:
-        #    out = Dense(1)(x)
                 
         model = Model(inputs=inputs, outputs=out)
         
@@ -477,17 +514,28 @@ class NN():
 
 
     def full_Q_model(self, encoder_model, Q_model, plan_depth=0, transition_model=None, R_model=None, discount_model=None):
-        """
-        Build a network consistent with each type of inputs
+        """ Instantiate a  a Keras model for the Q-network from s.
 
+        The model takes the following inputs:
+        s : list of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        a : list of ints with length plan_depth; if plan_depth=0, there isn't any input for a.
+            the action(s) considered at s
+    
         Parameters
         -----------
-        s
-        noise in abstract state space
-    
+        encoder_model: instantiation of a Keras model for the encoder (E)
+        Q_model: instantiation of a Keras model for the Q-network from x.
+        plan_depth: if>1, it provides the possibility to consider a sequence of transitions following s 
+        (input a is then a list of actions)
+        transition_model: instantiation of a Keras model for the transition (T)
+        R_model: instantiation of a Keras model for the reward
+        discount_model: instantiation of a Keras model for the discount
+            
         Returns
         -------
-        model with output Tx (= model estimate of x')
+        model with output the Q-values
         """
         inputs=[]
         
@@ -522,15 +570,6 @@ class NN():
                 disc_plan=Multiply()([disc_plan,discount]) #disc_model([out]+inputs[-1:])
 
             out=transition_model([out]+inputs[-1:])
-
-        #if(self._high_int_dim==True):
-        #    input = Input(shape=(dim[-2],dim[-1],dim[-3]))
-        #    inputs.append(input)
-        #else:
-        #    input = Input(shape=(self.internal_dim,))
-        #    inputs.append(input)
-        #
-        #x=Add()([out,inputs[-1]]) # adding noise in the abstract state space
         
         if(plan_depth==0):
             Q_estim=Q_model(out)

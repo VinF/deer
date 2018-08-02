@@ -25,6 +25,9 @@ def exp_dec_error(y_true, y_pred):
     return K.exp( - 5.*K.sqrt( K.clip(K.sum(K.square(y_pred), axis=-1, keepdims=True),0.000001,10) )  ) # tend to increase y_pred
 
 def cosine_proximity2(y_true, y_pred):
+    """ This loss is similar to the native cosine_proximity loss from Keras
+    but it differs by the fact that only the two first components of the two vectors are used
+    """
     y_true = K.l2_normalize(y_true[:,0:2], axis=-1)
     y_pred = K.l2_normalize(y_pred[:,0:2], axis=-1)
     return -K.sum(y_true * y_pred, axis=-1)
@@ -91,18 +94,18 @@ class CRAR(LearningAlgo):
         self.encoder = self.learn_and_plan.encoder_model()
         self.encoder_diff = self.learn_and_plan.encoder_diff_model(self.encoder)
         
-        self.R = self.learn_and_plan.R_model()
+        self.R = self.learn_and_plan.float_model()
         self.Q = self.learn_and_plan.Q_model()
-        self.gamma = self.learn_and_plan.R_model()
+        self.gamma = self.learn_and_plan.float_model()
         self.transition = self.learn_and_plan.transition_model()
 
         self.full_Q=self.learn_and_plan.full_Q_model(self.encoder,self.Q,0,self._df)
         
         # used to fit rewards
-        self.full_R = self.learn_and_plan.full_R_model(self.encoder,self.R)
+        self.full_R = self.learn_and_plan.full_float_model(self.encoder,self.R)
         
         # used to fit gamma
-        self.full_gamma = self.learn_and_plan.full_R_model(self.encoder,self.gamma)
+        self.full_gamma = self.learn_and_plan.full_float_model(self.encoder,self.gamma)
         
         # used to fit transitions
         self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)
@@ -125,8 +128,8 @@ class CRAR(LearningAlgo):
         self.learn_and_plan_target = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim, internal_dim=self._internal_dim)
         self.encoder_target = self.learn_and_plan_target.encoder_model()
         self.Q_target = self.learn_and_plan_target.Q_model()
-        self.R_target = self.learn_and_plan_target.R_model()
-        self.gamma_target = self.learn_and_plan_target.R_model()
+        self.R_target = self.learn_and_plan_target.float_model()
+        self.gamma_target = self.learn_and_plan_target.float_model()
         self.transition_target = self.learn_and_plan_target.transition_model()
 
         self.full_Q_target = self.learn_and_plan_target.full_Q_model(self.encoder,self.Q) # FIXME
@@ -322,7 +325,7 @@ class CRAR(LearningAlgo):
 
 
     def qValues(self, state_val):
-        """ Get the q values for one pseudo state (without planning)
+        """ Get the q values for one pseudo-state (without planning)
 
         Arguments
         ---------
@@ -339,15 +342,15 @@ class CRAR(LearningAlgo):
         return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state])[0]
 
     def qValues_planning(self, state_val, R, gamma, T, Q, d=5):
-        """ Get the q values for one belief state with a planning depth d
-
+        """ Get the average Q-values up to planning depth d for one pseudo-state.
+        
         Arguments
         ---------
         state_val : array of objects (or list of objects)
             Each object is a numpy array that relates to one of the observations
             with size [1 * history size * size of punctual observation (which is 2D,1D or scalar)]).
-        R : R_model
-        gamma : discount_model
+        R : float_model for the reward
+        gamma : float_model for the discount
         T : transition_model
         Q : Q_model
         d : int
@@ -355,7 +358,7 @@ class CRAR(LearningAlgo):
 
         Returns
         -------
-        The q values with planning depth d for the provided belief state
+        The average q values with planning depth up to d for the provided pseudo-state
         """
         encoded_x = self.encoder.predict(state_val)
 
@@ -405,22 +408,32 @@ class CRAR(LearningAlgo):
         return QD_plan
   
     def qValues_planning_abstr(self, state_abstr_val, R, gamma, T, Q, d, branching_factor=None):
-        """ 
+        """ Get the q values for one pseudo-state with a planning depth d
+
+        Arguments
+        ---------
+        state_abstr_val : internal state(s).
+        R : float_model for the reward
+        gamma : float_model for the discount
+        T : transition_model
+        Q : Q_model
+        d : int
+            planning depth
+
+        Returns
+        -------
+        The Q-values with planning depth d for the provided encoded state(s)
         """
         #if(branching_factor==None or branching_factor>self._n_actions):
         #    branching_factor=self._n_actions
         
-        #print "qValues_planning_abstr d"
-        #print d
         n=len(state_abstr_val)
-        identity_matrix = np.diag(np.ones(self._n_actions))
+        identity_matrix = np.identity(self._n_actions)
         
         this_branching_factor=branching_factor.pop(0)
         if (n==1):
             # We require that the first branching factor is self._n_actions so that QD_plan has the right dimension
             this_branching_factor=self._n_actions
-        #else:
-        #    this_branching_factor=branching_factor
                          
         if (d==0):
             if(this_branching_factor<self._n_actions):
