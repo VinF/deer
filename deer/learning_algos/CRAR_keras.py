@@ -110,21 +110,23 @@ class CRAR(LearningAlgo):
         # used to fit transitions
         self.diff_Tx_x_ = self.learn_and_plan.diff_Tx_x_(self.encoder,self.transition)
         
+        # constraint on consecutive t
+        self.diff_s_s_ = self.learn_and_plan.encoder_diff_model(self.encoder)
+
         # used to force features variations
         if(self._high_int_dim==False):
             self.force_features=self.learn_and_plan.force_features(self.encoder,self.transition)
                 
-        # constraint on consecutive t
-        self.diff_s_s_ = self.learn_and_plan.encoder_diff_model(self.encoder)
-
+        # Grab all the parameters in self.params
         layers=self.encoder.layers+self.Q.layers+self.R.layers+self.gamma.layers+self.transition.layers
-        # Grab all the parameters together.
         self.params = [ param
                     for layer in layers 
                     for param in layer.trainable_weights ]
 
+        # Compile all models
         self._compile()
 
+        # Instantiate the same neural network as a target network.
         self.learn_and_plan_target = neural_network(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, high_int_dim=self._high_int_dim, internal_dim=self._internal_dim)
         self.encoder_target = self.learn_and_plan_target.encoder_model()
         self.Q_target = self.learn_and_plan_target.Q_model()
@@ -135,8 +137,8 @@ class CRAR(LearningAlgo):
         self.full_Q_target = self.learn_and_plan_target.full_Q_model(self.encoder,self.Q) # FIXME
         self.full_Q_target.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.full_Q
 
+        # Grab all the parameters of the target network together.
         layers=self.encoder_target.layers+self.Q_target.layers+self.R_target.layers+self.gamma_target.layers+self.transition_target.layers
-        # Grab all the parameters together.
         self.params_target = [ param
                     for layer in layers 
                     for param in layer.trainable_weights ]
@@ -222,6 +224,23 @@ class CRAR(LearningAlgo):
         # Fit transition
         self.loss_T+=self.diff_Tx_x_.train_on_batch(states_val+next_states_val+[onehot_actions]+[(1-terminals_val)], np.zeros_like(Es))
         
+        # Fit rewards
+        self.lossR+=self.full_R.train_on_batch(states_val+[onehot_actions], rewards_val)
+
+        # Fit gammas
+        self.loss_gamma+=self.full_gamma.train_on_batch(states_val+[onehot_actions], (1-terminals_val[:])*self._df)
+
+        # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
+        # reduce the squared value of the abstract features
+        self.loss_disambiguate1+=self.encoder.train_on_batch(states_val,np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
+
+        # Increase the entropy in the abstract features of two states
+        # This works only when states_val is made up of only one observation --> FIXME
+        rolled=np.roll(states_val[0],1,axis=0)
+        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
+
+        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
+
         # Interpretable AI
         if(self._high_int_dim==False):
             target_modif_features=np.zeros((self._n_actions,self._internal_dim))
@@ -244,23 +263,6 @@ class CRAR(LearningAlgo):
             self.loss_interpret+=self.force_features.train_on_batch(states_val_tiled+[onehot_actions_tiled], target_modif_features)
 
     
-        # Fit rewards
-        self.lossR+=self.full_R.train_on_batch(states_val+[onehot_actions], rewards_val) 
-
-        # Fit gammas
-        self.loss_gamma+=self.full_gamma.train_on_batch(states_val+[onehot_actions], (1-terminals_val[:])*self._df)
-
-        # Loss to ensure entropy but limited volume in abstract state space, avg=0 and sigma=1
-        # reduce the squared value of the abstract features
-        self.loss_disambiguate1+=self.encoder.train_on_batch(states_val,np.zeros_like(Es)) #np.zeros((self._batch_size,self.learn_and_plan.internal_dim)))
-        
-        # Increase the entropy in the abstract features of two states
-        # This is done only when states_val is made up of only one observation --> FIXME
-        rolled=np.roll(states_val[0],1,axis=0)
-        self.loss_disambiguate2+=self.encoder_diff.train_on_batch([states_val[0],rolled],np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
-
-        self.loss_disentangle_t+=self.diff_s_s_.train_on_batch(states_val+next_states_val, np.reshape(np.zeros_like(Es),(self._batch_size,-1)))
-
 
         
         if(self.update_counter%500==0):
@@ -522,10 +524,6 @@ class CRAR(LearningAlgo):
         self.full_R.compile(optimizer=optimizer3, loss='mse') # Fit rewards
         self.full_gamma.compile(optimizer=optimizer3, loss='mse') # Fit discount
 
-        if(self._high_int_dim==False):
-            self.force_features.compile(optimizer=optimizer7,
-                  loss=cosine_proximity2)
-
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)
         self.encoder_diff.compile(optimizer=optimizer5,
@@ -533,6 +531,10 @@ class CRAR(LearningAlgo):
 
         self.diff_s_s_.compile(optimizer=optimizer6,
                   loss=exp_dec_error)
+
+        if(self._high_int_dim==False):
+            self.force_features.compile(optimizer=optimizer7,
+                  loss=cosine_proximity2)
 
     def _resetQHat(self):
         """ Set the target Q-network weights equal to the main Q-network weights
