@@ -55,9 +55,9 @@ class Environment(object):
     def inputDimensions(self):
         """Gets the shape of the input space for this environment.
         
-        This returns a list whose length is the number of observations in the environment. Each element of the 
-        list is a tuple: the first integer is always the history size considered for this observation and the rest describes 
-        the shape of the observation at a given time step:
+        This returns a list whose length is the number of observations in the environment. Each element of the list is a tuple: 
+        the first integer is always the history size considered for this observation and the rest describes the shape of the 
+        observation at a given time step. For instance:
         - () or (1,) means each observation at a given time step is a single scalar and the history size is 1 (= only current 
         observation)
         - (N,) means each observation at a given time step is a single scalar and the history size is N
@@ -92,14 +92,12 @@ class Environment(object):
         return False
 
     def observe(self):
-        """Gets a list of punctual observations on all subjects composing this environment.
+        """Gets a list of punctual observations composing this environment.
         
-        This returns a list where element i is a punctual observation on subject i. You will notice that the history 
-        of observations on this subject is not returned; only the very last observation. Each element is thus either 
-        a number, vector or matrix and not a succession of numbers, vectors and matrices.
+        This returns a list where element i is a punctual observation. Note that the history  of observations is not 
+        returned and only the current observation is.
 
-        See the documentation of batchDimensions() for more information about the shape of the observations according 
-        to their mathematical representation (number, vector or matrix).
+        See the documentation of inputDimensions() for more information about the shape of the observations.
         """
 
         raise NotImplementedError()
