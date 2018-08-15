@@ -9,14 +9,12 @@ import cv2
 import gym
 from deer.base_classes import Environment
 
-import matplotlib
-matplotlib.use('qt5agg')
-from mpl_toolkits.axes_grid1 import host_subplot
-import mpl_toolkits.axisartist as AA
-import matplotlib.pyplot as plt
-from PIL import Image
-
-import gym
+#import matplotlib
+#matplotlib.use('qt5agg')
+#from mpl_toolkits.axes_grid1 import host_subplot
+#import mpl_toolkits.axisartist as AA
+#import matplotlib.pyplot as plt
+#from PIL import Image
     
 class MyEnv(Environment):
     VALIDATION_MODE = 0
@@ -67,14 +65,14 @@ class MyEnv(Environment):
         self._reduced_screen = cv2.resize(self._screen, (84, 84), interpolation=cv2.INTER_LINEAR) 
         self.state=np.zeros((84,84), dtype=np.uint8) #FIXME
         
-        return [4 * [84 * [84 * [0]]]]
+        return [1*[4 * [84 * [84 * [0]]]]]
         
         
     def act(self, action):
         #print "action"
         #print action
         
-        self.state=np.zeros((84,84), dtype=np.uint8)
+        self.state=np.zeros((4,84,84), dtype=np.float)
         reward=0
         for t in range(4):
             observation, r, self.terminal, info = self.env.step(action)
@@ -84,23 +82,23 @@ class MyEnv(Environment):
             if self.inTerminalState():
                 break
 
-        self._screen=np.average(observation,axis=-1) # Gray levels
-        self._reduced_screen = cv2.resize(self._screen, (84, 84), interpolation=cv2.INTER_NEAREST)  # 84*84
-        #plt.imshow(self._screen, cmap='gray')
-        #plt.show()
-        self.state=self._reduced_screen
+            self._screen=np.average(observation,axis=-1) # Gray levels
+            self._reduced_screen = cv2.resize(self._screen, (84, 84), interpolation=cv2.INTER_NEAREST)  # 84*84
+            #plt.imshow(self._screen, cmap='gray')
+            #plt.show()
+            self.state[t,:,:]=self._reduced_screen
             
         self._mode_score += reward
         return np.sign(reward)
 
-    def summarizePerformance(self, test_data_set, learning_algo):
+    def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))
 
 
     def inputDimensions(self):
-        return [(4, 84, 84)] #FIXME
+        return [(1, 4, 84, 84)]
 
     def observationType(self, subject):
         return np.float #np.uint8
