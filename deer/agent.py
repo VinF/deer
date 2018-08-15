@@ -338,22 +338,16 @@ class NeuralAgent(object):
         
     def _step(self):
         """
-        This method is called at each time step. If the agent is currently in testing mode, and if its *test* replay 
-        memory has enough samples, it will select the best action it can. If there are not enough samples, FIXME.
-        In the case the agent is not in testing mode, if its replay memory has enough samples, it will select the best 
-        action it can with probability 1-CurrentEpsilon and a random action otherwise. If there are not enough samples, 
-        it will always select a random action.
-        Parameters
-        -----------
-        state : ndarray
-            An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
-               input.historySize x "shape of a given ponctual observation for this input".
+        This method is called at each time step and performs one action in the environment.
+
         Returns
         -------
-        action : int
-            The id of the action selected by the agent.
         V : float
             Estimated value function of current state.
+        action : int
+            The id of the action selected by the agent.
+        reward : float
+            Reward obtained for the transition
         """
 
         action, V = self._chooseAction()
@@ -408,17 +402,18 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, random_state=None, max_size=1000, use_priority=False, only_full_history=True):
+    def __init__(self, env, random_state=None, max_size=1000000, use_priority=False, only_full_history=True):
         """Initializer.
         Parameters
         -----------
         inputDims : list of tuples
-            For each subject i, inputDims[i] is a tuple where the first value is the memory size for this
-            subject and the rest describes the shape of each single observation on this subject (number, vector or
-            matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
+            Each tuple relates to one of the observations where the first value is the history size considered for this
+            observation and the rest describes the shape of each punctual observation (e.g., scalar, vector or matrix). 
+            See base_classes.Environment.inputDimensions() documentation for more info.
         random_state : Numpy random number generator
             If None, a new one is created with default numpy seed.
-        max_size : The replay memory maximum size.
+        max_size : float
+            The replay memory maximum size. Default : 1000000
         """
 
         self._batch_dimensions = env.inputDimensions()
@@ -470,8 +465,6 @@ class DataSet(object):
 
     def observations(self):
         """Get all observations currently in the replay memory, ordered by time where they were observed.
-        
-        observations[s][i] corresponds to the observation made on subject s before the agent took actions()[i].
         """
 
         ret = np.zeros_like(self._observations)
@@ -730,11 +723,11 @@ class DataSet(object):
         return indices_replay_mem, indices_tree
 
     def addSample(self, obs, action, reward, is_terminal, priority):
-        """Store a (observation[for all subjects], action, reward, is_terminal) in the dataset. 
+        """Store the punctual observations, action, reward, is_terminal and priority in the dataset. 
         Parameters
         -----------
         obs : ndarray
-            An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the
+            An ndarray(dtype='object') where obs[s] corresponds to the punctual observation s before the
             agent took action [action].
         action :  int
             The action taken after having observed [obs].
