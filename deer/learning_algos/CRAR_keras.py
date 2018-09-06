@@ -60,7 +60,7 @@ class CRAR(LearningAlgo):
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
     neural_network : object, optional
-        default is deer.learning_algos.NN_keras
+        Default is deer.learning_algos.NN_keras
     """
 
     def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN, **kwargs):
@@ -119,6 +119,7 @@ class CRAR(LearningAlgo):
                 
         # Grab all the parameters in self.params
         layers=self.encoder.layers+self.Q.layers+self.R.layers+self.gamma.layers+self.transition.layers
+
         self.params = [ param
                     for layer in layers 
                     for param in layer.trainable_weights ]
@@ -134,13 +135,14 @@ class CRAR(LearningAlgo):
         self.gamma_target = self.learn_and_plan_target.float_model()
         self.transition_target = self.learn_and_plan_target.transition_model()
 
-        self.full_Q_target = self.learn_and_plan_target.full_Q_model(self.encoder,self.Q) # FIXME
+        self.full_Q_target = self.learn_and_plan_target.full_Q_model(self.encoder_target,self.Q_target)
         self.full_Q_target.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.full_Q
 
         # Grab all the parameters of the target network together.
-        layers=self.encoder_target.layers+self.Q_target.layers+self.R_target.layers+self.gamma_target.layers+self.transition_target.layers
+        layers_target=self.encoder_target.layers+self.Q_target.layers+self.R_target.layers+self.gamma_target.layers+self.transition_target.layers
+
         self.params_target = [ param
-                    for layer in layers 
+                    for layer in layers_target
                     for param in layer.trainable_weights ]
 
         self._resetQHat()
@@ -207,10 +209,10 @@ class CRAR(LearningAlgo):
                    
         if(self.update_counter%500==0):
             print ("Printing a few elements useful for debugging:")
-            print ("states_val[0][0]")
-            print (states_val[0][0])
-            print ("next_states_val[0][0]")
-            print (next_states_val[0][0])
+            #print ("states_val[0][0]")
+            #print (states_val[0][0])
+            #print ("next_states_val[0][0]")
+            #print (next_states_val[0][0])
             print ("actions_val[0], rewards_val[0], terminals_val[0]")
             print (actions_val[0], rewards_val[0], terminals_val[0])
             print ("Es[0],ETs[0],Es_[0]")
@@ -266,12 +268,12 @@ class CRAR(LearningAlgo):
 
         
         if(self.update_counter%500==0):
-            print ("self.loss_T/100., self.lossR/100., self.loss_gamma/100., self.loss_Q/100., self.loss_disentangle_t/100., self.loss_disambiguate1/100., self.loss_disambiguate2/100.")
-            print (self.loss_T/100., self.lossR/100.,self.loss_gamma/100., self.loss_Q/100., self.loss_disentangle_t/100., self.loss_disambiguate1/100., self.loss_disambiguate2/100.)
-            
+            print ("self.loss_T/500., self.lossR/500., self.loss_gamma/500., self.loss_Q/500., self.loss_disentangle_t/500., self.loss_disambiguate1/500., self.loss_disambiguate2/500.")
+            print (self.loss_T/500., self.lossR/500.,self.loss_gamma/500., self.loss_Q/500., self.loss_disentangle_t/500., self.loss_disambiguate1/500., self.loss_disambiguate2/500.)
+
             if(self._high_int_dim==False):
-                print ("self.loss_interpret/100.")
-                print (self.loss_interpret/100.)
+                print ("self.loss_interpret/500.")
+                print (self.loss_interpret/500.)
 
             self.lossR=0
             self.loss_gamma=0
@@ -282,7 +284,6 @@ class CRAR(LearningAlgo):
             self.loss_disentangle_t=0
             self.loss_disambiguate1=0
             self.loss_disambiguate2=0
-            
 
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
@@ -457,9 +458,11 @@ class CRAR(LearningAlgo):
                 else:
                     print ("error")
             else:
-                # A subset of the actions are considered
+                # A subset of the actions corresponding to the best estimated Q-values are considered et each branch 
                 estim_Q_values=Q.predict([state_abstr_val])
                 ind = np.argpartition(estim_Q_values, -this_branching_factor)[:,-this_branching_factor:]
+                # Replacing ind if we want random branching
+                #ind = np.random.randint(0,self._n_actions,size=ind.shape)
                 repeat_identity=identity_matrix[ind].reshape(n*this_branching_factor,self._n_actions)
                 tile3_encoded_x=np.repeat(state_abstr_val,this_branching_factor,axis=0)
             
@@ -565,7 +568,7 @@ class CRAR(LearningAlgo):
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
 
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1 for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1. for distrib of laby
 
     def transfer(self, original, transfer, epochs=1):
         # First, make sure that the target network and the current network are the same

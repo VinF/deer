@@ -6,9 +6,9 @@ CRAR Neural network using Keras
 import numpy as np
 from keras import backend as K
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge, RepeatVector, AveragePooling2D
+from keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, UpSampling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge, RepeatVector, AveragePooling2D
 from keras import regularizers
-np.random.seed(102912)
+#np.random.seed(111111)
 
 class NN():
     """
@@ -54,17 +54,22 @@ class NN():
         Keras model with output x (= encoding of s)
     
         """
-        layers=[]
         outs_conv=[]
         inputs=[]
 
         for i, dim in enumerate(self._input_dimensions):
             # - observation[i] is a FRAME
             if len(dim) == 3 or len(dim) == 4:
-                input = Input(shape=(dim[-3],dim[-2],dim[-1]))
-                inputs.append(input)
+                if(len(dim) == 4):
+                    input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
+                    input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+                else:
+                    input = Input(shape=(dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
                 x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
-                if(dim[-2]>8 and dim[-1]>8):
+
+                if(dim[-2]>12 and dim[-1]>12):
                     self._pooling_encoder=6
                     x = Conv2D(8, (2, 2), padding='same', activation='tanh')(x)
                     x = Conv2D(16, (2, 2), padding='same', activation='tanh')(x)
@@ -165,14 +170,16 @@ class NN():
         
         for j in range(2):
             for i, dim in enumerate(self._input_dimensions):
-                if len(dim) == 3 or len(dim) == 4:
+                if(len(dim) == 4):
+                    input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
+                    input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+                elif(len(dim) == 3):
                     input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
-            
                 elif len(dim) == 2:
                     input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
-            
                 else:
                     input = Input(shape=(dim[-3],))
                     inputs.append(input)
@@ -270,14 +277,16 @@ class NN():
         inputs=[]
         for j in range(2):
             for i, dim in enumerate(self._input_dimensions):
-                if len(dim) == 3 or len(dim) == 4:
+                if(len(dim) == 4):
+                    input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
+                    input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+                elif(len(dim) == 3):
                     input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
-            
                 elif len(dim) == 2:
                     input = Input(shape=(dim[-3],dim[-2]))
                     inputs.append(input)
-            
                 else:
                     input = Input(shape=(dim[-3],))
                     inputs.append(input)
@@ -326,14 +335,16 @@ class NN():
         """
         inputs=[]
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3 or len(dim) == 4:
+            if(len(dim) == 4):
+                input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                inputs.append(input)
+                input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+            elif(len(dim) == 3):
                 input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
-        
             elif len(dim) == 2:
                 input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
-        
             else:
                 input = Input(shape=(dim[-3],))
                 inputs.append(input)
@@ -428,14 +439,16 @@ class NN():
         inputs=[]
         
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3 or len(dim) == 4:
+            if(len(dim) == 4):
+                input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                inputs.append(input)
+                input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+            elif(len(dim) == 3):
                 input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
-
             elif len(dim) == 2:
                 input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
-
             else:
                 input = Input(shape=(dim[-3],))
                 inputs.append(input)
@@ -540,14 +553,16 @@ class NN():
         inputs=[]
         
         for i, dim in enumerate(self._input_dimensions):
-            if len(dim) == 3 or len(dim) == 4:
+            if(len(dim) == 4):
+                input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                inputs.append(input)
+                input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+            elif(len(dim) == 3):
                 input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                 inputs.append(input)
-
             elif len(dim) == 2:
                 input = Input(shape=(dim[-3],dim[-2]))
                 inputs.append(input)
-
             else:
                 input = Input(shape=(dim[-3],))
                 inputs.append(input)
