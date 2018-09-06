@@ -105,6 +105,7 @@ class MyEnv(Environment):
         """
 
         all_possib_inp=[] # Will store all possible inputs (=observation) for the CRAR agent
+        labels_maze=[]
         self.create_map()
         for y_a in range(self._size_maze):
             for x_a in range(self._size_maze):                
@@ -116,7 +117,23 @@ class MyEnv(Environment):
                     else:
                         state[x_a,y_a]=0.5
                         all_possib_inp.append(state)
-
+                    
+                    ## labels
+                    #if(y_a<self._size_maze//2):
+                    #    labels_maze.append(0.)
+                    #elif(y_a==self._size_maze//2):
+                    #    labels_maze.append(1.)
+                    #else:
+                    #    labels_maze.append(2.)
+        
+        #arr=np.array(all_possib_inp)
+        #if(self._higher_dim_obs==False):
+        #    arr=arr.reshape(arr.shape[0],-1)
+        #else:
+        #    arr=arr.reshape(arr.shape[0],-1)
+        #    
+        #np.savetxt('tsne_python/mazesH_X.txt',arr.reshape(arr.shape[0],-1))
+        #np.savetxt('tsne_python/mazesH_labels.txt',np.array(labels_maze))
         
         all_possib_inp=np.expand_dims(np.array(all_possib_inp,dtype='float'),axis=1)
 
@@ -124,7 +141,7 @@ class MyEnv(Environment):
         if(all_possib_abs_states.ndim==4):
             all_possib_abs_states=np.transpose(all_possib_abs_states, (0, 3, 1, 2))    # data_format='channels_last' --> 'channels_first'
         
-        n=500
+        n=1000
         historics=[]
         for i,observ in enumerate(test_data_set.observations()[0][0:n]):
             historics.append(np.expand_dims(observ,axis=0))
@@ -179,10 +196,11 @@ class MyEnv(Environment):
         # Plot the dots at each time step depending on the action taken
         length_block=[[0,18],[18,19],[19,31]]
         for i in range(3):
+            colors=['blue','orange','green']
             if(self.intern_dim==2):
-                line3 = ax.scatter(all_possib_abs_states[length_block[i][0]:length_block[i][1],0], all_possib_abs_states[length_block[i][0]:length_block[i][1],1], s=30, marker='x', edgecolors='k', alpha=0.5)
+                line3 = ax.scatter(all_possib_abs_states[length_block[i][0]:length_block[i][1],0], all_possib_abs_states[length_block[i][0]:length_block[i][1],1], c=colors[i], marker='x', edgecolors='k', alpha=0.5, s=100)
             else:
-                line3 = ax.scatter(all_possib_abs_states[length_block[i][0]:length_block[i][1],0], all_possib_abs_states[length_block[i][0]:length_block[i][1],1] ,all_possib_abs_states[length_block[i][0]:length_block[i][1],2], s=30, marker='x', depthshade=True, edgecolors='k', alpha=0.5)
+                line3 = ax.scatter(all_possib_abs_states[length_block[i][0]:length_block[i][1],0], all_possib_abs_states[length_block[i][0]:length_block[i][1],1] ,all_possib_abs_states[length_block[i][0]:length_block[i][1],2], marker='x', depthshade=True, edgecolors='k', alpha=0.5, s=50)
 
         if(self.intern_dim==2):
             axes_lims=[ax.get_xlim(),ax.get_ylim()]

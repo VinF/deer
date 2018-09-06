@@ -23,7 +23,7 @@ class Defaults:
     # ----------------------
     STEPS_PER_EPOCH = 5000
     EPOCHS = 50
-    STEPS_PER_TEST = 500
+    STEPS_PER_TEST = 1000
     PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------
@@ -54,7 +54,7 @@ class Defaults:
     DETERMINISTIC = False
 
 
-
+HIGHER_DIM_OBS = True
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = simple_maze_env(rng, higher_dim_obs=False)
+    env = simple_maze_env(rng, higher_dim_obs=HIGHER_DIM_OBS)
     
     # --- Instantiate learning_algo ---
     learning_algo = CRAR(
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         periodicity=1,
         reset_every='none'))
 
-    agent.run(10, 100)  #(5, 50)
+    agent.run(10, 500)
     print("end gathering data")
 
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
