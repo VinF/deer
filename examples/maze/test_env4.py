@@ -99,7 +99,7 @@ class MyEnv(Environment):
             else:
                 self._mode_episode_count += 1
                     
-        #print ("reset mode:"+str(mode)+".")
+        print ("reset mode:"+str(mode)+".")
         #print "self._pos_agent,self._pos_walls,self._pos_rewards"
         #print self._pos_agent,self._pos_walls,self._pos_rewards
                 
@@ -133,7 +133,7 @@ class MyEnv(Environment):
         return self.reward
 
 
-    def summarizePerformance(self, test_data_set, learning_algo):
+    def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
         print ("test_data_set.observations.shape")
         print (test_data_set.observations()[0][0:1])
         
@@ -192,8 +192,8 @@ class MyEnv(Environment):
             for i in indices_agent:
                 self._map[i[0]*6:(i[0]+1)*6:,i[1]*6:(i[1]+1)*6]=agent_obs
             self._map=(self._map*2)-1 #scaling
-            #print "self._map higher_dim_obs"
-            #print self._map
+            #print ("self._map higher_dim_obs")
+            #print (self._map)
             #plt.imshow(self._map, cmap='gray_r')
             #plt.show()
         else:
