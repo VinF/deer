@@ -22,7 +22,7 @@ class Defaults:
     # Experiment Parameters
     # ----------------------
     STEPS_PER_EPOCH = 2000
-    EPOCHS = 20
+    EPOCHS = 50
     STEPS_PER_TEST = 500
     PERIOD_BTW_SUMMARY_PERFS = 1
     
@@ -35,8 +35,8 @@ class Defaults:
     # DQN Agent parameters:
     # ----------------------
     UPDATE_RULE = 'rmsprop'
-    LEARNING_RATE = 0.0002
-    LEARNING_RATE_DECAY = 1
+    LEARNING_RATE = 0.0005
+    LEARNING_RATE_DECAY = 0.9
     DISCOUNT = 0.9
     DISCOUNT_INC = 1
     DISCOUNT_MAX = 0.99
@@ -54,7 +54,7 @@ class Defaults:
     DETERMINISTIC = False
 
 
-HIGHER_DIM_OBS = False
+HIGHER_DIM_OBS = True
 HIGH_INT_DIM = False
 
 if __name__ == "__main__":

@@ -92,11 +92,19 @@ class MyEnv(Environment):
         """
         
         all_possib_inp=[]
+        #labels=[]
         for x_b in range(self._nx_block):#[1]:#range(self._nx_block):
             for y_b in range(self._height):
                 for x_p in range(self._width-self._width_paddle+1):
                     state=self.get_observation(y_b,x_b*((self._width-1)//(self._nx_block-1)),x_p)
                     all_possib_inp.append(state)
+                    
+                    #labels.append(x_b)
+
+        #arr=np.array(all_possib_inp)
+        #arr=arr.reshape(arr.shape[0],-1)            
+        #np.savetxt('tsne_python/catcherH_X.txt',arr.reshape(arr.shape[0],-1))
+        #np.savetxt('tsne_python/cacherH_labels.txt',np.array(labels))
 
         all_possib_inp=np.expand_dims(all_possib_inp,axis=1)
         all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp)
@@ -242,7 +250,7 @@ class MyEnv(Environment):
         plt.show()
         for ii in range(-15,345,30):
             ax.view_init(elev=20., azim=ii)
-            plt.savefig('fig_w_V_div5_'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
+            plt.savefig('fig_w_V_div5_forcelr_forcessdiv2'+str(learning_algo.update_counter)+'_'+str(ii)+'.pdf')
 
 
         # fig_visuV
