@@ -71,7 +71,7 @@ if __name__ == "__main__":
     #                         {"key": "color_averaging", "value": True},
     #                         {"key": "repeat_action_probability", "value": 0.}])
     
-    env = ALE_env(rng, frame_skip=parameters.frame_skip)
+    env = ALE_env(rng, game=parameters.param1, frame_skip=parameters.frame_skip)
     
     # --- Instantiate qnetwork ---
     qnetwork = CRAR(

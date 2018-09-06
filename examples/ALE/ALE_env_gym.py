@@ -25,7 +25,11 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        self.env = gym.make('SpaceInvaders-v4')#Breakout-v4')#BeamRider-v4')#Qbert-v4')#Seaquest-v4')#Freeway-v4')
+        if(bool(kwargs["game"])):
+            self.env = gym.make(kwargs["game"])
+        else:
+            # Choice between Seaquest-v4, Breakout-v4, SpaceInvaders-v4, BeamRider-v4, Qbert-v4, Freeway-v4', etc.
+            self.env = gym.make('Seaquest-v4')
         self._random_state=rng
         self.env.reset()
         frame_skip=kwargs.get('frame_skip',1)
@@ -101,11 +105,11 @@ class MyEnv(Environment):
         return [(1, 4, 84, 84)]
 
     def observationType(self, subject):
-        return np.float #np.uint8
+        return np.float16
 
     def nActions(self):
-        print "self.env.action_space"
-        print self.env.action_space
+        print ("self.env.action_space")
+        print (self.env.action_space)
         return self.env.action_space.n
 
     def observe(self):
