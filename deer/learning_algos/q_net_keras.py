@@ -126,7 +126,7 @@ class MyQNetwork(QNetwork):
         else:
             max_next_q_vals=np.max(next_q_vals, axis=1, keepdims=True)
 
-        not_terminals=np.ones_like(terminals_val) - terminals_val
+        not_terminals=np.invert(terminals_val).astype(float)
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
