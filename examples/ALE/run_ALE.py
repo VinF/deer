@@ -10,7 +10,7 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.learning_algos.CRAR_keras import CRAR
+from deer.learning_algos.q_net_keras import MyQNetwork
 from ALE_env_gym import MyEnv as ALE_env
 import deer.experiment.base_controllers as bc
 
@@ -52,8 +52,6 @@ class Defaults:
     FREEZE_INTERVAL = 2500
     DETERMINISTIC = True
 
-HIGH_INT_DIM = True
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     env = ALE_env(rng, game=parameters.param1, frame_skip=parameters.frame_skip)
     
     # --- Instantiate qnetwork ---
-    qnetwork = CRAR(
+    qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
@@ -84,9 +82,7 @@ if __name__ == "__main__":
         parameters.batch_size,
         parameters.update_rule,
         rng,     
-        double_Q=True,
-        high_int_dim=HIGH_INT_DIM,
-        internal_dim=3)
+        double_Q=True)
     
     train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)

@@ -64,10 +64,11 @@ class NN():
                     input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
                     input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+                    x=Permute((2,3,1), input_shape=(dim[-4]*dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
                 else:
                     input = Input(shape=(dim[-3],dim[-2],dim[-1]))
                     inputs.append(input)
-                x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
+                    x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
 
                 if(dim[-2]>12 and dim[-1]>12):
                     self._pooling_encoder=6
