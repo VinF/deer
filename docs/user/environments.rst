@@ -27,7 +27,6 @@ Examples are better than precepts and the best is to get started with the follow
   
   environments/toy_env_time_series.rst
   environments/gym.rst
-  environments/two_storages.rst  
-  environments/PLE.rst
+  environments/two_storages.rst
   environments/ALE.rst
   
