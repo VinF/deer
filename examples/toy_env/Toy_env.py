@@ -8,15 +8,12 @@ The state of the agent is made up of an history of two punctual observations:
 - Either the agent possesses the good or not (1 or 0)
 The price signal is build following the same rules for the training and the validation environment. That allows the agent to learn a strategy that exploits this successfully.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import numpy as np
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
-import theano
-import copy
 
 from deer.base_classes import Environment
 
@@ -97,7 +94,7 @@ class MyEnv(Environment):
         
         return reward
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         """
         This function is called at every PERIOD_BTW_SUMMARY_PERFS.
         Parameters

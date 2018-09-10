@@ -1,6 +1,5 @@
 """2-Storage Microgrid launcher. See the docs for more details about this experiment.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import sys
@@ -16,7 +15,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algos.q_net_keras import MyQNetwork
 from MG_two_storages_env import MyEnv as MG_two_storages_env
 import deer.experiment.base_controllers as bc
 
@@ -46,7 +45,7 @@ class Defaults:
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = .3
     EPSILON_DECAY = 500000
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     
     # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
-    print parameters.deterministic
+
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
@@ -75,8 +74,6 @@ if __name__ == "__main__":
         # That way, the number of days in each season is divisible by parameters.param1 and it is thus possible
         # to reduce the variety of the data within each season in the time series by a factor of parameters.param1
         parameters.steps_per_epoch=parameters.steps_per_epoch-(parameters.steps_per_epoch%(24*4*int(parameters.param1)))-1
-    print "parameters.steps_per_epoch"
-    print parameters.steps_per_epoch
 
     # --- Instantiate environment ---
     env = MG_two_storages_env(rng, parameters.param1, parameters.param2, parameters.param3)
@@ -87,7 +84,7 @@ if __name__ == "__main__":
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,

@@ -1,7 +1,6 @@
 """ Mountain car environment launcher.
 Same principles as run_toy_env. See the docs for more details.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import sys
@@ -11,8 +10,9 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algos.q_net_keras import MyQNetwork
 from mountain_car_env import MyEnv as mountain_car_env
+from deer.policies import EpsilonGreedyPolicy,LongerExplorationPolicy
 
 class Defaults:
     # ----------------------
@@ -40,7 +40,7 @@ class Defaults:
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = 0.2
     EPSILON_DECAY = 10000
@@ -69,13 +69,16 @@ if __name__ == "__main__":
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
         rng,
         double_Q=True)
     
+    train_policy = LongerExplorationPolicy(qnetwork, env.nActions(), rng, 1.0)#EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.)
+    test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.)
+
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
@@ -84,7 +87,9 @@ if __name__ == "__main__":
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng,
-        exp_priority=1.)
+        exp_priority=1.,
+        train_policy=train_policy,
+        test_policy=test_policy)
 
     # --- Bind controllers to the agent ---
     # For comments, please refer to run_toy_env.py

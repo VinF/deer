@@ -46,9 +46,9 @@ How can I get started?
 
 First, make sure you have installed the package properly by following the steps descibed in :ref:`installation`.
 
-The general idea of this framework is that you need to instantiate an agent (along with a q-network) and an environment. In order to perform an experiment, you also need to attach to the agent some controllers for controlling the training and the various parameters of your agent.
+The general idea of this framework is that you need to instantiate an agent (along with a learning algorithm) and an environment. In order to perform an experiment, you also need to attach to the agent some controllers for controlling the training and the various parameters of your agent.
 
-The environment should be built specifically for any specific task while q-networks, the DQN agent and many controllers are provided within this package. 
+The environment should be built specifically for any specific task while learning algorithms (such as q-networks) and many controllers are provided within this package. 
 
 The best to get started is to have a look at the :ref:`examples` and in particular the two first environments that are simple to understand: 
 

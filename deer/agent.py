@@ -1,11 +1,10 @@
-"""This module contains classes used to define the standard behavior of the agent.
+""" 
+This module contains classes used to define the standard behavior of the agent.
 It relies on the controllers, the chosen training/test policy and the learning algorithm
 to specify its behavior in the environment.
 
-.. Authors: Vincent Francois-Lavet, David Taralla
 """
 
-from theano import config
 import os
 import numpy as np
 import copy
@@ -18,7 +17,7 @@ from .helper import tree
 from deer.policies import EpsilonGreedyPolicy
 
 class NeuralAgent(object):
-    """The NeuralAgent class wraps a deep Q-network for training and testing in a given environment.
+    """The NeuralAgent class wraps a learning algorithm (such as a deep Q-network) for training and testing in a given environment.
     
     Attach controllers to it in order to conduct an experiment (when to train the agent, when to test,...).
     
@@ -26,8 +25,8 @@ class NeuralAgent(object):
     -----------
     environment : object from class Environment
         The environment in which the agent interacts
-    q_network : object from class QNetwork
-        The q_network associated to the agent
+    learning_algo : object from class LearningAlgo
+        The learning algorithm associated to the agent
     replay_memory_size : int
         Size of the replay memory. Default : 1000000
     replay_start_size : int
@@ -49,7 +48,7 @@ class NeuralAgent(object):
         observations before the beginning of the episode
     """
 
-    def __init__(self, environment, q_network, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
+    def __init__(self, environment, learning_algo, replay_memory_size=1000000, replay_start_size=None, batch_size=32, random_state=np.random.RandomState(), exp_priority=0, train_policy=None, test_policy=None, only_full_history=True):
         inputDims = environment.inputDimensions()
         
         if replay_start_size == None:
@@ -59,7 +58,7 @@ class NeuralAgent(object):
         
         self._controllers = []
         self._environment = environment
-        self._network = q_network
+        self._learning_algo = learning_algo
         self._replay_memory_size = replay_memory_size
         self._replay_start_size = replay_start_size
         self._batch_size = batch_size
@@ -77,15 +76,17 @@ class NeuralAgent(object):
         self._selected_action = -1
         self._state = []
         for i in range(len(inputDims)):
-            self._state.append(np.zeros(inputDims[i], dtype=config.floatX))
+            self._state.append(np.zeros(inputDims[i], dtype=float))
         if (train_policy==None):
-            self._train_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.1)
+            self._train_policy = EpsilonGreedyPolicy(learning_algo, environment.nActions(), random_state, 0.1)
         else:
             self._train_policy = train_policy
         if (test_policy==None):
-            self._test_policy = EpsilonGreedyPolicy(q_network, environment.nActions(), random_state, 0.)
+            self._test_policy = EpsilonGreedyPolicy(learning_algo, environment.nActions(), random_state, 0.)
         else:
             self._test_policy = test_policy
+        self.gathering_data=True    # Whether the agent is gathering data or not
+        self.sticky_action=1        # Number of times the agent is forced to take the same action as part of one actual time step
 
     def setControllersActive(self, toDisable, active):
         """ Activate controller
@@ -96,22 +97,22 @@ class NeuralAgent(object):
     def setLearningRate(self, lr):
         """ Set the learning rate for the gradient descent
         """
-        self._network.setLearningRate(lr)
+        self._learning_algo.setLearningRate(lr)
 
     def learningRate(self):
         """ Get the learning rate
         """
-        return self._network.learningRate()
+        return self._learning_algo.learningRate()
 
     def setDiscountFactor(self, df):
         """ Set the discount factor
         """
-        self._network.setDiscountFactor(df)
+        self._learning_algo.setDiscountFactor(df)
 
     def discountFactor(self):
         """ Get the discount factor
         """
-        return self._network.discountFactor()
+        return self._learning_algo.discountFactor()
 
     def overrideNextAction(self, action):
         """ Possibility to override the chosen action. This possibility should be used on the signal OnActionChosen.
@@ -140,13 +141,6 @@ class NeuralAgent(object):
         """
         return self._total_mode_reward/self._totalModeNbrEpisode, self._totalModeNbrEpisode
 
-    def bestAction(self):
-        """ Returns the best Action
-        """
-        action = self._network.chooseBestAction(self._state)
-        V = max(self._network.qValues(self._state))
-        return action, V
-     
     def attach(self, controller):
         if (isinstance(controller, controllers.Controller)):
             self._controllers.append(controller)
@@ -179,12 +173,12 @@ class NeuralAgent(object):
         if self._mode == -1:
             raise AgentError("Cannot summarize test performance outside test environment.")
 
-        self._environment.summarizePerformance(self._tmp_dataset)
+        self._environment.summarizePerformance(self._tmp_dataset, self._learning_algo, train_data_set=self._dataset)
 
     def train(self):
         """
         This function selects a random batch of data (with self._dataset.randomBatch) and performs a 
-        Q-learning iteration (with self._network.train).        
+        Q-learning iteration (with self._learning_algo.train).        
         """
         # We make sure that the number of elements in the replay memory
         # is strictly superior to self._replay_start_size before taking 
@@ -193,8 +187,13 @@ class NeuralAgent(object):
             return
 
         try:
-            states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
-            loss, loss_ind = self._network.train(states, actions, rewards, next_states, terminals)
+            if hasattr(self._learning_algo, 'nstep'):
+                observations, actions, rewards, terminals, rndValidIndices = self._dataset.randomBatch_nstep(self._batch_size, self._learning_algo.nstep, self._exp_priority)
+                loss, loss_ind = self._learning_algo.train(observations, actions, rewards, terminals)
+            else:
+                states, actions, rewards, next_states, terminals, rndValidIndices = self._dataset.randomBatch(self._batch_size, self._exp_priority)
+                loss, loss_ind = self._learning_algo.train(states, actions, rewards, next_states, terminals)
+
             self._training_loss_averages.append(loss)
             if (self._exp_priority):
                 self._dataset.updatePriorities(pow(loss_ind,self._exp_priority)+0.0001, rndValidIndices[1])
@@ -222,7 +221,7 @@ class NeuralAgent(object):
             if fname in f:
                 os.remove("nnets/" + f)
 
-        all_params = self._network.getAllParams()
+        all_params = self._learning_algo.getAllParams()
 
         if (nEpoch>=0):
             joblib.dump(all_params, basename + ".epoch={}".format(nEpoch))
@@ -247,7 +246,7 @@ class NeuralAgent(object):
         else:
             all_params = joblib.load(basename)
 
-        self._network.setAllParams(all_params)
+        self._learning_algo.setAllParams(all_params)
 
     def run(self, n_epochs, epoch_length):
         """
@@ -269,7 +268,7 @@ class NeuralAgent(object):
         while i < n_epochs or self._mode_epochs_length > 0:
             self._training_loss_averages = []
 
-            if self._mode != -1:
+            if self._mode != -1:                
                 self._totalModeNbrEpisode=0
                 while self._mode_epochs_length > 0:
                     self._totalModeNbrEpisode += 1
@@ -302,24 +301,31 @@ class NeuralAgent(object):
                 self._state[i][1:] = initState[i][1:]
         
         self._Vs_on_last_episode = []
+        is_terminal=False
+        reward=0
         while maxSteps > 0:
             maxSteps -= 1
-
-            obs = self._environment.observe()
-
-            for i in range(len(obs)):
-                self._state[i][0:-1] = self._state[i][1:]
-                self._state[i][-1] = obs[i]
-
-            V, action, reward = self._step()
-            
-            self._Vs_on_last_episode.append(V)
-            if self._mode != -1:
-                self._total_mode_reward += reward
-
-            is_terminal = self._environment.inTerminalState()
+            if(self.gathering_data==True or self._mode!=-1):
+                obs = self._environment.observe()
                 
-            self._addSample(obs, action, reward, is_terminal)
+                for i in range(len(obs)):
+                    self._state[i][0:-1] = self._state[i][1:]
+                    self._state[i][-1] = obs[i]
+                
+                V, action, reward = self._step()
+                
+                self._Vs_on_last_episode.append(V)
+                if self._mode != -1:
+                    self._total_mode_reward += reward
+                
+                is_terminal = self._environment.inTerminalState()   # If the transition ends up in a terminal state, mark transition as terminal
+                                                                    # Note that the new obs will not be stored, as it is unnecessary.
+                    
+                if(maxSteps>0):
+                    self._addSample(obs, action, reward, is_terminal)
+                else:
+                    self._addSample(obs, action, reward, True)      # If the episode ends because max number of steps is reached, mark the transition as terminal
+            
             for c in self._controllers: c.onActionTaken(self)
             
             if is_terminal:
@@ -332,26 +338,22 @@ class NeuralAgent(object):
         
     def _step(self):
         """
-        This method is called at each time step. If the agent is currently in testing mode, and if its *test* replay 
-        memory has enough samples, it will select the best action it can. If there are not enough samples, FIXME.
-        In the case the agent is not in testing mode, if its replay memory has enough samples, it will select the best 
-        action it can with probability 1-CurrentEpsilon and a random action otherwise. If there are not enough samples, 
-        it will always select a random action.
-        Parameters
-        -----------
-        state : ndarray
-            An ndarray(size=number_of_inputs, dtype='object), where states[input] is a 1+D matrix of dimensions
-               input.historySize x "shape of a given ponctual observation for this input".
+        This method is called at each time step and performs one action in the environment.
+
         Returns
         -------
-        action : int
-            The id of the action selected by the agent.
         V : float
             Estimated value function of current state.
+        action : int
+            The id of the action selected by the agent.
+        reward : float
+            Reward obtained for the transition
         """
 
-        action, V = self._chooseAction()        
-        reward = self._environment.act(action)
+        action, V = self._chooseAction()
+        reward=0
+        for i in range(self.sticky_action):
+            reward += self._environment.act(action)
 
         return V, action, reward
 
@@ -366,11 +368,11 @@ class NeuralAgent(object):
         
         if self._mode != -1:
             # Act according to the test policy if not in training mode
-            action, V = self._test_policy.action(self._state)
+            action, V = self._test_policy.action(self._state, mode=self._mode, dataset=self._dataset)
         else:
             if self._dataset.n_elems > self._replay_start_size:
                 # follow the train policy
-                action, V = self._train_policy.action(self._state)     #is self._state the only way to store/pass the state?
+                action, V = self._train_policy.action(self._state, mode=None, dataset=self._dataset)     #is self._state the only way to store/pass the state?
             else:
                 # Still gathering initial data: choose dummy action
                 action, V = self._train_policy.randomAction()
@@ -400,17 +402,18 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, random_state=None, max_size=1000, use_priority=False, only_full_history=True):
+    def __init__(self, env, random_state=None, max_size=1000000, use_priority=False, only_full_history=True):
         """Initializer.
         Parameters
         -----------
         inputDims : list of tuples
-            For each subject i, inputDims[i] is a tuple where the first value is the memory size for this
-            subject and the rest describes the shape of each single observation on this subject (number, vector or
-            matrix). See base_classes.Environment.inputDimensions() documentation for more info about this format.
+            Each tuple relates to one of the observations where the first value is the history size considered for this
+            observation and the rest describes the shape of each punctual observation (e.g., scalar, vector or matrix). 
+            See base_classes.Environment.inputDimensions() documentation for more info.
         random_state : Numpy random number generator
             If None, a new one is created with default numpy seed.
-        max_size : The replay memory maximum size.
+        max_size : float
+            The replay memory maximum size. Default : 1000000
         """
 
         self._batch_dimensions = env.inputDimensions()
@@ -439,6 +442,7 @@ class DataSet(object):
             self._random_state = random_state
 
         self.n_elems  = 0
+        self.sticky_action=1        # Number of times the agent is forced to take the same action as part of one actual time step
 
     def actions(self):
         """Get all actions currently in the replay memory, ordered by time where they were taken."""
@@ -461,8 +465,6 @@ class DataSet(object):
 
     def observations(self):
         """Get all observations currently in the replay memory, ordered by time where they were observed.
-        
-        observations[s][i] corresponds to the observation made on subject s before the agent took actions()[i].
         """
 
         ret = np.zeros_like(self._observations)
@@ -477,42 +479,43 @@ class DataSet(object):
         for i in range( len(rndValidIndices) ):
             self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
-    def randomBatch(self, size, use_priority):
-        """Return corresponding states, actions, rewards, terminal status, and next_states for size randomly 
-        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for 
-        each subject s.
+    def randomBatch(self, batch_size, use_priority):
+        """Returns a batch of states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
+        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
+        each s.
         
         Parameters
         -----------
-        size : int
+        batch_size : int
             Number of transitions to return.
+        use_priority : Boolean
+            Whether to use prioritized replay or not
+
         Returns
         -------
-        states : ndarray
-            An ndarray(size=number_of_subjects, dtype='object), where states[s] is a 2+D matrix of dimensions
-            size x s.memorySize x "shape of a given observation for this subject". States were taken randomly in
-            the data with the only constraint that they are complete regarding the histories for each observed
-            subject.
-        actions : ndarray
-            An ndarray(size=number_of_subjects, dtype='int32') where actions[i] is the action taken after
-            having observed states[:][i].
-        rewards : ndarray
-            An ndarray(size=number_of_subjects, dtype='float32') where rewards[i] is the reward obtained for
-            taking actions[i-1].
-        next_states : ndarray
-            Same structure than states, but next_states[s][i] is guaranteed to be the information
-            concerning the state following the one described by states[s][i] for each subject s.
-        terminals : ndarray
-            An ndarray(size=number_of_subjects, dtype='bool') where terminals[i] is True if actions[i] lead
-            to terminal states and False otherwise
+        states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+            States are taken randomly in the data with the only constraint that they are complete regarding the history size 
+            for each observation.
+        actions : numpy array of integers [batch_size]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards : numpy array of floats [batch_size]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals : numpy array of booleans [batch_size] 
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
+
         Throws
         -------
             SliceError
-                If a batch of this size could not be built based on current data set (not enough data or all
+                If a batch of this batch_size could not be built based on current data set (not enough data or all
                 trajectories are too short).
         """
 
-        if (self._max_history_size - 1 >= self.n_elems):
+        if (self._max_history_size + self.sticky_action - 1 >= self.n_elems):
             raise SliceError(
                 "Not enough elements in the dataset to create a "
                 "complete state. {} elements in dataset; requires {}"
@@ -520,41 +523,41 @@ class DataSet(object):
 
         if (self._use_priority):
             #FIXME : take into account the case where self._only_full_history is false
-            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(size)
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
             if (rndValidIndices.size == 0):
                 raise SliceError("Could not find a state with full histories")
         else:
-            rndValidIndices = np.zeros(size, dtype='int32')
+            rndValidIndices = np.zeros(batch_size, dtype='int32')
             if (self._only_full_history):
-                for i in range(size): # TODO: multithread this loop?
-                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size)
+                for i in range(batch_size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action-1)
             else:
-                for i in range(size): # TODO: multithread this loop?
-                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=1)
+                for i in range(batch_size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action)
                 
 
-        actions   = np.vstack( self._actions.getSliceBySeq(rndValidIndices) )
+        actions   = self._actions.getSliceBySeq(rndValidIndices)
         rewards   = self._rewards.getSliceBySeq(rndValidIndices)
         terminals = self._terminals.getSliceBySeq(rndValidIndices)
     
         states = np.zeros(len(self._batch_dimensions), dtype='object')
         next_states = np.zeros_like(states)
         # We calculate the first terminal index backward in time and set it 
-        # at maximum to the value self._max_history_size
+        # at maximum to the value self._max_history_size+self.sticky_action-1
         first_terminals=[]
         for rndValidIndex in rndValidIndices:
             first_terminal=1
-            while first_terminal<self._max_history_size:
+            while first_terminal<self._max_history_size+self.sticky_action-1:
                 if (self._terminals[rndValidIndex-first_terminal]==True or first_terminal>rndValidIndex):
                     break 
                 first_terminal+=1
             first_terminals.append(first_terminal)
             
         for input in range(len(self._batch_dimensions)):
-            states[input] = np.zeros((size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
+            states[input] = np.zeros((batch_size,) + self._batch_dimensions[input], dtype=self._observations[input].dtype)
             next_states[input] = np.zeros_like(states[input])
-            for i in range(size):
-                slice=self._observations[input].getSlice(rndValidIndices[i]+1-min(self._batch_dimensions[input][0],first_terminals[i]), rndValidIndices[i]+1)
+            for i in range(batch_size):
+                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action+2-min(self._batch_dimensions[input][0],first_terminals[i]+self.sticky_action-1), rndValidIndices[i]+1)
                 if (len(slice)==len(states[input][i])):
                     states[input][i] = slice
                 else:
@@ -576,6 +579,106 @@ class DataSet(object):
             return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
         else:
             return states, actions, rewards, next_states, terminals, rndValidIndices
+
+    def randomBatch_nstep(self, batch_size, nstep, use_priority):
+        """Return corresponding states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
+        chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
+        each s.
+        
+        Parameters
+        -----------
+        batch_size : int
+            Number of transitions to return.
+        nstep : int
+            Number of transitions to be considered for each element
+        use_priority : Boolean
+            Whether to use prioritized replay or not
+
+        Returns
+        -------
+        states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * (history size+nstep-1) * size of punctual observation (which is 2D,1D or scalar)]).
+            States are taken randomly in the data with the only constraint that they are complete regarding the history size 
+            for each observation.
+        actions : numpy array of integers [batch_size, nstep]
+            actions[i] is the action taken after having observed states[:][i].
+        rewards : numpy array of floats [batch_size, nstep]
+            rewards[i] is the reward obtained for taking actions[i-1].
+        next_states : numpy array of objects
+            Each object is a numpy array that relates to one of the observations
+            with size [batch_size * (history size+nstep-1) * size of punctual observation (which is 2D,1D or scalar)]).
+        terminals : numpy array of booleans [batch_size, nstep] 
+            terminals[i] is True if the transition leads to a terminal state and False otherwise
+
+        Throws
+        -------
+            SliceError
+                If a batch of this size could not be built based on current data set (not enough data or all
+                trajectories are too short).
+        """
+
+        if (self._max_history_size + self.sticky_action - 1 >= self.n_elems):
+            raise SliceError(
+                "Not enough elements in the dataset to create a "
+                "complete state. {} elements in dataset; requires {}"
+                .format(self.n_elems, self._max_history_size))
+
+        if (self._use_priority):
+            #FIXME : take into account the case where self._only_full_history is false
+            rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
+            if (rndValidIndices.size == 0):
+                raise SliceError("Could not find a state with full histories")
+        else:
+            rndValidIndices = np.zeros(batch_size, dtype='int32')
+            if (self._only_full_history):
+                for i in range(batch_size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(self._max_history_size+self.sticky_action*nstep-1)
+            else:
+                for i in range(batch_size): # TODO: multithread this loop?
+                    rndValidIndices[i] = self._randomValidStateIndex(minimum_without_terminal=self.sticky_action*nstep)
+                
+
+        actions=np.zeros((batch_size,(nstep)*self.sticky_action), dtype=int)
+        rewards=np.zeros((batch_size,(nstep)*self.sticky_action))
+        terminals=np.zeros((batch_size,(nstep)*self.sticky_action))
+        for i in range(batch_size):
+            actions[i] = self._actions.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+            rewards[i] = self._rewards.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+            terminals[i] = self._terminals.getSlice(rndValidIndices[i]-self.sticky_action*nstep+1,rndValidIndices[i]+self.sticky_action)
+        
+        observations = np.zeros(len(self._batch_dimensions), dtype='object')
+        # We calculate the first terminal index backward in time and set it 
+        # at maximum to the value self._max_history_size+self.sticky_action-1
+        first_terminals=[]
+        for rndValidIndex in rndValidIndices:
+            first_terminal=1
+            while first_terminal<self._max_history_size+self.sticky_action*nstep-1:
+                if (self._terminals[rndValidIndex-first_terminal]==True or first_terminal>rndValidIndex):
+                    break 
+                first_terminal+=1
+            first_terminals.append(first_terminal)
+            
+        batch_dimensions=copy.deepcopy(self._batch_dimensions)
+        for input in range(len(self._batch_dimensions)):
+            batch_dimensions[input]=tuple( x + y for x, y in zip(self._batch_dimensions[input],(self.sticky_action*(nstep+1)-1,0,0)) )
+            observations[input] = np.zeros((batch_size,) + batch_dimensions[input], dtype=self._observations[input].dtype)
+            for i in range(batch_size):
+                slice=self._observations[input].getSlice(rndValidIndices[i]-self.sticky_action*nstep+2-min(self._batch_dimensions[input][0],first_terminals[i]-self.sticky_action*nstep+1), rndValidIndices[i]+self.sticky_action+1)
+                if (len(slice)==len(observations[input][i])):
+                    observations[input][i] = slice
+                else:
+                    for j in range(len(slice)):
+                        observations[input][i][-j-1]=slice[-j-1]
+                 # If transition leads to terminal, we don't care about next state
+                if terminals[i][-1]:#rndValidIndices[i] >= self.n_elems - 1 or terminals[i]:
+                    observations[input][rndValidIndices[i]:rndValidIndices[i]+self.sticky_action+1] = 0
+        
+        if (self._use_priority):
+            return observations, actions, rewards, terminals, [rndValidIndices, rndValidIndices_tree]
+        else:
+            return observations, actions, rewards, terminals, rndValidIndices
+
 
     def _randomValidStateIndex(self, minimum_without_terminal):
         """ Returns the index corresponding to a timestep that is valid
@@ -610,9 +713,8 @@ class DataSet(object):
                 # else index was ok according to terminals
                 return index
     
-    def _randomPrioritizedBatch(self, size):
-        indices_tree = self._prioritiy_tree.getBatch(
-            size, self._random_state, self)
+    def _randomPrioritizedBatch(self, batch_size):
+        indices_tree = self._prioritiy_tree.getBatch(batch_size, self._random_state, self)
         indices_replay_mem=np.zeros(indices_tree.size,dtype='int32')
         for i in range(len(indices_tree)):
             indices_replay_mem[i]= int(self._translation_array[indices_tree[i]] \
@@ -621,11 +723,11 @@ class DataSet(object):
         return indices_replay_mem, indices_tree
 
     def addSample(self, obs, action, reward, is_terminal, priority):
-        """Store a (observation[for all subjects], action, reward, is_terminal) in the dataset. 
+        """Store the punctual observations, action, reward, is_terminal and priority in the dataset. 
         Parameters
         -----------
         obs : ndarray
-            An ndarray(dtype='object') where obs[s] corresponds to the observation made on subject s before the
+            An ndarray(dtype='object') where obs[s] corresponds to the punctual observation s before the
             agent took action [action].
         action :  int
             The action taken after having observed [obs].

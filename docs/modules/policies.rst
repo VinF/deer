@@ -9,9 +9,6 @@
     deer.policies.EpsilonGreedyPolicy
     deer.policies.LongerExplorationPolicy
 
-Detailed description
---------------------
-
 .. autoclass:: deer.base_classes.Policy
    :members:
 .. autoclass:: deer.policies.EpsilonGreedyPolicy

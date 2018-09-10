@@ -1,12 +1,11 @@
 """Toy environment launcher. See the docs for more details about this environment.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import numpy as np
 
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
+from deer.learning_algos.q_net_keras import MyQNetwork
 from Toy_env import MyEnv as Toy_env
 import deer.experiment.base_controllers as bc
 

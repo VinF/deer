@@ -10,9 +10,6 @@
     NeuralAgent
     DataSet
 
-Detailed description
---------------------
-
 .. autoclass:: NeuralAgent
    :members:
 .. autoclass:: DataSet

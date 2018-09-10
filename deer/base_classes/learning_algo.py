@@ -1,12 +1,12 @@
 """
-.. Authors: Vincent Francois-Lavet, David Taralla
+This module defines the base class for the learning algorithms.
+
 """
 
-from theano import config
 import numpy as np
 
-class QNetwork(object):
-    """ All the Q-networks and actor-critic networks should inherit this interface.
+class LearningAlgo(object):
+    """ All the Q-networks, actor-critic networks, etc. should inherit this interface.
 
     Parameters
     -----------
@@ -24,17 +24,18 @@ class QNetwork(object):
         self._batch_size = batch_size
 
     def train(self, states, actions, rewards, nextStates, terminals):
-        """ This method performs the Bellman iteration for one batch of tuples.
+        """ This method performs the training step (e.g. using Bellman iteration in a deep Q-network) 
+        for one batch of tuples.
         """
         raise NotImplementedError()
 
     def chooseBestAction(self, state):
-        """ Get the best action for a belief state
+        """ Get the best action for a pseudo-state
         """        
         raise NotImplementedError()
 
     def qValues(self, state):
-        """ Get the q value for one belief state
+        """ Get the q value for one pseudo-state
         """        
         raise NotImplementedError()
 

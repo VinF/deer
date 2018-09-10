@@ -1,5 +1,5 @@
 """ Exploration policy for permutation invariant environments
-Authors: Vincent Francois-Lavet, Adrien Couetoux
+
 """
 
 from ..base_classes import Policy
@@ -19,14 +19,14 @@ class LongerExplorationPolicy(Policy):
     length : int
         Length of the exploration sequences that will be considered
     """
-    def __init__(self, q_network, n_actions, random_state, epsilon, length=10):
-        Policy.__init__(self, q_network, n_actions, random_state)
+    def __init__(self, learning_algo, n_actions, random_state, epsilon, length=10):
+        Policy.__init__(self, learning_algo, n_actions, random_state)
         self._epsilon = epsilon
         self._l = length
         self._count_down = -1
         self._action_sequence = []
 
-    def action(self, state):
+    def action(self, state, mode=None, *args, **kwargs):
         if self._count_down >= 0:
             # Take the next exploration action in the sequence
             V = 0
@@ -42,7 +42,7 @@ class LongerExplorationPolicy(Policy):
                 self._count_down -= 1
             else:
                 # Simply act greedily with respect to what is currently believed to be the best action
-                action, V = self.bestAction(state)
+                action, V = self.bestAction(state, mode, args, kwargs)
         
         return np.array(action), V
 

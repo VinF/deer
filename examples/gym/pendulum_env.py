@@ -16,7 +16,7 @@ class MyEnv(Environment):
         self._last_observation = self.env.reset()
         self.is_terminal=False
         self._input_dim = [(1,), (1,), (1,), (1,)]  # self.env.observation_space.shape is equal to 4 
-                                                    # and we use only the current value in the belief state
+                                                    # and we use only the current observations in the pseudo-state
 
     def act(self, action):
         """ Simulate one time step in the environment.

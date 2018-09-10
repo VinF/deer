@@ -3,10 +3,7 @@
 :mod:`Environment`
 =============================
 
-.. automodule:: deer.base_classes.Environment
-
-Detailed description
---------------------
+.. automodule:: deer.base_classes.environment
 
 .. autoclass:: deer.base_classes.Environment
    :members:

@@ -16,9 +16,6 @@
     InterleavedTestEpochController
     FindBestController
 
-Detailed description
---------------------
-
 .. autoclass:: Controller
    :members:
 .. autoclass:: LearningRateController

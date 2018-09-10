@@ -13,19 +13,30 @@ In addition, the framework is made in such a way that it is easy to
 
 * build any environment
 * modify any part of the learning process
-* use your favorite python-based framework to code your own neural network architecture. The provided neural network architectures are based on Keras (or pure Theano) but you may easily use others.
+* use your favorite python-based framework to code your own learning algorithm or neural network architecture. The provided learning algorithms and neural network architectures are based on Keras.
+
+.. image:: http://vincent.francois-l.be/img_GeneralDeepQRL/schema_deer.png
+   :scale: 50 %
+   :alt: alternate text
+   :align: right
+
+:Figure: General schema of the different elements implement in DeeR.
 
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
 What is new
 ------------
+Version 0.4
+************
+- Integration of CRAR that allows to combine the model-free and the model-based approaches via abstract representations.
+- Augmented documentation and some interfaces have been updated.
+
 Version 0.3 
 ************
-- Integration of different exploration/exploitation policies and possibility to easily built your own (see :ref:`policies`)
+- Integration of different exploration/exploitation policies and possibility to easily built your own.
 - Integration of DDPG for continuous action spaces (see :ref:`actor-critic`)
 - :ref:`naming_conv` and some interfaces have been updated. This may cause broken backward compatibility. In that case, make the changes to the new convention by looking at the API in this documentation or by looking at the current version of the examples.
 - Additional automated tests
-
 
 Version 0.2
 ***********
@@ -65,7 +76,7 @@ If you are looking for information on a specific function, class or method, this
   modules/agents
   modules/controllers
   modules/environments
-  modules/q-networks
+  modules/learning-algorithms
   modules/policies
   
 Indices and tables

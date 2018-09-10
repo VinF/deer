@@ -1,7 +1,7 @@
 """ Interface with the ALE environment
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
+
 import numpy as np
 import cv2
 from ale_python_interface import ALEInterface
@@ -67,11 +67,9 @@ class MyEnv(Environment):
     def act(self, action):
         action = self._actions[action]
         
-        reward = 0
-        for _ in range(self._frame_skip):
-            reward += self._ale.act(action)
-            if self.inTerminalState():
-                break
+        reward = self._ale.act(action)
+        #if self.inTerminalState():
+        #    break
             
         self._ale.getScreenGrayscale(self._screen)
         cv2.resize(self._screen, (84, 84), self._reduced_screen, interpolation=cv2.INTER_NEAREST)
@@ -79,7 +77,7 @@ class MyEnv(Environment):
         self._mode_score += reward
         return np.sign(reward)
 
-    def summarizePerformance(self, test_data_set):
+    def summarizePerformance(self, test_data_set, *args, **kwargs):
         if self.inTerminalState() == False:
             self._mode_episode_count += 1
         print("== Mean score per episode is {} over {} episodes ==".format(self._mode_score / self._mode_episode_count, self._mode_episode_count))

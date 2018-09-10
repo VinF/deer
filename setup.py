@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 import deer
 
 NAME = 'deer'
-VERSION = '0.3.2'
+VERSION = '0.4'
 AUTHOR = "Vincent Francois-Lavet"
-AUTHOR_EMAIL = "v.francois@ulg.ac.be"
+AUTHOR_EMAIL = "vincent.francois@gmail.com"
 URL = 'https://github.com/VinF/deer'
 DESCRIPTION = 'Framework for deep reinforcement learning'
 with open('README.rst') as f:
@@ -20,8 +20,8 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.3',
-    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
     'Topic :: Scientific/Engineering',
     'Topic :: Utilities',
     'Topic :: Software Development :: Libraries',

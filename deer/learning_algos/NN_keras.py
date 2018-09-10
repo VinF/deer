@@ -5,7 +5,7 @@ Neural network using Keras (called by q_net_keras)
 
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Conv2D, MaxPooling2D, Reshape, Permute
+from keras.layers import Input, Layer, Dense, Flatten, concatenate, Activation, Conv2D, MaxPooling2D, Reshape, Permute
 
 class NN():
     """
@@ -38,11 +38,17 @@ class NN():
 
         for i, dim in enumerate(self._input_dimensions):
             # - observation[i] is a FRAME
-            if len(dim) == 3:
-                input = Input(shape=(dim[0],dim[1],dim[2]))
-                inputs.append(input)
-                reshaped=Permute((2,3,1), input_shape=(dim[0],dim[1],dim[2]))(input)    #data_format='channels_last'
-                x = Conv2D(8, (4, 4), activation='relu', padding='valid')(reshaped)   #Conv on the frames
+            if len(dim) == 3 or len(dim) == 4:
+                if(len(dim) == 4):
+                    input = Input(shape=(dim[-4],dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
+                    input = Reshape((dim[-4]*dim[-3],dim[-2],dim[-1]), input_shape=(dim[-4],dim[-3],dim[-2],dim[-1]))(input)
+                    x=Permute((2,3,1), input_shape=(dim[-4]*dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
+                else:
+                    input = Input(shape=(dim[-3],dim[-2],dim[-1]))
+                    inputs.append(input)
+                    x=Permute((2,3,1), input_shape=(dim[-3],dim[-2],dim[-1]))(input)    #data_format='channels_last'
+                x = Conv2D(8, (4, 4), activation='relu', padding='valid')(x)   #Conv on the frames
                 x = Conv2D(16, (3, 3), activation='relu', padding='valid')(x)         #Conv on the frames
                 x = MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')(x)
                 x = Conv2D(16, (3, 3), activation='relu', padding='valid')(x)         #Conv on the frames
@@ -92,7 +98,7 @@ class NN():
                 outs_conv.append(input)
         
         if len(outs_conv)>1:
-            x = merge(outs_conv, mode='concat')
+            x = concatenate(outs_conv)
         else:
             x= outs_conv [0]
         

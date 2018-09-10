@@ -16,7 +16,7 @@ You can find these examples at the |package_root|. For each example at least two
 
 The launcher file performs different actions:
 
-* It instantiates the environment, the agent (along with a q-network).
+* It instantiates the environment and the agent along with a learning algorithm (such as a q-network).
 * It binds controllers to the agent
 * it finally runs the experiment
 
@@ -26,9 +26,7 @@ Examples are better than precepts and the best is to get started with the follow
   :maxdepth: 2
   
   environments/toy_env_time_series.rst
-  environments/toy_env_pendulum.rst
   environments/gym.rst
-  environments/two_storages.rst  
-  environments/PLE.rst
+  environments/two_storages.rst
   environments/ALE.rst
   

@@ -1,7 +1,6 @@
 """ Launcher for mountain car environment with continuous action space.
 Same principles as run_toy_env. See the wiki for more details.
 
-Author: Vincent Francois-Lavet
 """
 
 import sys
@@ -11,7 +10,7 @@ import numpy as np
 import deer.experiment.base_controllers as bc
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.AC_net_keras import MyACNetwork
+from deer.learning_algos.AC_net_keras import MyACNetwork
 from mountain_car_continuous_env import MyEnv as mountain_car_continuous_env
 from deer.policies import LongerExplorationPolicy
 
@@ -42,7 +41,7 @@ class Defaults:
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = 0.2
     EPSILON_DECAY = 10000
@@ -71,7 +70,7 @@ if __name__ == "__main__":
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,

@@ -1,6 +1,5 @@
 """ALE launcher. See Wiki for more details about this experiment.
 
-Authors: Vincent Francois-Lavet, David Taralla
 """
 
 import sys
@@ -11,8 +10,8 @@ import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
-from deer.q_networks.q_net_theano import MyQNetwork
-from ALE_env import MyEnv as ALE_env
+from deer.learning_algos.q_net_keras import MyQNetwork
+from ALE_env_gym import MyEnv as ALE_env
 import deer.experiment.base_controllers as bc
 
 from deer.policies import EpsilonGreedyPolicy
@@ -21,9 +20,9 @@ class Defaults:
     # ----------------------
     # Experiment Parameters
     # ----------------------
-    STEPS_PER_EPOCH = 250000
-    EPOCHS = 40
-    STEPS_PER_TEST = 125000
+    STEPS_PER_EPOCH = 10000#250000
+    EPOCHS = 500#40
+    STEPS_PER_TEST = 2000#125000
     PERIOD_BTW_SUMMARY_PERFS = 1
     
     # ----------------------
@@ -34,26 +33,24 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'deepmind_rmsprop'
-    LEARNING_RATE = 0.01
-    LEARNING_RATE_DECAY = 0.99
+    UPDATE_RULE = 'rmsprop'
+    LEARNING_RATE = 0.0002
+    LEARNING_RATE_DECAY = 1.#0.99
     DISCOUNT = 0.95
     DISCOUNT_INC = 0.99
     DISCOUNT_MAX = 0.99
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
     MOMENTUM = 0
-    CLIP_DELTA = 1.0
+    CLIP_NORM = 1.0
     EPSILON_START = 1.0
     EPSILON_MIN = .1
     EPSILON_DECAY = 100000
     UPDATE_FREQUENCY = 1
-    REPLAY_MEMORY_SIZE = 1000000
+    REPLAY_MEMORY_SIZE = 250000 #Each element is 4 frames --> 10^6 frames
     BATCH_SIZE = 32
-    FREEZE_INTERVAL = 10000
+    FREEZE_INTERVAL = 2500
     DETERMINISTIC = True
-
-
 
 
 if __name__ == "__main__":
@@ -67,23 +64,27 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = ALE_env(rng, frame_skip=parameters.frame_skip, 
-                ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
-                             {"key": "color_averaging", "value": True},
-                             {"key": "repeat_action_probability", "value": 0.}])
-
+    #env = ALE_env(rng, frame_skip=parameters.frame_skip, 
+    #            ale_options=[{"key": "random_seed", "value": rng.randint(9999)}, 
+    #                         {"key": "color_averaging", "value": True},
+    #                         {"key": "repeat_action_probability", "value": 0.}])
+    
+    env = ALE_env(rng, game=parameters.param1, frame_skip=parameters.frame_skip)
+    
     # --- Instantiate qnetwork ---
     qnetwork = MyQNetwork(
         env,
         parameters.rms_decay,
         parameters.rms_epsilon,
         parameters.momentum,
-        parameters.clip_delta,
+        parameters.clip_norm,
         parameters.freeze_interval,
         parameters.batch_size,
         parameters.update_rule,
-        rng)
+        rng,     
+        double_Q=True)
     
+    train_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 1.)
     test_policy = EpsilonGreedyPolicy(qnetwork, env.nActions(), rng, 0.05)
 
     # --- Instantiate agent ---
@@ -94,6 +95,7 @@ if __name__ == "__main__":
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
         rng,
+        train_policy=train_policy,
         test_policy=test_policy)
 
     # --- Create unique filename for FindBestController ---
@@ -153,10 +155,10 @@ if __name__ == "__main__":
     # structure of the neural network having the best validation score. These dumps can then used to plot the evolution 
     # of the validation and test scores (see below) or simply recover the resulting neural network for your 
     # application.
-    agent.attach(bc.FindBestController(
-        validationID=ALE_env.VALIDATION_MODE,
-        testID=None,
-        unique_fname=fname))
+#    agent.attach(bc.FindBestController(
+#        validationID=ALE_env.VALIDATION_MODE,
+#        testID=None,
+#        unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
     # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
@@ -169,11 +171,36 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4],
+        controllers_to_disable=[0, 1, 2, 3, 4, 6,7,8],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+1, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 7,8],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+2, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6,8],
         periodicity=2,
         show_score=True,
         summarize_every=1))
     
+    agent.attach(bc.InterleavedTestEpochController(
+        id=ALE_env.VALIDATION_MODE+3, 
+        epoch_length=parameters.steps_per_test,
+        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6, 7],
+        periodicity=2,
+        show_score=True,
+        summarize_every=1))
+
+
     # --- Run the experiment ---
     try:
         os.mkdir("params")

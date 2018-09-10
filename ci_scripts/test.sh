@@ -13,15 +13,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     python run_mountain_car.py  --epochs 5
 
     pip -V pip
-    pip install --upgrade pip
-    conda install libgcc -y
-    if [[ "$PYTHON_VERSION" == "2.7" ]]; then
-      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl;
-    elif [[ "$PYTHON_VERSION" == "3.5" ]]; then
-      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp35-cp35m-linux_x86_64.whl;
-    fi
     
-#    pip install keras
 #    python run_mountain_car_continuous.py  --epochs 5
 
 else
