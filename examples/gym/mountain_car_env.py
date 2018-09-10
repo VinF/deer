@@ -12,21 +12,31 @@ class MyEnv(Environment):
         Arguments:
             rng - the numpy random number generator            
         """
-        self.env = gym.make('MountainCar-v0')
+        gym.envs.register(
+        id='MountainCarModified-v0',
+        entry_point='gym.envs.classic_control:MountainCarEnv',
+        max_episode_steps=500,      # MountainCar-v0 uses 200
+        reward_threshold=-110.0,
+        )
+
+        self.env = gym.make('MountainCarModified-v0')
+        self.env.max_episode_steps = 500
         self.rng=rng
         self._last_observation = self.env.reset()
         self.is_terminal=False
-        self._input_dim = [(1,), (1,)]      # self.env.observation_space.shape is equal to 4 
+        self._input_dim = [(1,), (1,)]      # self.env.observation_space.shape is equal to 2
                                             # and we use only the current observation in the pseudo-state
 
     def act(self, action):
         """ Simulate one time step in the environment.
         """
         reward=0
-        for _ in range(5):
+        nsteps=10
+        for _ in range(nsteps):
             self._last_observation, r, self.is_terminal, info = self.env.step(action)
             reward+=r
             if(self.is_terminal==True):
+                reward+=3*nsteps
                 break
         
             if (self.mode==0): # Show the policy only at test time
@@ -35,15 +45,14 @@ class MyEnv(Environment):
                 except:
                     pass
                     #print("Warning:", sys.exc_info()[0])
-        
-        s=copy.deepcopy(self._last_observation)
-        
+
+        #s=copy.deepcopy(self._last_observation)
         ## Possibility to add a reward shaping for faster convergence   
         #s[0]+=math.pi/6
         #if(s[0]>0):
         #    reward+=pow(s[0],2)#np.linalg.norm(s[0])
-                
-        return reward
+
+        return reward/nsteps
                 
     def reset(self, mode=0):
         """ Reset environment for a new episode.
@@ -55,11 +64,12 @@ class MyEnv(Environment):
         self.mode=mode
         
         self._last_observation = self.env.reset()
-        if (self.mode==-1): # Reset to a random value when in training mode (that allows to increase exploration)
-            high=self.env.observation_space.high
-            low=self.env.observation_space.low
-            self._last_observation=low+self.rng.rand(2)*(high-low)            
-            self.env.state=self._last_observation
+        # DEEPRECATED
+        #if (self.mode==-1): # Reset to a random value when in training mode (that allows to increase exploration)
+        #    high=self.env.observation_space.high
+        #    low=self.env.observation_space.low
+        #    self._last_observation=low+self.rng.rand(2)*(high-low)
+        #    self.env.env.state=self._last_observation
 
         self.is_terminal=False
         

@@ -33,8 +33,8 @@ class MyEnv(Environment):
         reduce_qty_data=int(reduce_qty_data) if reduce_qty_data is not None else int(1)
         length_history=int(length_history) if length_history is not None else int(12)
         start_history=int(start_history) if start_history is not None else int(0)
-        print "reduce_qty_data, length_history, start_history"
-        print reduce_qty_data, length_history, start_history
+        print ("reduce_qty_data, length_history, start_history")
+        print (reduce_qty_data, length_history, start_history)
         # Defining the type of environment
         self._dist_equinox=0
         self._pred=0
@@ -86,8 +86,8 @@ class MyEnv(Environment):
         self.production_valid=self.production_valid_norm*12000./1000.*inc_sizing
         self.production_test=self.production_test_norm*12000/1000*inc_sizing
 
-        print "self.production_train brefore"
-        print self.production_train
+        print ("self.production_train brefore")
+        print (self.production_train)
         
         ###
         ### Artificially reducing the variety of the training and validation time series
@@ -110,8 +110,8 @@ class MyEnv(Environment):
                 self.production_train_norm[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_train_norm[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
                 self.production_valid_norm[season*nd_one_seas:(season+1)*nd_one_seas]=np.tile(self.production_valid_norm[int((season+(self._start_history+0.)/self._reduce_qty_data)*nd_one_seas):int((season+(self._start_history+1.)/self._reduce_qty_data)*nd_one_seas)], self._reduce_qty_data)
             
-        print "self.production_train after"
-        print self.production_train
+        print ("self.production_train after")
+        print (self.production_train)
 
         self.min_production=min(self.production_train)
         self.max_production=max(self.production_train)

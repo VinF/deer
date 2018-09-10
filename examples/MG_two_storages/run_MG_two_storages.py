@@ -63,7 +63,7 @@ if __name__ == "__main__":
     
     # --- Parse parameters ---
     parameters = process_args(sys.argv[1:], Defaults)
-    print parameters.deterministic
+
     if parameters.deterministic:
         rng = np.random.RandomState(123456)
     else:
@@ -74,8 +74,6 @@ if __name__ == "__main__":
         # That way, the number of days in each season is divisible by parameters.param1 and it is thus possible
         # to reduce the variety of the data within each season in the time series by a factor of parameters.param1
         parameters.steps_per_epoch=parameters.steps_per_epoch-(parameters.steps_per_epoch%(24*4*int(parameters.param1)))-1
-    print "parameters.steps_per_epoch"
-    print parameters.steps_per_epoch
 
     # --- Instantiate environment ---
     env = MG_two_storages_env(rng, parameters.param1, parameters.param2, parameters.param3)
