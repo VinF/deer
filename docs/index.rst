@@ -5,7 +5,7 @@ DeeR (Deep Reinforcement) is a python library to train an agent how to behave in
 
 Here are key advantages of the library:
 
-* You have access within a single library to techniques such as Double Q-learning, prioritized Experience Replay, Deep deterministic policy gradient (DDPG), etc.
+* You have access within a single library to techniques such as Double Q-learning, prioritized Experience Replay, Deep deterministic policy gradient (DDPG), Combined Reinforcement via Abstract Representations (CRAR), etc.
 * This package provides a general framework where observations are made up of any number of elements (scalars, vectors or frames).
 * You can easily add up a validation phase that allows to stop the training process before overfitting. This possibility is useful when the environment is dependent on scarce data (e.g. limited time series).
 
@@ -20,7 +20,7 @@ In addition, the framework is made in such a way that it is easy to
    :alt: alternate text
    :align: right
 
-:Figure: General schema of the different elements implement in DeeR.
+:Figure: General schema of the different elements available in DeeR.
 
 It is a work in progress and input is welcome. Please submit any contribution via pull request.
 
@@ -49,10 +49,20 @@ Version 0.2
 Future extensions:
 ******************
 
-* Add planning (e.g. MCTS based when deterministic environment)
 * Several agents interacting in the same environment
 * ...
 
+How should I cite DeeR?
+************************
+
+Please cite DeeR in your publications if you use it in your research. Here is an example BibTeX entry:
+
+@misc{franccoislavet2016deer,
+  title={DeeR},
+  author={Fran\c{c}ois-Lavet, Vincent and others},
+  year={2016},
+  howpublished={\url{https://deer.readthedocs.io/}},
+}
 
 User Guide
 ------------
