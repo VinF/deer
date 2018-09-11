@@ -36,7 +36,8 @@ def loss_diff_s_s_(y_true, y_pred):
     return K.square(   1.    -    K.sqrt(  K.clip( K.sum(y_pred,axis=-1,keepdims=True), 0.000001 , 1. )  )     ) # tend to increase y_pred --> loss -1
 
 class CRAR(LearningAlgo):
-    """ Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
+    """
+    Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
     
     Parameters
     -----------

@@ -39,9 +39,8 @@ class MyACNetwork(ACNetwork):
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
+        Set the random seed.
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
