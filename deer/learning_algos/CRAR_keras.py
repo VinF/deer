@@ -42,6 +42,7 @@ class CRAR(LearningAlgo):
     Parameters
     -----------
     environment : object from class Environment
+        The environment in which the agent evolves.
     rho : float
         Parameter for rmsprop. Default : 0.9
     rms_epsilon : float
