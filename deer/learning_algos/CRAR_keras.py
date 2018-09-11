@@ -9,10 +9,10 @@ from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 from ..base_classes import LearningAlgo
 from .NN_CRAR_keras import NN # Default Neural network used
-import tensorflow as tf
-config = tf.ConfigProto()
-config.gpu_options.allow_growth=True
-sess = tf.Session(config=config)
+#import tensorflow as tf
+#config = tf.ConfigProto()
+#config.gpu_options.allow_growth=True
+#sess = tf.Session(config=config)
 import copy
 
 def mean_squared_error_p(y_true, y_pred):
