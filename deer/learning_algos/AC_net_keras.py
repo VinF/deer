@@ -3,11 +3,9 @@ Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 
 """
 
-import sys
 import numpy as np
 from ..base_classes import LearningAlgo as ACNetwork
 from .NN_keras import NN # Default Neural network used
-from warnings import warn
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 
@@ -16,7 +14,6 @@ try:
     assert(K.backend()=="tensorflow")
 except:
     print('Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json')
-    #sys.exit(0)
 
 class MyACNetwork(ACNetwork):
     """
@@ -168,7 +165,7 @@ class MyACNetwork(ACNetwork):
         ns_list.append( next_actions_val )
         next_q_vals = self.next_q_vals.predict(  ns_list  )
         
-        not_terminals=np.ones_like(terminals_val) - terminals_val
+        not_terminals=np.invert(terminals_val).astype(float)
         
         target = rewards_val + not_terminals * self._df * next_q_vals.reshape((-1))
         
