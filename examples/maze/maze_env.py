@@ -98,10 +98,6 @@ class MyEnv(Environment):
                 
             else:
                 self._mode_episode_count += 1
-                    
-        print ("reset mode:"+str(mode)+".")
-        #print "self._pos_agent,self._pos_walls,self._pos_rewards"
-        #print self._pos_agent,self._pos_walls,self._pos_rewards
                 
         return [1 * [self._size_maze * [self._size_maze * [0]]]]
         
@@ -186,7 +182,6 @@ class MyEnv(Environment):
             reward_obs[5,2:4]=0.7
             
             for i in indices_reward:
-                #print self._map[i[0]*6:(i[0]+1)*6:,i[1]*6:(i[1]+1)*6]
                 self._map[i[0]*6:(i[0]+1)*6:,i[1]*6:(i[1]+1)*6]=reward_obs
 
             for i in indices_agent:
@@ -204,8 +199,6 @@ class MyEnv(Environment):
         if(self._reverse==True):
             self._map=-self._map #1-self._map
         
-        #print "self._map"
-        #print self._map
         return [self._map]
 
     def inTerminalState(self):

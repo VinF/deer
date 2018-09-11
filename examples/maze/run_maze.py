@@ -12,7 +12,7 @@ import os
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent
 from deer.learning_algos.CRAR_keras import CRAR
-from test_env4 import MyEnv as test_env
+from maze_env import MyEnv as maze_env
 import deer.experiment.base_controllers as bc
 
 from deer.policies import EpsilonGreedyPolicy
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState()
     
     # --- Instantiate environment ---
-    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS)
+    env = maze_env(rng, higher_dim_obs=HIGHER_DIM_OBS)
     
     # --- Instantiate learning_algo ---
     learning_algo = CRAR(
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # of the validation and test scores (see below) or simply recover the resulting neural network for your 
     # application.
     #agent.attach(bc.FindBestController(
-    #    validationID=test_env.VALIDATION_MODE,
+    #    validationID=maze_env.VALIDATION_MODE,
     #    testID=None,
     #    unique_fname=fname))
     
@@ -259,7 +259,7 @@ if __name__ == "__main__":
 #
 #    
 #    # --- Re instantiate environment with reverse=True ---
-#    env = test_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=True)
+#    env = maze_env(rng, higher_dim_obs=HIGHER_DIM_OBS, reverse=True)
 #
 #    # --- Re instantiate agent ---
 #    agent = NeuralAgent(
@@ -332,7 +332,7 @@ if __name__ == "__main__":
 #    # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
 #    # [parameters.period_btw_summary_perfs] *validation* epochs.
 #    agent.attach(bc.InterleavedTestEpochController(
-#        id=test_env.VALIDATION_MODE, 
+#        id=maze_env.VALIDATION_MODE, 
 #        epoch_length=parameters.steps_per_test,
 #        controllers_to_disable=[0, 1, 2, 3, 4],
 #        periodicity=2,
@@ -341,7 +341,7 @@ if __name__ == "__main__":
 #
 #
 ##    agent.attach(bc.InterleavedTestEpochController(
-##        id=test_env.VALIDATION_MODE+1, 
+##        id=maze_env.VALIDATION_MODE+1, 
 ##        epoch_length=parameters.steps_per_test,
 ##        controllers_to_disable=[0, 1, 2, 3, 4, 5, 7,8],
 ##        periodicity=2,
@@ -349,7 +349,7 @@ if __name__ == "__main__":
 ##        summarize_every=1))
 ##
 ##    agent.attach(bc.InterleavedTestEpochController(
-##        id=test_env.VALIDATION_MODE+2, 
+##        id=maze_env.VALIDATION_MODE+2, 
 ##        epoch_length=parameters.steps_per_test,
 ##        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6,8],
 ##        periodicity=2,
@@ -357,7 +357,7 @@ if __name__ == "__main__":
 ##        summarize_every=1))
 ##    
 ##    agent.attach(bc.InterleavedTestEpochController(
-##        id=test_env.VALIDATION_MODE+3, 
+##        id=maze_env.VALIDATION_MODE+3, 
 ##        epoch_length=parameters.steps_per_test,
 ##        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6, 7],
 ##        periodicity=2,
