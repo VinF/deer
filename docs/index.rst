@@ -57,12 +57,15 @@ How should I cite DeeR?
 
 Please cite DeeR in your publications if you use it in your research. Here is an example BibTeX entry:
 
-@misc{franccoislavet2016deer,
-  title={DeeR},
-  author={Fran\c{c}ois-Lavet, Vincent and others},
-  year={2016},
-  howpublished={\url{https://deer.readthedocs.io/}},
-}
+.. code-block:: bash
+    
+    @misc{franccoislavet2016deer,
+    title={DeeR},
+    author={Fran\c{c}ois-Lavet, Vincent and others},
+    year={2016},
+    howpublished={\url{https://deer.readthedocs.io/}},
+    }
+
 
 User Guide
 ------------
