@@ -57,6 +57,7 @@ class CRAR(LearningAlgo):
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
     random_state : numpy random number generator
+        Set the random seed.
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
