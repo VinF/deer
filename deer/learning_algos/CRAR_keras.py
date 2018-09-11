@@ -355,10 +355,14 @@ class CRAR(LearningAlgo):
         state_val : array of objects (or list of objects)
             Each object is a numpy array that relates to one of the observations
             with size [1 * history size * size of punctual observation (which is 2D,1D or scalar)]).
-        R : float_model for the reward
-        gamma : float_model for the discount
+        R : float_model
+            Model that fits the reward
+        gamma : float_model
+            Model that fits the discount factor
         T : transition_model
+            Model that fits the transition between abstract representation
         Q : Q_model
+            Model that fits the optimal Q-value
         d : int
             planning depth
 
@@ -420,10 +424,14 @@ class CRAR(LearningAlgo):
         Arguments
         ---------
         state_abstr_val : internal state(s).
-        R : float_model for the reward
-        gamma : float_model for the discount
+        R : float_model
+            Model that fits the reward
+        gamma : float_model
+            Model that fits the discount factor
         T : transition_model
+            Model that fits the transition between abstract representation
         Q : Q_model
+            Model that fits the optimal Q-value
         d : int
             planning depth
 
@@ -483,8 +491,10 @@ class CRAR(LearningAlgo):
 
         Arguments
         ---------
-        state : one pseudo-state
-        mode : identifier of the mode (-1 is reserved for the training mode)
+        state : list of numpy arrays
+             One pseudo-state. The number of arrays and their dimensions matches self.environment.inputDimensions().
+        mode : int
+            Identifier of the mode (-1 is reserved for the training mode).
 
         Returns
         -------
