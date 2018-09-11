@@ -52,7 +52,7 @@ You can install the framework with pip:
     
     pip install deer
 
-For the bleeding edge version (recommanded), you can simply use
+For the bleeding edge version (recommended), you can simply use
 
 .. code-block:: bash
 

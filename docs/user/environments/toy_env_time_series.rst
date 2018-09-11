@@ -103,8 +103,7 @@ If you want to use LSTM's architecture, you can import the following libraries
 
 .. code-block:: bash
 
-    from deer.q_networks.q_net_keras import MyQNetwork
-    from deer.q_networks.NN_keras_LSTM import NN as NN_keras
+    from deer.learning_algos.NN_keras_LSTM import NN as NN_keras
 
 and then instanciate the qnetwork by specifying the 'neural_network' as follows:
 

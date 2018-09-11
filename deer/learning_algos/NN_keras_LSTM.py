@@ -6,9 +6,8 @@ Neural network with LSTM's using Keras (called by q_net_keras)
 
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, merge, Activation, Convolution2D, MaxPooling2D, Reshape
+from keras.layers import Input, Layer, Dense, Flatten, concatenate, Activation, Convolution2D, MaxPooling2D, Reshape
 from keras.layers.recurrent import LSTM
-import theano.tensor as T
 
 class NN():
     """
@@ -101,7 +100,7 @@ class NN():
                 outs_conv.append(input)
 
         if len(outs_conv)>1:
-            x = merge(outs_conv, mode='concat')
+            x = concatenate(outs_conv)
         else:
             x= outs_conv [0]
                     
