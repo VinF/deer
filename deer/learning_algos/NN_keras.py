@@ -114,7 +114,7 @@ class NN():
         else:
             out = Dense(1)(x)
 
-        model = Model(input=inputs, output=out)
+        model = Model(inputs=inputs, outputs=out)
         layers=model.layers
         
         # Grab all the parameters together.
