@@ -20,7 +20,7 @@ The launcher file performs different actions:
 * It binds controllers to the agent
 * it finally runs the experiment
 
-You can get started with the following examples (roughly in order of difficulty)
+You can get started with the following examples:
 
 .. toctree::
   :maxdepth: 2
