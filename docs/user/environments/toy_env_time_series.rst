@@ -15,7 +15,7 @@ The price pattern is made by repeating the following signal plus a random consta
    :alt: Toy example price pattern
    :align: center
 
-Let's now see how this environement is built by looking into the file ``Toy_env.py`` in |toy_env_folder|. It is important to note that any environment derives from the base class :ref:`env_interface` and you can refer to it in order to understand the required methods and their usage.
+You can see how this environement is built by looking into the file ``Toy_env.py`` in |toy_env_folder|. It is important to note that any environment derives from the base class :ref:`env_interface` and you can refer to it in order to understand the required methods and their usage.
 
 .. |toy_env_folder| raw:: html
 
