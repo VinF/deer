@@ -28,5 +28,6 @@ You can get started with the following examples (roughly in order of difficulty)
   environments/toy_env_time_series.rst
   environments/gym.rst
   environments/two_storages.rst
+  environments/planning.rst
   environments/ALE.rst
   
