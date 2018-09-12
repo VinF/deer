@@ -1,6 +1,6 @@
 """
 Neural network using Keras (called by q_net_keras)
-.. Author: Vincent Francois-Lavet
+
 """
 
 import numpy as np
@@ -18,6 +18,7 @@ class NN():
     input_dimensions :
     n_actions :
     random_state : numpy random number generator
+        Set the random seed.
     action_as_input : Boolean
         Whether the action is given as input or as output
     """
