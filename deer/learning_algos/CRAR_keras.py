@@ -9,10 +9,10 @@ from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 from ..base_classes import LearningAlgo
 from .NN_CRAR_keras import NN # Default Neural network used
-import tensorflow as tf
-config = tf.ConfigProto()
-config.gpu_options.allow_growth=True
-sess = tf.Session(config=config)
+#import tensorflow as tf
+#config = tf.ConfigProto()
+#config.gpu_options.allow_growth=True
+#sess = tf.Session(config=config)
 import copy
 
 def mean_squared_error_p(y_true, y_pred):
@@ -36,11 +36,13 @@ def loss_diff_s_s_(y_true, y_pred):
     return K.square(   1.    -    K.sqrt(  K.clip( K.sum(y_pred,axis=-1,keepdims=True), 0.000001 , 1. )  )     ) # tend to increase y_pred --> loss -1
 
 class CRAR(LearningAlgo):
-    """ Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
+    """
+    Combined Reinforcement learning via Abstract Representations (CRAR) using Keras
     
     Parameters
     -----------
     environment : object from class Environment
+        The environment in which the agent evolves.
     rho : float
         Parameter for rmsprop. Default : 0.9
     rms_epsilon : float
@@ -56,6 +58,7 @@ class CRAR(LearningAlgo):
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
     random_state : numpy random number generator
+        Set the random seed.
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
@@ -352,10 +355,14 @@ class CRAR(LearningAlgo):
         state_val : array of objects (or list of objects)
             Each object is a numpy array that relates to one of the observations
             with size [1 * history size * size of punctual observation (which is 2D,1D or scalar)]).
-        R : float_model for the reward
-        gamma : float_model for the discount
+        R : float_model
+            Model that fits the reward
+        gamma : float_model
+            Model that fits the discount factor
         T : transition_model
+            Model that fits the transition between abstract representation
         Q : Q_model
+            Model that fits the optimal Q-value
         d : int
             planning depth
 
@@ -417,10 +424,14 @@ class CRAR(LearningAlgo):
         Arguments
         ---------
         state_abstr_val : internal state(s).
-        R : float_model for the reward
-        gamma : float_model for the discount
+        R : float_model
+            Model that fits the reward
+        gamma : float_model
+            Model that fits the discount factor
         T : transition_model
+            Model that fits the transition between abstract representation
         Q : Q_model
+            Model that fits the optimal Q-value
         d : int
             planning depth
 
@@ -480,8 +491,10 @@ class CRAR(LearningAlgo):
 
         Arguments
         ---------
-        state : one pseudo-state
-        mode : identifier of the mode (-1 is reserved for the training mode)
+        state : list of numpy arrays
+             One pseudo-state. The number of arrays and their dimensions matches self.environment.inputDimensions().
+        mode : int
+            Identifier of the mode (-1 is reserved for the training mode).
 
         Returns
         -------

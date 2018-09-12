@@ -20,7 +20,7 @@ The launcher file performs different actions:
 * It binds controllers to the agent
 * it finally runs the experiment
 
-Examples are better than precepts and the best is to get started with the following examples (with the simplest examples listed first)
+You can get started with the following examples:
 
 .. toctree::
   :maxdepth: 2
@@ -28,5 +28,6 @@ Examples are better than precepts and the best is to get started with the follow
   environments/toy_env_time_series.rst
   environments/gym.rst
   environments/two_storages.rst
+  environments/planning.rst
   environments/ALE.rst
   

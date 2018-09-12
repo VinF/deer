@@ -20,7 +20,7 @@
 DeeR
 ====
 
-DeeR is a python library for Deep Reinforcement. It is build with modularity in mind so that it can easily be adapted to any need. It provides many possibilities out of the box (prioritized experience replay, double Q-learning, DDPG, etc). Many different environment examples are also provided (some of them using OpenAI gym). 
+DeeR is a python library for Deep Reinforcement. It is build with modularity in mind so that it can easily be adapted to any need. It provides many possibilities out of the box such as Double Q-learning, prioritized Experience Replay, Deep deterministic policy gradient (DDPG), Combined Reinforcement via Abstract Representations (CRAR). Many different environment examples are also provided (some of them using OpenAI gym).
 
 Dependencies
 ============

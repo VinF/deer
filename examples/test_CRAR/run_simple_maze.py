@@ -101,6 +101,21 @@ if __name__ == "__main__":
     print("The parameters hash is: {}".format(h))
     print("The parameters are: {}".format(parameters))
 
+    # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
+    # policy implemented by the agent. This controllers has a bit more capabilities, as it allows one to choose more
+    # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
+    # episode or epoch (or never, hence the resetEvery='none').
+    agent.attach(bc.EpsilonController(
+        initial_e=parameters.epsilon_start,
+        e_decays=parameters.epsilon_decay,
+        e_min=parameters.epsilon_min,
+        evaluate_on='action',
+        periodicity=1,
+        reset_every='none'))
+
+    agent.run(10, 500)
+    print("end gathering data")
+
     # --- Bind controllers to the agent ---
     # Before every training epoch (periodicity=1), we want to print a summary of the agent's epsilon, discount and 
     # learning rate as well as the training epoch number.
@@ -122,21 +137,6 @@ if __name__ == "__main__":
         discount_factor_max=parameters.discount_max,
         periodicity=1))
         
-    # As for the discount factor and the learning rate, one can update periodically the parameter of the epsilon-greedy
-    # policy implemented by the agent. This controllers has a bit more capabilities, as it allows one to choose more
-    # precisely when to update epsilon: after every X action, episode or epoch. This parameter can also be reset every
-    # episode or epoch (or never, hence the resetEvery='none').
-    agent.attach(bc.EpsilonController(
-        initial_e=parameters.epsilon_start, 
-        e_decays=parameters.epsilon_decay, 
-        e_min=parameters.epsilon_min,
-        evaluate_on='action',
-        periodicity=1,
-        reset_every='none'))
-
-    agent.run(10, 500)
-    print("end gathering data")
-
     # During training epochs, we want to train the agent after every [parameters.update_frequency] action it takes.
     # Plus, we also want to display after each training episode (!= than after every training) the average bellman
     # residual and the average of the V values obtained during the last episode, hence the two last arguments.

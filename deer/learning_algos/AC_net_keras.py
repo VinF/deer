@@ -3,11 +3,9 @@ Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 
 """
 
-import sys
 import numpy as np
 from ..base_classes import LearningAlgo as ACNetwork
 from .NN_keras import NN # Default Neural network used
-from warnings import warn
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 
@@ -16,7 +14,6 @@ try:
     assert(K.backend()=="tensorflow")
 except:
     print('Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json')
-    #sys.exit(0)
 
 class MyACNetwork(ACNetwork):
     """
@@ -25,6 +22,7 @@ class MyACNetwork(ACNetwork):
     Parameters
     -----------
     environment : object from class Environment
+        The environment in which the agent evolves.
     rho : float
         Parameter for rmsprop. Default : 0.9
     rms_epsilon : float
@@ -39,9 +37,8 @@ class MyACNetwork(ACNetwork):
         Number of tuples taken into account for each iteration of gradient descent. Default : 32
     update_rule: str
         {sgd,rmsprop}. Default : rmsprop
-    batch_accumulator : str
-        {sum,mean}. Default : sum
     random_state : numpy random number generator
+        Set the random seed.
     double_Q : bool, optional
         Activate or not the double_Q learning.
         More informations in : Hado van Hasselt et al. (2015) - Deep Reinforcement Learning with Double Q-learning.
@@ -168,7 +165,7 @@ class MyACNetwork(ACNetwork):
         ns_list.append( next_actions_val )
         next_q_vals = self.next_q_vals.predict(  ns_list  )
         
-        not_terminals=np.ones_like(terminals_val) - terminals_val
+        not_terminals=np.invert(terminals_val).astype(float)
         
         target = rewards_val + not_terminals * self._df * next_q_vals.reshape((-1))
         
