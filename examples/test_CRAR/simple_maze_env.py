@@ -62,10 +62,10 @@ class MyEnv(Environment):
         # Setting the starting position of the agent
         self._pos_agent=[self._size_maze//2,self._size_maze//2]
             
-        print ("new map:")
-        print (self._map)
-        print ("reset mode")
-        print (mode)
+        #print ("new map:")
+        #print (self._map)
+        #print ("reset mode")
+        #print (mode)
 
         return [1 * [self._size_maze * [self._size_maze * [0]]]]
         
