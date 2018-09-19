@@ -44,7 +44,7 @@ This combination allows to learn complex tasks such as playing ATARI games from 
 How can I get started?
 -----------------------
 
-First, make sure you have installed the package properly by following the steps descibed in :ref:`installation`.
+First, make sure you have installed the package properly by following the steps described in :ref:`installation`.
 
 The general idea of this framework is that you need to instantiate an agent (along with a learning algorithm) and an environment. In order to perform an experiment, you also need to attach to the agent some controllers for controlling the training and the various parameters of your agent.
 
