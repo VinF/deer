@@ -788,7 +788,11 @@ class CircularBuffer(object):
             self._ub += 1
 
         if self._ub > self._trueSize:
-            self._data[0:self._size-1] = self._data[self._lb:]
+            # Rolling array without copying whole array (for memory constraints)
+            # basic command: self._data[0:self._size-1] = self._data[self._lb:]
+            n_splits=10
+            for i in range(n_splits):
+                self._data[i*(self._size)//n_splits:(i+1)*(self._size)//n_splits] = self._data[self._lb+i*(self._size)//n_splits:self._lb+(i+1)*(self._size)//n_splits]
             self._lb  = 0
             self._ub  = self._size
             self._cur = self._size - 1
