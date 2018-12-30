@@ -53,7 +53,7 @@ The environment should be built specifically for any specific task while learnin
 The best to get started is to have a look at the :ref:`examples` and in particular the two first environments that are simple to understand: 
 
 * :ref:`toy_env_time_series`
-* :ref:`toy_env_pendulum`
+* :ref:`gym`
 
 If you find something that is not yet implemented and if you wish to contribute, you can check the section :ref:`dev`.
 
