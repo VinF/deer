@@ -8,20 +8,20 @@ What is deep reinforcement learning?
 
 Deep reinforcement learning is the combination of two fields:
 
-* *Reinforcement learning (RL)* is a theory that allows an agent to learn a startegy so as to maximize a sum of cumulated (delayed) rewards from any given environment. If you are not familiar with RL, you can get up to speed easily with |SB_link| by Sutton and Barto.
+* *Reinforcement learning (RL)* is a theory that allows an agent to learn a startegy so as to maximize a sum of cumulated (delayed) rewards from any given environment. If you are not familiar with RL, you can get up to speed easily with the |SB_link|.
 
 .. |SB_link| raw:: html
 
-   <a href="https://webdocs.cs.ualberta.ca/~sutton/book/the-book.html" target="_blank">this book</a>
+   <a href="https://webdocs.cs.ualberta.ca/~sutton/book/the-book.html" target="_blank">book by Sutton and Barto</a>
    
    
 * *Deep learning* is a branch of machine learning for regression and classification. It is particularly well suited to model high-level abstractions in data by using multiple processing layers composed of multiple non-linear transformations.
 
-This combination allows to learn complex tasks such as playing ATARI games from high-dimensional sensory inputs. For more informations, you can refer to one of the main papers in the domain : |Human-level_link|.
+This combination allows to learn complex tasks such as playing ATARI games from high-dimensional sensory inputs. For more information, you can refer to this |intro-deep-RL|.
 
-.. |Human-level_link| raw:: html
+.. |intro-deep-RL| raw:: html
 
-   <a href="http://www.nature.com/nature/journal/v518/n7540/full/nature14236.html" target="_blank">"Human-level control through deep reinforcement learning"</a>
+   <a href="https://arxiv.org/abs/1811.12560" target="_blank">introduction to deep reinforcement learning</a>
 
 ..
     How does it work?
@@ -53,7 +53,7 @@ The environment should be built specifically for any specific task while learnin
 The best to get started is to have a look at the :ref:`examples` and in particular the two first environments that are simple to understand: 
 
 * :ref:`toy_env_time_series`
-* :ref:`toy_env_pendulum`
+* :ref:`gym`
 
 If you find something that is not yet implemented and if you wish to contribute, you can check the section :ref:`dev`.
 
