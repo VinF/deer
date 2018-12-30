@@ -783,22 +783,21 @@ class CircularBuffer(object):
         self.dtype = dtype
     
     def append(self, obj):
-        if self._cur >= self._size:
+        if self._cur > self._size:  #> instead of >=
             self._lb += 1
             self._ub += 1
 
-        if self._ub > self._trueSize:
+        if self._ub >= self._trueSize:
             # Rolling array without copying whole array (for memory constraints)
-            # basic command: self._data[0:self._size-1] = self._data[self._lb:]
+            # basic command: self._data[0:self._size-1] = self._data[self._lb:] OR NEW self._data[0:self._size] = self._data[self._lb-1:]
             n_splits=10
             for i in range(n_splits):
-                self._data[i*(self._size)//n_splits:(i+1)*(self._size)//n_splits] = self._data[self._lb+i*(self._size)//n_splits:self._lb+(i+1)*(self._size)//n_splits]
+                self._data[i*(self._size)//n_splits:(i+1)*(self._size)//n_splits] = self._data[(self._lb-1)+i*(self._size)//n_splits:(self._lb-1)+(i+1)*(self._size)//n_splits]
             self._lb  = 0
             self._ub  = self._size
-            self._cur = self._size - 1
-            
-        self._data[self._cur] = obj
+            self._cur = self._size #OLD self._size - 1
 
+        self._data[self._cur] = obj
         self._cur += 1
 
     def __getitem__(self, i):
