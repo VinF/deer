@@ -325,9 +325,9 @@ class InterleavedTestEpochController(Controller):
             self._periodicity = 2
         else:
             self._periodicity = periodicity
-
         self._summary_counter = 0
         self._summary_periodicity = summarize_every
+        self.scores=[]
 
     def onStart(self, agent):
         if (self._active == False):
@@ -350,6 +350,7 @@ class InterleavedTestEpochController(Controller):
             if self._show_score:
                 score,nbr_episodes=agent.totalRewardOverLastTest()
                 print("Testing score per episode (id: {}) is {} (average over {} episode(s))".format(self._id, score, nbr_episodes))
+                self.scores.append(score)
             if self._summary_periodicity > 0 and self._summary_counter % self._summary_periodicity == 0:
                 agent.summarizeTestPerformance()
             agent.resumeTrainingMode()
