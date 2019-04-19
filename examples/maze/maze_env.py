@@ -1,4 +1,4 @@
-""" Interface with the test environment
+""" Environment with a distribution of mazes (one new maze is drawn at each episode)
 
 Author: Vincent Francois-Lavet
 """

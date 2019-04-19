@@ -5,7 +5,7 @@
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
+from joblib import hash, dump, load
 import os
 
 from deer.default_parser import process_args
@@ -147,8 +147,7 @@ if __name__ == "__main__":
         show_avg_Bellman_residual=True))
     
     # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
-    # seems to generalize the better, thus which one has the highest validation score. Here, we do not care about the
-    # "true generalization score", or "test score".
+    # has the highest validation score.
     # To achieve this goal, one can use the FindBestController along with an InterleavedTestEpochControllers. It is 
     # important that the validationID is the same than the id argument of the InterleavedTestEpochController.
     # The FindBestController will dump on disk the validation scores for each and every network, as well as the 
@@ -187,10 +186,11 @@ if __name__ == "__main__":
     
     # --- Show results ---
     basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
-    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
-    plt.legend()
-    plt.xlabel("Number of epochs")
-    plt.ylabel("Score")
-    plt.savefig(basename + "_scores.pdf")
-    plt.show()
+    scores = load(basename + "_scores.jldump")
+    print (scores)
+#    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
+#    plt.legend()
+#    plt.xlabel("Number of epochs")
+#    plt.ylabel("Score")
+#    plt.savefig(basename + "_scores.pdf")
+#    plt.show()

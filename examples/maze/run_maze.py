@@ -182,37 +182,41 @@ if __name__ == "__main__":
     # InterleavedTestEpochController. For each validation epoch, we want also to display the sum of all rewards 
     # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
     # [parameters.period_btw_summary_perfs] *validation* epochs.
-    agent.attach(bc.InterleavedTestEpochController(
+    valid0=bc.InterleavedTestEpochController(
         id=0, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4, 6, 7, 8],
         periodicity=2,
         show_score=True,
-        summarize_every=1))
+        summarize_every=1)
+    agent.attach(valid0)
 
-    agent.attach(bc.InterleavedTestEpochController(
+    valid1=bc.InterleavedTestEpochController(
         id=1, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4, 5, 7,8],
         periodicity=2,
         show_score=True,
-        summarize_every=1))
+        summarize_every=1)
+    agent.attach(valid1)
 
-    agent.attach(bc.InterleavedTestEpochController(
+    valid2=bc.InterleavedTestEpochController(
         id=2, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4, 5, 6,8],
         periodicity=2,
         show_score=True,
-        summarize_every=1))
+        summarize_every=1)
+    agent.attach(valid2)
     
-    agent.attach(bc.InterleavedTestEpochController(
+    valid3=bc.InterleavedTestEpochController(
         id=3, 
         epoch_length=parameters.steps_per_test,
         controllers_to_disable=[0, 1, 2, 3, 4, 5, 6, 7],
         periodicity=2,
         show_score=True,
-        summarize_every=1))
+        summarize_every=1)
+    agent.attach(valid3)
 
     # --- Run the experiment ---
     try:
@@ -223,6 +227,10 @@ if __name__ == "__main__":
     agent.gathering_data=False
     agent.run(parameters.epochs, parameters.steps_per_epoch)
     
+print (valid0.scores)
+print (valid1.scores)
+print (valid2.scores)
+print (valid3.scores)
 
 #    ###
 #    # TRANSFER
@@ -368,13 +376,3 @@ if __name__ == "__main__":
 #    agent.run(parameters.epochs, parameters.steps_per_epoch)
 #
 
-
-    # --- Show results ---
-    basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
-    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
-    plt.legend()
-    plt.xlabel("Number of epochs")
-    plt.ylabel("Score")
-    plt.savefig(basename + "_scores.pdf")
-    plt.show()
