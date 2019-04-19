@@ -5,7 +5,7 @@
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
+from joblib import hash, dump, load
 import os
 
 from deer.default_parser import process_args
@@ -186,10 +186,11 @@ if __name__ == "__main__":
     
     # --- Show results ---
     basename = "scores/" + fname
-    scores = joblib.load(basename + "_scores.jldump")
-    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
-    plt.legend()
-    plt.xlabel("Number of epochs")
-    plt.ylabel("Score")
-    plt.savefig(basename + "_scores.pdf")
-    plt.show()
+    scores = load(basename + "_scores.jldump")
+    print (scores)
+#    plt.plot(range(1, len(scores['vs'])+1), scores['vs'], label="VS", color='b')
+#    plt.legend()
+#    plt.xlabel("Number of epochs")
+#    plt.ylabel("Score")
+#    plt.savefig(basename + "_scores.pdf")
+#    plt.show()
