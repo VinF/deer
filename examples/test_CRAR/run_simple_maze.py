@@ -147,8 +147,7 @@ if __name__ == "__main__":
         show_avg_Bellman_residual=True))
     
     # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
-    # seems to generalize the better, thus which one has the highest validation score. Here, we do not care about the
-    # "true generalization score", or "test score".
+    # has the highest validation score.
     # To achieve this goal, one can use the FindBestController along with an InterleavedTestEpochControllers. It is 
     # important that the validationID is the same than the id argument of the InterleavedTestEpochController.
     # The FindBestController will dump on disk the validation scores for each and every network, as well as the 
