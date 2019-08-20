@@ -4,7 +4,6 @@ Code for the CRAR learning algorithm using Keras
 """
 
 import numpy as np
-np.set_printoptions(threshold=np.nan)
 from keras.optimizers import SGD,RMSprop
 from keras import backend as K
 from ..base_classes import LearningAlgo
