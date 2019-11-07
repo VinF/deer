@@ -219,8 +219,7 @@ class NN():
             
             layers_action=inputs[1]
             layers_action=RepeatVector((dim[-2] // self._pooling_encoder)*(dim[-1] // self._pooling_encoder))(layers_action)
-            layers_action=Reshape((self._n_actions,(dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,(dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=Reshape(((dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder),self._n_actions))(layers_action)
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
             
@@ -386,8 +385,7 @@ class NN():
             
             layers_action=inputs[1]
             layers_action=RepeatVector((dim[-2] // self._pooling_encoder)*(dim[-1] // self._pooling_encoder))(layers_action)
-            layers_action=Reshape((self._n_actions,(dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder)))(layers_action)
-            layers_action=Permute((2,3,1), input_shape=(self.n_channels_internal_dim+self._n_actions,(dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder)))(layers_action)    #data_format='channels_last'
+            layers_action=Reshape(((dim[-2] // self._pooling_encoder),(dim[-1] // self._pooling_encoder),self._n_actions))(layers_action)
 
             
             x = Concatenate(axis=-1)([layers_action,inputs[0]])
