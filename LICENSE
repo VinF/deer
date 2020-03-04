@@ -5,6 +5,8 @@ Inspired from "Human-level control through deep reinforcement learning",
 Nature, 518(7540):529-533, February 2015 and the implementation of Nathan 
 Sprague (https://github.com/spragunr/deep_q_rl)
 
+This software is released under the 3-Clause BSD license.
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
