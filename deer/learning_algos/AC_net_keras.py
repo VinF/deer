@@ -138,7 +138,8 @@ class MyACNetwork(ACNetwork):
         states_val : numpy array of objects
             Each object is a numpy array that relates to one of the observations
             with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
-        actions_val : numpy array of integers with size [self._batch_size]
+        actions_val : numpy array of objects with size [self._batch_size].
+            Each object is a numpy array of floats with size [len(self._nActions)]
             actions[i] is the action taken after having observed states[:][i].
         rewards_val : numpy array of floats with size [self._batch_size]
             rewards[i] is the reward obtained for taking actions[i-1].
