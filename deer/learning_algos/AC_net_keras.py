@@ -138,7 +138,8 @@ class MyACNetwork(ACNetwork):
         states_val : numpy array of objects
             Each object is a numpy array that relates to one of the observations
             with size [batch_size * history size * size of punctual observation (which is 2D,1D or scalar)]).
-        actions_val : numpy array of integers with size [self._batch_size]
+        actions_val : numpy array of objects with size [self._batch_size].
+            Each object is a numpy array of floats with size [len(self._nActions)]
             actions[i] is the action taken after having observed states[:][i].
         rewards_val : numpy array of floats with size [self._batch_size]
             rewards[i] is the reward obtained for taking actions[i-1].
@@ -170,7 +171,7 @@ class MyACNetwork(ACNetwork):
         target = rewards_val + not_terminals * self._df * next_q_vals.reshape((-1))
         
         s_list=states_val.tolist()
-        s_list.append( actions_val  )
+        s_list.append( np.array(actions_val.tolist())  )
         
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_vals=self.q_vals.predict( s_list ).reshape((-1))
