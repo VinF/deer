@@ -20,8 +20,8 @@ env:
   matrix:
     - PYTHON_VERSION="2.7"
     - PYTHON_VERSION="3.5"
-    - PYTHON_VERSION="3.6" EXAMPLE="toy_env"
-    - PYTHON_VERSION="3.6" EXAMPLE="mountain_car"
+    - PYTHON_VERSION="3.8" EXAMPLE="toy_env"
+    - PYTHON_VERSION="3.8" EXAMPLE="mountain_car"
 
 install: source ci_scripts/install.sh
 script: bash ci_scripts/test.sh
