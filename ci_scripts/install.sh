@@ -55,7 +55,7 @@ fi
 python --version
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
-python -c "import theano; print('theano %s' % theano.__version__)"
+#python -c "import theano; print('theano %s' % theano.__version__)"
 python -c "import tensorflow; print('tensorflow %s' % tensorflow.__version__)"
 
 python setup.py develop
