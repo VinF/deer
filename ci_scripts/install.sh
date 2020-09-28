@@ -32,7 +32,7 @@ popd
 conda create -n testenv --yes python=$PYTHON_VERSION pip nose \
       numpy
 
-conda install libgcc -y
+#conda install libgcc -y
 source activate testenv
 pip install --upgrade pip
 pip install scipy
@@ -40,7 +40,7 @@ pip install tensorflow>2.2
 pip install keras
 pip install matplotlib
 pip install joblib
-pip install cython
+#pip install cython
 
 #if [[ "$PYTHON_VERSION" == "2.7" ]]; then
 #    pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.10.1-cp27-none-linux_x86_64.whl # tensorflow
