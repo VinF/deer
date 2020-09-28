@@ -36,7 +36,7 @@ conda create -n testenv --yes python=$PYTHON_VERSION pip nose \
 source activate testenv
 pip install --upgrade pip
 pip install scipy
-pip install tensorflow>2.2
+pip install tensorflow-cpu
 pip install keras
 pip install matplotlib
 pip install joblib
