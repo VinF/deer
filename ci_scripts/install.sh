@@ -36,7 +36,7 @@ conda install libgcc -y
 source activate testenv
 pip install --upgrade pip
 pip install scipy
-pip install tensorflow
+pip install tensorflow>2.2
 pip install keras
 pip install matplotlib
 pip install joblib
