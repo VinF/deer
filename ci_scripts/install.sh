@@ -36,8 +36,8 @@ conda install libgcc -y
 source activate testenv
 pip install --upgrade pip
 pip install scipy
-pip install keras
 pip install tensorflow
+pip install keras
 pip install matplotlib
 pip install joblib
 pip install cython
