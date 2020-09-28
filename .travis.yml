@@ -2,7 +2,7 @@ dist: trusty
 language: python
 
 cache:
-  apt: true
+  apt: false
   # We use three different cache directory
   # to work around a Travis bug with multi-platform cache
   directories:
