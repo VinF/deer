@@ -1,4 +1,5 @@
-numpy>=1.10
-joblib>=0.9
-matplotlib>=1.1.1
+numpy>=1.19
+joblib>=0.16
+matplotlib>=3.3.2
+tensorflow>=2.2
 keras>=2.1.1

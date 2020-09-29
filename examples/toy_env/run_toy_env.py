@@ -5,8 +5,6 @@
 import sys
 import logging
 import numpy as np
-from joblib import hash, dump
-import os
 
 from deer.default_parser import process_args
 from deer.agent import NeuralAgent

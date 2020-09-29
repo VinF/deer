@@ -275,7 +275,7 @@ class NeuralAgent(object):
                     self._mode_epochs_length = self._runEpisode(self._mode_epochs_length)
             else:
                 length = epoch_length
-                while length > 0:
+                while length > 0: # run new episodes until the number of steps left for the epoch has reached 0
                     length = self._runEpisode(length)
                 i += 1
             for c in self._controllers: c.onEpochEnd(self)

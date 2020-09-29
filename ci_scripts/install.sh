@@ -32,15 +32,15 @@ popd
 conda create -n testenv --yes python=$PYTHON_VERSION pip nose \
       numpy
 
-conda install libgcc -y
+#conda install libgcc -y
 source activate testenv
 pip install --upgrade pip
 pip install scipy
+pip install tensorflow-cpu
 pip install keras
-pip install tensorflow
 pip install matplotlib
 pip install joblib
-pip install cython
+#pip install cython
 
 #if [[ "$PYTHON_VERSION" == "2.7" ]]; then
 #    pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.10.1-cp27-none-linux_x86_64.whl # tensorflow
@@ -55,7 +55,7 @@ fi
 python --version
 python -c "import numpy; print('numpy %s' % numpy.__version__)"
 python -c "import scipy; print('scipy %s' % scipy.__version__)"
-python -c "import theano; print('theano %s' % theano.__version__)"
+#python -c "import theano; print('theano %s' % theano.__version__)"
 python -c "import tensorflow; print('tensorflow %s' % tensorflow.__version__)"
 
 python setup.py develop

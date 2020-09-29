@@ -12,8 +12,7 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     cd examples/gym
     python run_mountain_car.py  --epochs 5
 
-    pip -V pip
-    
+#    pip -V pip
 #    python run_mountain_car_continuous.py  --epochs 5
 
 else
