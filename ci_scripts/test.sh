@@ -13,7 +13,6 @@ elif [[ "$EXAMPLE" == "mountain_car" ]]; then
     python run_mountain_car.py  --epochs 5
 
 #    pip -V pip
-    
 #    python run_mountain_car_continuous.py  --epochs 5
 
 else
