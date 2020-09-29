@@ -2,7 +2,7 @@ dist: trusty
 language: python
 
 cache:
-  apt: false
+  apt: true
   # We use three different cache directory
   # to work around a Travis bug with multi-platform cache
   directories:
@@ -19,7 +19,7 @@ env:
     - SCIPY_VERSION="0.17"
   matrix:
     - PYTHON_VERSION="2.7"
-    - PYTHON_VERSION="3.5"
+    - PYTHON_VERSION="3.8"
     - PYTHON_VERSION="3.8" EXAMPLE="toy_env"
     - PYTHON_VERSION="3.8" EXAMPLE="mountain_car"
 
