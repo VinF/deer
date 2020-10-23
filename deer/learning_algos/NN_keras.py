@@ -63,7 +63,7 @@ class NN():
                     inputs.append(input)
                     reshaped=Reshape((dim[0],dim[1],1), input_shape=(dim[0],dim[1]))(input) 
                     x = Conv2D(16, (2, 1), activation='relu', padding='valid')(reshaped)#Conv on the history
-                    x = Conv2D(16, (2, 2), activation='relu', padding='valid')(x)       #Conv on the history & features
+                    x = Conv2D(16, (2, 1), activation='relu', padding='valid')(x)       #Conv on the history & features
 
                     out = Flatten()(x)
                 else:
