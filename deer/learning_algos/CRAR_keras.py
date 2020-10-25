@@ -82,6 +82,7 @@ class CRAR(LearningAlgo):
         self.update_counter = 0    
         self._high_int_dim = kwargs.get('high_int_dim',False)
         self._internal_dim = kwargs.get('internal_dim',2)
+        self._div_entrop_loss = kwargs.get('div_entrop_loss',5.)
         self.loss_interpret=0
         self.loss_T=0
         self.lossR=0
@@ -579,8 +580,7 @@ class CRAR(LearningAlgo):
 
         K.set_value(self.encoder.optimizer.lr, self._lr)
         K.set_value(self.encoder_diff.optimizer.lr, self._lr)
-
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/5.) # /5. for simple laby or simple catcher; /1. for distrib of laby
+        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/self._div_entrop_loss) # /5. for simple laby or simple catcher; /1. for distrib of laby
 
     def transfer(self, original, transfer, epochs=1):
         # First, make sure that the target network and the current network are the same

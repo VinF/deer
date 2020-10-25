@@ -86,7 +86,8 @@ if __name__ == "__main__":
         rng,
         double_Q=True,
         high_int_dim=HIGH_INT_DIM,
-        internal_dim=3)
+        internal_dim=3,
+        div_entrop_loss=1.)
     
     train_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 1.)
     test_policy = EpsilonGreedyPolicy(learning_algo, env.nActions(), rng, 0.1)
