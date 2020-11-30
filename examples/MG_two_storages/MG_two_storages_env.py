@@ -14,7 +14,6 @@ Efficient decision making in stochastic micro-grids using deep reinforcement lea
 """
 
 import numpy as np
-np.set_printoptions(threshold=np.nan)
 import copy
 
 from deer.base_classes import Environment
