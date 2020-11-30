@@ -40,7 +40,7 @@ class MyQNetwork(QNetwork):
         default is deer.learning_algos.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
+    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=1, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network=NN):
         """ Initialize environment
         
         """
