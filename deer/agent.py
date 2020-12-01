@@ -246,7 +246,31 @@ class NeuralAgent(object):
 
         self._learning_algo.setAllParams(all_params)
 
+        
     def run(self, n_epochs, epoch_length):
+        """
+        This function encapsulates the inference and the learning.
+        If the agent is in train mode (mode = -1):
+            It starts by calling the controllers method "onStart", 
+            Then it runs a given number of epochs where an epoch is made up of one or many episodes (called with 
+            agent._runEpisode) and where an epoch ends up after the number of steps reaches the argument "epoch_length".
+            It ends up by calling the controllers method "end".
+        If the agent is on non train mode (mode > -1):
+            This function runs a number of epochs in non train mode (mode > -1), thus without controllers.
+
+        Parameters
+        -----------
+        n_epochs : int
+            number of epochs
+        epoch_length : int
+            maximum number of steps for a given epoch
+        """
+        if(self._mode==-1):
+            self._run_train(n_epochs, epoch_length)
+        else:
+            self._run_non_train(n_epochs, epoch_length)
+            
+    def _run_train(self, n_epochs, epoch_length):
         """
         This function encapsulates the whole process of the learning.
         It starts by calling the controllers method "onStart", 
@@ -274,7 +298,7 @@ class NeuralAgent(object):
         self._environment.end()
         for c in self._controllers: c.onEnd(self)
 
-    def run_non_train(self, n_epochs, epoch_length):
+    def _run_non_train(self, n_epochs, epoch_length):
         """
         This function runs a number of epochs in non train mode (id > -1), thus without controllers.
 

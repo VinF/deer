@@ -334,7 +334,7 @@ class InterleavedTestEpochController(Controller):
         self._epoch_count += 1
         if mod == 0:
             agent.startMode(self._id, self._epoch_length)
-            agent.run_non_train(n_epochs=1, epoch_length=self._epoch_length)
+            agent._run_non_train(n_epochs=1, epoch_length=self._epoch_length)
             self._summary_counter += 1
 
             if self._show_score:
