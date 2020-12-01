@@ -31,8 +31,8 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'sgd'
-    LEARNING_RATE = 0.005
+    UPDATE_RULE = 'rmsprop'
+    LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
     DISCOUNT_INC = 1.
@@ -47,7 +47,7 @@ class Defaults:
     UPDATE_FREQUENCY = 1
     REPLAY_MEMORY_SIZE = 1000000
     BATCH_SIZE = 32
-    FREEZE_INTERVAL = 100
+    FREEZE_INTERVAL = 500
     DETERMINISTIC = True
 
 if __name__ == "__main__":
@@ -119,8 +119,7 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=0, 
         epoch_length=parameters.steps_per_test, 
-        controllers_to_disable=[0, 1, 2, 3, 4], 
-        periodicity=2, 
+        periodicity=1, 
         show_score=True,
         summarize_every=parameters.period_btw_summary_perfs))
     

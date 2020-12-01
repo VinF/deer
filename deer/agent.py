@@ -68,7 +68,6 @@ class NeuralAgent(object):
         self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority, only_full_history=self._only_full_history)
         self._tmp_dataset = None # Will be created by startTesting() when necessary
         self._mode = -1
-        self._mode_epochs_length = 0
         self._total_mode_reward = 0
         self._training_loss_averages = []
         self._Vs_on_last_episode = []
@@ -161,7 +160,6 @@ class NeuralAgent(object):
             raise AgentError("Mode -1 is reserved and means 'training mode'; use resumeTrainingMode() instead.")
         else:
             self._mode = mode
-            self._mode_epochs_length = epochLength
             self._total_mode_reward = 0.
             del self._tmp_dataset
             self._tmp_dataset = DataSet(self._environment, self._random_state, max_size=self._replay_memory_size, only_full_history=self._only_full_history)
@@ -265,23 +263,35 @@ class NeuralAgent(object):
         """
         for c in self._controllers: c.onStart(self)
         i = 0
-        while i < n_epochs or self._mode_epochs_length > 0:
+        while i < n_epochs:
             self._training_loss_averages = []
 
-            if self._mode != -1:                
-                self._totalModeNbrEpisode=0
-                while self._mode_epochs_length > 0:
-                    self._totalModeNbrEpisode += 1
-                    self._mode_epochs_length = self._runEpisode(self._mode_epochs_length)
-            else:
-                length = epoch_length
-                while length > 0: # run new episodes until the number of steps left for the epoch has reached 0
-                    length = self._runEpisode(length)
-                i += 1
+            while epoch_length > 0: # run new episodes until the number of steps left for the epoch has reached 0
+                epoch_length = self._runEpisode(epoch_length)
+            i += 1
             for c in self._controllers: c.onEpochEnd(self)
             
         self._environment.end()
         for c in self._controllers: c.onEnd(self)
+
+    def run_non_train(self, n_epochs, epoch_length):
+        """
+        This function runs a number of epochs in non train mode (id > -1), thus without controllers.
+
+        Parameters
+        -----------
+        n_epochs : int
+            number of epochs
+        epoch_length : int
+            maximum number of steps for a given epoch
+        """
+        i = 0
+        while i < n_epochs:
+            self._totalModeNbrEpisode=0
+            while epoch_length > 0:
+                self._totalModeNbrEpisode += 1
+                epoch_length = self._runEpisode(epoch_length)
+            i += 1
 
     def _runEpisode(self, maxSteps):
         """

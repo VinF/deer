@@ -166,8 +166,7 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=catcher_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4],
-        periodicity=2,
+        periodicity=1,
         show_score=True,
         summarize_every=1))
 

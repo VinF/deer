@@ -171,32 +171,28 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4, 6,7,8],
-        periodicity=2,
+        periodicity=1,
         show_score=True,
         summarize_every=1))
 
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE+1, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4, 5, 7,8],
-        periodicity=2,
+        periodicity=1,
         show_score=True,
         summarize_every=1))
 
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE+2, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6,8],
-        periodicity=2,
+        periodicity=1,
         show_score=True,
         summarize_every=1))
     
     agent.attach(bc.InterleavedTestEpochController(
         id=ALE_env.VALIDATION_MODE+3, 
         epoch_length=parameters.steps_per_test,
-        controllers_to_disable=[0, 1, 2, 3, 4, 5, 6, 7],
-        periodicity=2,
+        periodicity=1,
         show_score=True,
         summarize_every=1))
 

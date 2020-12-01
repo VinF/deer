@@ -125,8 +125,7 @@ if __name__ == "__main__":
     agent.attach(bc.InterleavedTestEpochController(
         id=0, 
         epoch_length=parameters.steps_per_test, 
-        controllers_to_disable=[0, 1, 2, 3, 4], 
-        periodicity=2, 
+        periodicity=1, 
         show_score=True,
         summarize_every=parameters.period_btw_summary_perfs))
     
