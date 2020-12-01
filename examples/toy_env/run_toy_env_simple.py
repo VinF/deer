@@ -42,8 +42,7 @@ agent.attach(bc.TrainerController())
 # way, using the controllersToDisable argument of the InterleavedTestEpochController. The value of this argument 
 # is a list of the indexes of all controllers to disable, their index reflecting in which order they were added.
 agent.attach(bc.InterleavedTestEpochController(
-    epoch_length=500, 
-    controllers_to_disable=[0, 1]))
+    epoch_length=500))
     
 # --- Run the experiment ---
 agent.run(n_epochs=100, epoch_length=1000)
