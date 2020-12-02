@@ -289,7 +289,6 @@ class NeuralAgent(object):
         i = 0
         while i < n_epochs:
             self._training_loss_averages = []
-
             while epoch_length > 0: # run new episodes until the number of steps left for the epoch has reached 0
                 epoch_length = self._runEpisode(epoch_length)
             i += 1
@@ -300,7 +299,7 @@ class NeuralAgent(object):
 
     def _run_non_train(self, n_epochs, epoch_length):
         """
-        This function runs a number of epochs in non train mode (id > -1), thus without controllers.
+        This function runs a number of epochs in non train mode (id > -1).
 
         Parameters
         -----------
@@ -309,6 +308,7 @@ class NeuralAgent(object):
         epoch_length : int
             maximum number of steps for a given epoch
         """
+        for c in self._controllers: c.onStart(self)
         i = 0
         while i < n_epochs:
             self._totalModeNbrEpisode=0
@@ -316,6 +316,10 @@ class NeuralAgent(object):
                 self._totalModeNbrEpisode += 1
                 epoch_length = self._runEpisode(epoch_length)
             i += 1
+            for c in self._controllers: c.onEpochEnd(self)
+        
+        self._environment.end()
+        for c in self._controllers: c.onEnd(self)
 
     def _runEpisode(self, maxSteps):
         """
