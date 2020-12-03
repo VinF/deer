@@ -148,7 +148,7 @@ if __name__ == "__main__":
         reset_every='none'))
 
     # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
-    # seems to generalize the better, thus which one has the highest validation score. However we also want to keep 
+    # seems to generalize the best, thus which one has the highest validation score. However we also want to keep 
     # track of a "true generalization score", the "test score". Indeed, what if we overfit the validation score ?
     # To achieve these goals, one can use the FindBestController along two InterleavedTestEpochControllers, one for
     # each mode (validation and test). It is important that the validationID and testID are the same than the id 
@@ -163,13 +163,9 @@ if __name__ == "__main__":
         unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
-    # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
-    # these validation epoch to interfere with the training of the agent, which is well established by the 
-    # TrainerController, EpsilonController and alike, nor with its testing (see next controller). Therefore, we will 
-    # disable these controllers for the whole duration of the validation epochs interleaved this way, using the 
-    # controllersToDisable argument of the InterleavedTestEpochController. For each validation epoch, we want also to 
-    # display the sum of all rewards obtained, hence the showScore=True. Finally, we never want this controller to call 
-    # the summarizePerformance method of MG_two_storage_env.
+    # "validation epoch" between each training epoch (hence the periodicity=1). For each validation epoch, we want also 
+    # to  display the sum of all rewards obtained, hence the showScore=True. Finally, we never want this controller to 
+    # call the summarizePerformance method of MG_two_storage_env.
     agent.attach(bc.InterleavedTestEpochController(
         id=MG_two_storages_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_epoch,
@@ -178,11 +174,8 @@ if __name__ == "__main__":
         summarize_every=-1))
     
     # Besides inserting a validation epoch (required if one wants to find the best neural network over all training
-    # epochs), we also wish to interleave a "test epoch" between each training epoch ("one of two epochs", hence the 
-    # periodicity=2). We do not want these test epoch to interfere with the training of the agent nor with its 
-    # validation. Therefore, we will disable these controllers for the whole duration of the test epochs interleaved 
-    # this way, using the controllersToDisable argument of the InterleavedTestEpochController. For each test epoch, we 
-    # want also to display the sum of all rewards obtained, hence the showScore=True. Finally, we want to call the 
+    # epochs), we also wish to interleave a "test epoch" between each training epoch. For each test epoch, we also
+    # want to display the sum of all rewards obtained, hence the showScore=True. Finally, we want to call the 
     # summarizePerformance method of MG_two_storage_env every [parameters.period_btw_summary_perfs] *test* epochs.
     agent.attach(bc.InterleavedTestEpochController(
         id=MG_two_storages_env.TEST_MODE,

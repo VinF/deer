@@ -36,13 +36,8 @@ agent.attach(bc.VerboseController())
 # residual and the average of the V values obtained during the last episode.
 agent.attach(bc.TrainerController())
 
-# All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
-# "test epoch" between each training epoch. We do not want these test epoch to interfere with the training of the 
-# agent. Therefore, we will disable these controllers for the whole duration of the test epochs interleaved this 
-# way, using the controllersToDisable argument of the InterleavedTestEpochController. The value of this argument 
-# is a list of the indexes of all controllers to disable, their index reflecting in which order they were added.
-agent.attach(bc.InterleavedTestEpochController(
-    epoch_length=500))
+# We also want to interleave a "test epoch" between each training epoch. 
+agent.attach(bc.InterleavedTestEpochController(epoch_length=500))
     
 # --- Run the experiment ---
 agent.run(n_epochs=100, epoch_length=1000)

@@ -132,15 +132,7 @@ if __name__ == "__main__":
         periodicity=1, 
         reset_every='none'))
 
-    # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
-    # "test epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want these 
-    # test epoch to interfere with the training of the agent, which is well established by the TrainerController, 
-    # EpsilonController and alike. Therefore, we will disable these controllers for the whole duration of the test 
-    # epochs interleaved this way, using the controllersToDisable argument of the InterleavedTestEpochController. 
-    # The value of this argument is a list of the indexes of all controllers to disable, their index reflecting in 
-    # which order they were added. Here, "0" is refering to the firstly attached controller, thus the 
-    # VerboseController; "2" refers to the thirdly attached controller, thus the LearningRateController; etc. The order 
-    # in which the indexes are listed is not important.
+    # We also want to interleave a "test epoch" between each training epoch. 
     # For each test epoch, we want also to display the sum of all rewards obtained, hence the showScore=True.
     # Finally, we want to call the summarizePerformance method of Toy_Env every [parameters.period_btw_summary_perfs]
     # *test* epochs.

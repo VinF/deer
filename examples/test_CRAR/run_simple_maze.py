@@ -160,13 +160,9 @@ if __name__ == "__main__":
         unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
-    # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
-    # these validation epoch to interfere with the training of the agent, which is well established by the 
-    # TrainerController, EpsilonController and alike. Therefore, we will disable these controllers for the whole 
-    # duration of the validation epochs interleaved this way, using the controllersToDisable argument of the 
-    # InterleavedTestEpochController. For each validation epoch, we want also to display the sum of all rewards 
-    # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
-    # [parameters.period_btw_summary_perfs] *validation* epochs.
+    # "validation epoch" between each training epoch. For each validation epoch, we want also to display the sum of all 
+    # rewards obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env 
+    # every [parameters.period_btw_summary_perfs] *validation* epochs.
     agent.attach(bc.InterleavedTestEpochController(
         id=simple_maze_env.VALIDATION_MODE, 
         epoch_length=parameters.steps_per_test,

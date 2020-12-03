@@ -161,28 +161,7 @@ if __name__ == "__main__":
         show_episode_avg_V_value=True, 
         show_avg_Bellman_residual=True))
     
-    # We wish to discover, among all versions of our neural network (i.e., after every training epoch), which one 
-    # seems to generalize the better, thus which one has the highest validation score. Here, we do not care about the
-    # "true generalization score", or "test score".
-    # To achieve this goal, one can use the FindBestController along with an InterleavedTestEpochControllers. It is 
-    # important that the validationID is the same than the id argument of the InterleavedTestEpochController.
-    # The FindBestController will dump on disk the validation scores for each and every network, as well as the 
-    # structure of the neural network having the best validation score. These dumps can then used to plot the evolution 
-    # of the validation and test scores (see below) or simply recover the resulting neural network for your 
-    # application.
-    #agent.attach(bc.FindBestController(
-    #    validationID=maze_env.VALIDATION_MODE,
-    #    testID=None,
-    #    unique_fname=fname))
-    
-    # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
-    # "validation epoch" between each training epoch ("one of two epochs", hence the periodicity=2). We do not want 
-    # these validation epoch to interfere with the training of the agent, which is well established by the 
-    # TrainerController, EpsilonController and alike. Therefore, we will disable these controllers for the whole 
-    # duration of the validation epochs interleaved this way, using the controllersToDisable argument of the 
-    # InterleavedTestEpochController. For each validation epoch, we want also to display the sum of all rewards 
-    # obtained, hence the showScore=True. Finally, we want to call the summarizePerformance method of ALE_env every 
-    # [parameters.period_btw_summary_perfs] *validation* epochs.
+
     valid0=bc.InterleavedTestEpochController(
         id=0, 
         epoch_length=parameters.steps_per_test,
