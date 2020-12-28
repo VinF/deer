@@ -288,9 +288,10 @@ class NeuralAgent(object):
         for c in self._controllers: c.onStart(self)
         i = 0
         while i < n_epochs:
+            nbr_steps_left=epoch_length
             self._training_loss_averages = []
-            while epoch_length > 0: # run new episodes until the number of steps left for the epoch has reached 0
-                epoch_length = self._runEpisode(epoch_length)
+            while nbr_steps_left > 0: # run new episodes until the number of steps left for the epoch has reached 0
+                nbr_steps_left = self._runEpisode(nbr_steps_left)
             i += 1
             for c in self._controllers: c.onEpochEnd(self)
             
@@ -311,10 +312,11 @@ class NeuralAgent(object):
         for c in self._controllers: c.onStart(self)
         i = 0
         while i < n_epochs:
+            nbr_steps_left=epoch_length
             self._totalModeNbrEpisode=0
-            while epoch_length > 0:
+            while nbr_steps_left > 0:
                 self._totalModeNbrEpisode += 1
-                epoch_length = self._runEpisode(epoch_length)
+                nbr_steps_left = self._runEpisode(nbr_steps_left)
             i += 1
             for c in self._controllers: c.onEpochEnd(self)
         
