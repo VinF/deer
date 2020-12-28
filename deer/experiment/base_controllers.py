@@ -159,7 +159,7 @@ class EpsilonController(Controller):
     e_min : float
         End epsilon
     evaluate_on : str
-        After what type of event epsilon shoud be updated periodically. Possible values: 'action', 'episode', 'epoch'.
+        After what type of event epsilon should be updated periodically. Possible values: 'action', 'episode', 'epoch'.
     periodicity : int
         How many [evaluateOn] are necessary before an update of epsilon occurs
     reset_every : str
@@ -353,8 +353,8 @@ class TrainerController(Controller):
     Parameters
     ----------
     evaluate_on : str
-        After what type of event the agent shoud be trained periodically. Possible values: 
-        'action', 'episode', 'epoch'. The first training will occur after the first occurence of [evaluateOn].
+        After what type of event the agent should be trained periodically. Possible values: 
+        'action', 'episode', 'epoch'. The first training will occur after the first occurrence of [evaluateOn].
     periodicity : int
         How many [evaluateOn] are necessary before a training occurs
         _show_avg_Bellman_residual [bool] - Whether to show an informative message after each episode end (and after a 
@@ -427,7 +427,7 @@ class VerboseController(Controller):
     ----------
     evaluate_on : str
         After what type of event the printing should occur periodically. Possible values: 
-        'action', 'episode', 'epoch'. The first printing will occur after the first occurence of [evaluateOn].
+        'action', 'episode', 'epoch'. The first printing will occur after the first occurrence of [evaluateOn].
     periodicity : int
         How many [evaluateOn] are necessary before a printing occurs
     modes : list of int
@@ -504,7 +504,7 @@ class FindBestController(Controller):
 
     At the end of the experiment (onEnd), if active, this controller will print information about the epoch at which 
     the best neural net was found together with its generalization score, this last information shown only if [testID] 
-    is different from None. Finally it will dump a dictionnary containing the data of the plots ({n: number of 
+    is different from None. Finally it will dump a dictionary containing the data of the plots ({n: number of 
     epochs elapsed, ts: test scores, vs: validation scores}). Note that if [testID] is None, the value dumped for the
     'ts' key is [].
     
