@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from joblib import hash, dump, load
 import os
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import sys
 from os import path
@@ -158,8 +158,8 @@ if __name__ == "__main__":
     # used to plot the evolution of the validation and test scores (see below) or simply recover the resulting neural 
     # network for your application.
     agent.attach(bc.FindBestController(
-        validationID=MG_two_storages_env.VALIDATION_MODE, 
-        testID=MG_two_storages_env.TEST_MODE,
+        validationID=env.VALIDATION_MODE,
+        testID=env.TEST_MODE,
         unique_fname=fname))
     
     # All previous controllers control the agent during the epochs it goes through. However, we want to interleave a 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     # to  display the sum of all rewards obtained, hence the showScore=True. Finally, we never want this controller to 
     # call the summarizePerformance method of MG_two_storage_env.
     agent.attach(bc.InterleavedTestEpochController(
-        id=MG_two_storages_env.VALIDATION_MODE, 
+        id=env.VALIDATION_MODE,
         epoch_length=parameters.steps_per_epoch,
         periodicity=1, 
         show_score=True,
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     # want to display the sum of all rewards obtained, hence the showScore=True. Finally, we want to call the 
     # summarizePerformance method of MG_two_storage_env every [parameters.period_btw_summary_perfs] *test* epochs.
     agent.attach(bc.InterleavedTestEpochController(
-        id=MG_two_storages_env.TEST_MODE,
+        id=env.TEST_MODE,
         epoch_length=parameters.steps_per_test,
         periodicity=1,
         show_score=True,

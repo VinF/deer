@@ -20,15 +20,15 @@ from deer.base_classes import Environment
 #from plot_MG_operation import plot_op
 
 class MyEnv(Environment):
-    VALIDATION_MODE = 0
-    TEST_MODE = 1
-
     def __init__(self, rng, reduce_qty_data=None, length_history=None, start_history=None):
         """ Initialize environment
 
         Arguments:
             rng - the numpy random number generator
         """
+        self.VALIDATION_MODE = 0
+        self.TEST_MODE = 1
+
         reduce_qty_data=int(reduce_qty_data) if reduce_qty_data is not None else int(1)
         length_history=int(length_history) if length_history is not None else int(12)
         start_history=int(start_history) if start_history is not None else int(0)
@@ -148,7 +148,7 @@ class MyEnv(Environment):
             self.production=self.production_train
             self.consumption_norm=self.consumption_train_norm
             self.consumption=self.consumption_train
-        elif mode == MyEnv.VALIDATION_MODE:
+        elif mode == self.VALIDATION_MODE:
             self.production_norm=self.production_valid_norm
             self.production=self.production_valid
             self.consumption_norm=self.consumption_valid_norm

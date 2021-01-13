@@ -551,11 +551,11 @@ class FindBestController(Controller):
     def onEnd(self, agent):
         if (self._active == False):
             return
-
         bestIndex = np.argmax(self._validationScores)
-        print("Best neural net obtained after {} epochs, with validation score {}".format(bestIndex+1, self._validationScores[bestIndex]))
-        if self._testID != None:
-            print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
+        if agent.mode() == -1:
+            print("Best neural net obtained after {} epochs, with validation score {}".format(bestIndex+1, self._validationScores[bestIndex]))
+            if self._testID != None:
+                print("Test score of this neural net: {}".format(self._testScores[bestIndex]))
                 
         try:
             os.mkdir("scores")
