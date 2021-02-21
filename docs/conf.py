@@ -63,6 +63,9 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.mathjax',
+    'numpydoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.inheritance_diagram'
 #    'sphinx.ext.viewcode',  # create HTML file of source code and link to it
 #    'sphinx.ext.linkcode',  # link to github, see linkcode_resolve() below
 ##    'numpydoc',               # !Generates unwanted tables with autoclass!
