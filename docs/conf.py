@@ -53,6 +53,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
+sys.path.append(os.path.abspath('../'))
 
 # -- General configuration ------------------------------------------------
 
@@ -153,7 +154,7 @@ if os.environ.get('READTHEDOCS') != 'True':
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
     html_theme = 'sphinx_rtd_theme'
 def setup(app):
-    app.add_stylesheet("fix_rtd.css")
+    app.add_css_file("fix_rtd.css")
 
 
 # Theme options are theme-specific and customize the look and feel of a theme
