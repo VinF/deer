@@ -12,6 +12,10 @@ from .NN_CRAR_keras import NN # Default Neural network used
 #config = tf.ConfigProto()
 #config.gpu_options.allow_growth=True
 #sess = tf.Session(config=config)
+
+#this did work for me:
+#import tensorflow as tf
+#tf.config.experimental.set_memory_growth(tf.config.list_physical_devices('GPU')[0], True)
 import copy
 
 def mean_squared_error_p(y_true, y_pred):

@@ -11,6 +11,7 @@ an episode ends.
 import numpy as np
 import joblib
 import os
+import matplotlib.pyplot as plt
 
 class Controller(object):
     """A base controller that does nothing when receiving the various signals emitted by an agent. This class should 
@@ -547,6 +548,24 @@ class FindBestController(Controller):
             self._testScores.append(score)
         else:
             self._trainingEpochCount += 1
+
+        #live plotting of reward over time
+        if mode == self._validationID:
+            plt.plot(range(1, len(self._validationScores)+1), self._validationScores, label="VS", color='b')
+            plt.legend()
+            plt.xlabel("Number of epochs")
+            plt.ylabel("Score")
+            plt.savefig("validation_scores.pdf")
+            plt.close()
+            # plt.show()
+        elif mode == self._testID:
+            plt.plot(range(1, len(self._testScores)+1), self._testScores, label="TS", color='b')
+            plt.legend()
+            plt.xlabel("Number of epochs")
+            plt.ylabel("Score")
+            plt.savefig("test_scores.pdf")
+            plt.close()
+            # plt.show()
         
     def onEnd(self, agent):
         if (self._active == False):

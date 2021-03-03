@@ -48,7 +48,7 @@ class Defaults:
     EPSILON_MIN = 1.0
     EPSILON_DECAY = 10000
     UPDATE_FREQUENCY = 1
-    REPLAY_MEMORY_SIZE = 1000000
+    REPLAY_MEMORY_SIZE = 1000000 #replacing with 200000 will works just fine (in case you dont have 18gb of memory)
     BATCH_SIZE = 32
     FREEZE_INTERVAL = 1000
     DETERMINISTIC = False
