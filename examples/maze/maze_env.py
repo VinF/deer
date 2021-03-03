@@ -3,7 +3,6 @@
 Author: Vincent Francois-Lavet
 """
 import numpy as np
-import cv2
 
 from deer.base_classes import Environment
 
@@ -106,7 +105,7 @@ class MyEnv(Environment):
         self._episode_steps += 1
         action = self._actions[action]
 
-        self.reward = -0.1
+        reward = -0.1
 
         if(action==0):
             if([self._pos_agent[0]+1,self._pos_agent[1]] not in self._pos_walls):
@@ -122,11 +121,11 @@ class MyEnv(Environment):
                 self._pos_agent[1]=self._pos_agent[1]-1
         
         if (self._pos_agent in self._pos_rewards):
-            self.reward = 1
+            reward = 1
             self._pos_rewards.remove(self._pos_agent)
 
-        self._mode_score += self.reward
-        return self.reward
+        self._mode_score += reward
+        return reward
 
 
     def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):

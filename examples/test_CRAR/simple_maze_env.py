@@ -2,13 +2,12 @@
 
 """
 import numpy as np
-import cv2
 
 from deer.base_classes import Environment
 
 import matplotlib
 #matplotlib.use('agg')
-matplotlib.use('qt5agg')
+# matplotlib.use('qt5agg')
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import matplotlib.pyplot as plt
@@ -95,10 +94,10 @@ class MyEnv(Environment):
                 self._pos_agent[1]=self._pos_agent[1]+1
         
         # There is no reward in this simple environment
-        self.reward = 0
+        reward = 0
 
-        self._mode_score += self.reward
-        return self.reward
+        self._mode_score += reward
+        return reward
 
     def summarizePerformance(self, test_data_set, learning_algo, *args, **kwargs):
         """ Plot of the low-dimensional representation of the environment built by the model

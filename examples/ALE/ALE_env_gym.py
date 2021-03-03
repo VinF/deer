@@ -37,6 +37,7 @@ class MyEnv(Environment):
         
         self._screen=np.average(self.env.render(mode='rgb_array'),axis=-1)
         self._reduced_screen = cv2.resize(self._screen, (84, 84), interpolation=cv2.INTER_LINEAR) 
+            #decide whether you want to keep this in repo, if so: add dependency to cv2
         #plt.imshow(self._reduced_screen, cmap='gray')
         #plt.show()
         
