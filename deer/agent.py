@@ -200,7 +200,7 @@ class NeuralAgent(object):
         except SliceError as e:
             warn("Training not done - " + str(e), AgentWarning)
 
-    def dumpNetwork(self, fname, nEpoch=-1):
+    def dumpNetwork(self, fname, nEpoch=-1, train_test="test"):
         """ Dump the network
         
         Parameters
@@ -219,13 +219,21 @@ class NeuralAgent(object):
         for f in os.listdir("nnets/"):
             if fname in f:
                 os.remove("nnets/" + f)
-
-        all_params = self._learning_algo.getAllParams()
-
+        file_name_root = ""
         if (nEpoch>=0):
-            joblib.dump(all_params, basename + ".epoch={}".format(nEpoch))
+            file_name_root = basename + ".epoch={}".format(nEpoch)
         else:
-            joblib.dump(all_params, basename, compress=True)
+            file_name_root = basename
+        if train_test=="test":
+            open(file_name_root+'.json', 'w').write(self._test_policy.learning_algo.q_vals.to_json())
+            self._test_policy.learning_algo.q_vals.save_weights(file_name_root+'.h5', overwrite=True)
+        else:
+            if train_test=="train":
+                open(file_name_root + '.json', 'w').write(self._train_policy.learning_algo.q_vals.to_json())
+                self._train_policy.learning_algo.q_vals.save_weights(file_name_root + '.h5', overwrite=True)
+            else:
+                raise AgentError("train_test parameter must be set to train or test value to indicate which NN to save")
+
 
     def setNetwork(self, fname, nEpoch=-1):
         """ Set values into the network
@@ -239,14 +247,17 @@ class NeuralAgent(object):
         """
 
         basename = "nnets/" + fname
-
+        file_name_root = ""
         if (nEpoch>=0):
-            all_params = joblib.load(basename + ".epoch={}".format(nEpoch))
+            file_name_root = basename + ".epoch={}".format(nEpoch)
         else:
-            all_params = joblib.load(basename)
-
-        self._learning_algo.setAllParams(all_params)
-
+            file_name_root = basename
+        model = model_from_json(open(file_name_root+'.json').read())
+        model.load_weights(file_name_root+'.h5')
+        self._test_policy.learning_algo.q_vals=model
+        self._test_policy.learning_algo.next_q_vals=model
+        self._train_policy.learning_algo.q_vals=model
+        self._train_policy.learning_algo.next_q_vals=model
         
     def run(self, n_epochs, epoch_length):
         """
