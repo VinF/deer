@@ -11,6 +11,7 @@ import copy
 import sys
 import joblib
 from warnings import warn
+from keras.models import model_from_json
 
 from .experiment import base_controllers as controllers
 from .helper import tree 
