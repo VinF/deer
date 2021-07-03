@@ -4,9 +4,9 @@ Neural network with LSTM's using Keras (called by q_net_keras)
 """
 
 import numpy as np
-from keras.models import Model
-from keras.layers import Input, Layer, Dense, Flatten, concatenate, Activation, Convolution2D, MaxPooling2D, Reshape
-from keras.layers.recurrent import LSTM
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Layer, Dense, Flatten, concatenate, Activation, Convolution2D, MaxPooling2D, Reshape
+from tensorflow.keras.layers.recurrent import LSTM
 
 class NN():
     """

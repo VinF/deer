@@ -4,8 +4,8 @@ Code for the CRAR learning algorithm using Keras
 """
 
 import numpy as np
-from keras.optimizers import SGD,RMSprop
-from keras import backend as K
+from tensorflow.keras.optimizers import SGD,RMSprop
+from tensorflow.keras import backend as K
 from ..base_classes import LearningAlgo
 from .NN_CRAR_keras import NN # Default Neural network used
 #import tensorflow as tf
