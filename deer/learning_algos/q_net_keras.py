@@ -5,8 +5,8 @@ Code for general deep Q-learning using Keras that can take as inputs scalars, ve
 """
 
 import numpy as np
-from keras.optimizers import SGD,RMSprop
-from keras import backend as K
+from tensorflow.keras.optimizers import SGD,RMSprop
+from tensorflow.keras import backend as K
 from ..base_classes import LearningAlgo as QNetwork
 from .NN_keras import NN # Default Neural network used
 

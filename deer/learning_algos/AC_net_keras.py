@@ -6,8 +6,8 @@ Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 import numpy as np
 from ..base_classes import LearningAlgo as ACNetwork
 from .NN_keras import NN # Default Neural network used
-from keras.optimizers import SGD,RMSprop
-from keras import backend as K
+from tensorflow.keras.optimizers import SGD,RMSprop
+from tensorflow.keras import backend as K
 
 try:
     import tensorflow as tf
