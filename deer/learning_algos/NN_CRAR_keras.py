@@ -6,7 +6,7 @@ CRAR Neural network using Keras
 import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, UpSampling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, merge, RepeatVector, AveragePooling2D
+from tensorflow.keras.layers import Input, Layer, Dense, Flatten, Activation, Conv2D, MaxPooling2D, UpSampling2D, Reshape, Permute, Add, Subtract, Dot, Multiply, Average, Lambda, Concatenate, BatchNormalization, RepeatVector, AveragePooling2D
 from tensorflow.keras import regularizers
 #np.random.seed(111111)
 
@@ -131,7 +131,7 @@ class NN():
 
         if(self._high_int_dim==False):
             if len(outs_conv)>1:
-                x = merge(outs_conv, mode='concat')
+                x = Concatenate()(outs_conv)
             else:
                 x= outs_conv [0]
         
@@ -503,7 +503,7 @@ class NN():
                 outs_conv.append(out)
             
             if len(outs_conv)>1:
-                x = merge(outs_conv, mode='concat')
+                x = Concatenate()(outs_conv)
             else:
                 x= outs_conv [0]
             

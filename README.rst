@@ -27,7 +27,7 @@ Dependencies
 
 This framework is tested to work under Python 3.6.
 
-The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need Keras>=2.1.
+The required dependencies are NumPy >= 1.10, joblib >= 0.9. You also need Keras>=2.6.
 
 For running the examples, Matplotlib >= 1.1.1 is required.
 For running the atari games environment, you need to install ALE >= 0.4.
