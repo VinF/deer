@@ -4,15 +4,17 @@ Same principles as run_toy_env. See the docs for more details.
 Authors: Vincent Francois-Lavet, David Taralla
 """
 
-import sys
 import logging
+import sys
+
 import numpy as np
+from pendulum_env import MyEnv as pendulum_env
 
 import deer.experiment.base_controllers as bc
-from deer.default_parser import process_args
 from deer.agent import NeuralAgent
+from deer.default_parser import process_args
 from deer.learning_algos.q_net_keras import MyQNetwork
-from pendulum_env import MyEnv as pendulum_env
+
 
 class Defaults:
     # ----------------------
@@ -31,11 +33,11 @@ class Defaults:
     # ----------------------
     # DQN Agent parameters:
     # ----------------------
-    UPDATE_RULE = 'rmsprop'
+    UPDATE_RULE = "rmsprop"
     LEARNING_RATE = 0.0002
     LEARNING_RATE_DECAY = 0.99
     DISCOUNT = 0.9
-    DISCOUNT_INC = 1.
+    DISCOUNT_INC = 1.0
     DISCOUNT_MAX = 0.95
     RMS_DECAY = 0.9
     RMS_EPSILON = 0.0001
@@ -50,6 +52,7 @@ class Defaults:
     FREEZE_INTERVAL = 500
     DETERMINISTIC = True
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
@@ -59,7 +62,7 @@ if __name__ == "__main__":
         rng = np.random.RandomState(12345)
     else:
         rng = np.random.RandomState()
-    
+
     # --- Instantiate environment ---
     env = pendulum_env(rng)
 
@@ -74,8 +77,9 @@ if __name__ == "__main__":
         parameters.batch_size,
         parameters.update_rule,
         rng,
-        double_Q=True)
-    
+        double_Q=True,
+    )
+
     # --- Instantiate agent ---
     agent = NeuralAgent(
         env,
@@ -83,45 +87,59 @@ if __name__ == "__main__":
         parameters.replay_memory_size,
         max(env.inputDimensions()[i][0] for i in range(len(env.inputDimensions()))),
         parameters.batch_size,
-        rng)
+        rng,
+    )
 
     # --- Bind controllers to the agent ---
     # For comments, please refer to run_toy_env.py
-    agent.attach(bc.VerboseController(
-        evaluate_on='epoch', 
-        periodicity=1))
+    agent.attach(bc.VerboseController(evaluate_on="epoch", periodicity=1))
 
-    agent.attach(bc.TrainerController(
-        evaluate_on='action',
-        periodicity=parameters.update_frequency, 
-        show_episode_avg_V_value=False, 
-        show_avg_Bellman_residual=False))
+    agent.attach(
+        bc.TrainerController(
+            evaluate_on="action",
+            periodicity=parameters.update_frequency,
+            show_episode_avg_V_value=False,
+            show_avg_Bellman_residual=False,
+        )
+    )
 
-    agent.attach(bc.LearningRateController(
-        initial_learning_rate=parameters.learning_rate,
-        learning_rate_decay=parameters.learning_rate_decay,
-        periodicity=1))
+    agent.attach(
+        bc.LearningRateController(
+            initial_learning_rate=parameters.learning_rate,
+            learning_rate_decay=parameters.learning_rate_decay,
+            periodicity=1,
+        )
+    )
 
-    agent.attach(bc.DiscountFactorController(
-        initial_discount_factor=parameters.discount,
-        discount_factor_growth=parameters.discount_inc,
-        discount_factor_max=parameters.discount_max,
-        periodicity=1))
+    agent.attach(
+        bc.DiscountFactorController(
+            initial_discount_factor=parameters.discount,
+            discount_factor_growth=parameters.discount_inc,
+            discount_factor_max=parameters.discount_max,
+            periodicity=1,
+        )
+    )
 
-    agent.attach(bc.EpsilonController(
-        initial_e=parameters.epsilon_start, 
-        e_decays=parameters.epsilon_decay, 
-        e_min=parameters.epsilon_min,
-        evaluate_on='action', 
-        periodicity=1, 
-        reset_every='none'))
+    agent.attach(
+        bc.EpsilonController(
+            initial_e=parameters.epsilon_start,
+            e_decays=parameters.epsilon_decay,
+            e_min=parameters.epsilon_min,
+            evaluate_on="action",
+            periodicity=1,
+            reset_every="none",
+        )
+    )
 
-    agent.attach(bc.InterleavedTestEpochController(
-        id=0, 
-        epoch_length=parameters.steps_per_test, 
-        periodicity=1, 
-        show_score=True,
-        summarize_every=parameters.period_btw_summary_perfs))
-    
+    agent.attach(
+        bc.InterleavedTestEpochController(
+            id=0,
+            epoch_length=parameters.steps_per_test,
+            periodicity=1,
+            show_score=True,
+            summarize_every=parameters.period_btw_summary_perfs,
+        )
+    )
+
     # --- Run the experiment ---
     agent.run(parameters.epochs, parameters.steps_per_epoch)

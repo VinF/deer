@@ -3,12 +3,11 @@
 """
 
 import numpy as np
+from Toy_env import MyEnv as Toy_env
 
+import deer.experiment.base_controllers as bc
 from deer.agent import NeuralAgent
 from deer.learning_algos.q_net_keras import MyQNetwork
-from Toy_env import MyEnv as Toy_env
-import deer.experiment.base_controllers as bc
-
 
 rng = np.random.RandomState(123456)
 
@@ -16,18 +15,13 @@ rng = np.random.RandomState(123456)
 env = Toy_env(rng)
 
 # --- Instantiate qnetwork ---
-qnetwork = MyQNetwork(
-    environment=env,
-    random_state=rng)
+qnetwork = MyQNetwork(environment=env, random_state=rng)
 
 # --- Instantiate agent ---
-agent = NeuralAgent(
-    env,
-    qnetwork,
-    random_state=rng)
+agent = NeuralAgent(env, qnetwork, random_state=rng)
 
 # --- Bind controllers to the agent ---
-# Before every training epoch, we want to print a summary of the agent's epsilon, discount and 
+# Before every training epoch, we want to print a summary of the agent's epsilon, discount and
 # learning rate as well as the training epoch number.
 agent.attach(bc.VerboseController())
 
@@ -36,8 +30,8 @@ agent.attach(bc.VerboseController())
 # residual and the average of the V values obtained during the last episode.
 agent.attach(bc.TrainerController())
 
-# We also want to interleave a "test epoch" between each training epoch. 
+# We also want to interleave a "test epoch" between each training epoch.
 agent.attach(bc.InterleavedTestEpochController(epoch_length=500))
-    
+
 # --- Run the experiment ---
 agent.run(n_epochs=100, epoch_length=1000)

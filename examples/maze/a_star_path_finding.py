@@ -3,7 +3,9 @@ Code from https://github.com/laurentluce/python-algorithms/blob/master/algorithm
 """
 
 import heapq
+
 import numpy as np
+
 
 class Cell(object):
     def __init__(self, x, y, reachable):
@@ -27,8 +29,9 @@ class Cell(object):
 
     def __lt__(self, other):
         return self.f < other.f
-        
-#class Cell(object):
+
+
+# class Cell(object):
 #    def __init__(self, x, y, reachable):
 #        """Initialize new cell.
 #        @param reachable is cell reachable? not a wall?
@@ -79,9 +82,9 @@ class AStar(object):
                     reachable = True
                 self.cells.append(Cell(x, y, reachable))
         self.start = self.get_cell(*start)
-        self.start.reachable=True
-        
-        self.agent_cell=self.start
+        self.start.reachable = True
+
+        self.agent_cell = self.start
         self.end = self.get_cell(*end)
 
     def get_heuristic(self, cell):
@@ -106,14 +109,14 @@ class AStar(object):
         @returns adjacent cells list.
         """
         cells = []
-        if cell.x < self.grid_width-1:
-            cells.append(self.get_cell(cell.x+1, cell.y))
+        if cell.x < self.grid_width - 1:
+            cells.append(self.get_cell(cell.x + 1, cell.y))
         if cell.y > 0:
-            cells.append(self.get_cell(cell.x, cell.y-1))
+            cells.append(self.get_cell(cell.x, cell.y - 1))
         if cell.x > 0:
-            cells.append(self.get_cell(cell.x-1, cell.y))
-        if cell.y < self.grid_height-1:
-            cells.append(self.get_cell(cell.x, cell.y+1))
+            cells.append(self.get_cell(cell.x - 1, cell.y))
+        if cell.y < self.grid_height - 1:
+            cells.append(self.get_cell(cell.x, cell.y + 1))
         return cells
 
     def get_path(self):
@@ -165,20 +168,20 @@ class AStar(object):
                         self.update_cell(adj_cell, cell)
                         # add adj cell to open list
                         heapq.heappush(self.opened, (adj_cell.f, adj_cell))
-                                                
+
     def get_maze_array(self):
-        maze=[]
+        maze = []
         for i in range(self.grid_height):
-            row=[]
+            row = []
             for j in range(self.grid_width):
-                if(self.get_cell(i, j) is self.agent_cell):
+                if self.get_cell(i, j) is self.agent_cell:
                     row.append(1)
-                elif(self.get_cell(i, j) is self.end):
+                elif self.get_cell(i, j) is self.end:
                     row.append(2)
-                elif(self.get_cell(i, j).reachable==True):
+                elif self.get_cell(i, j).reachable == True:
                     row.append(0)
                 else:
                     row.append(-1)
             maze.append(row)
-        
+
         return maze

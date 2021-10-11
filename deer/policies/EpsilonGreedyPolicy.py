@@ -10,6 +10,7 @@ class EpsilonGreedyPolicy(Policy):
     epsilon : float
         Proportion of random steps
     """
+
     def __init__(self, learning_algo, n_actions, random_state, epsilon):
         Policy.__init__(self, learning_algo, n_actions, random_state)
         self._epsilon = epsilon
@@ -23,11 +24,9 @@ class EpsilonGreedyPolicy(Policy):
         return action, V
 
     def setEpsilon(self, e):
-        """ Set the epsilon used for :math:`\epsilon`-greedy exploration
-        """
+        """Set the epsilon used for :math:`\epsilon`-greedy exploration"""
         self._epsilon = e
 
     def epsilon(self):
-        """ Get the epsilon for :math:`\epsilon`-greedy exploration
-        """
+        """Get the epsilon for :math:`\epsilon`-greedy exploration"""
         return self._epsilon

@@ -4,21 +4,26 @@ Code for the actor-critic "DDPG" (https://arxiv.org/abs/1509.02971)
 """
 
 import numpy as np
-from ..base_classes import LearningAlgo as ACNetwork
-from .NN_keras import NN # Default Neural network used
-from tensorflow.keras.optimizers import SGD,RMSprop
 from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import SGD, RMSprop
+
+from ..base_classes import LearningAlgo as ACNetwork
+from .NN_keras import NN  # Default Neural network used
 
 try:
     import tensorflow as tf
-    assert(K.backend()=="tensorflow")
+
+    assert K.backend() == "tensorflow"
 except:
-    print('Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json')
+    print(
+        "Error : Currently only Tensorflow is supported as a backend for AC_net_keras. You can make the switch in the file ~/.keras/keras.json"
+    )
+
 
 class MyACNetwork(ACNetwork):
     """
     Actor-critic learning (using Keras) with Deep Deterministic Policy Gradient (DDPG) for the continuous action domain
-    
+
     Parameters
     -----------
     environment : object from class Environment
@@ -48,11 +53,23 @@ class MyACNetwork(ACNetwork):
         default is deer.learning_algos.NN_keras
     """
 
-    def __init__(self, environment, rho=0.9, rms_epsilon=0.0001, momentum=0, clip_norm=0, freeze_interval=1000, batch_size=32, update_rule="rmsprop", random_state=np.random.RandomState(), double_Q=False, neural_network_critic=NN, neural_network_actor=NN):
-        """ Initialize environment
-        
-        """
-        ACNetwork.__init__(self,environment, batch_size)
+    def __init__(
+        self,
+        environment,
+        rho=0.9,
+        rms_epsilon=0.0001,
+        momentum=0,
+        clip_norm=0,
+        freeze_interval=1000,
+        batch_size=32,
+        update_rule="rmsprop",
+        random_state=np.random.RandomState(),
+        double_Q=False,
+        neural_network_critic=NN,
+        neural_network_actor=NN,
+    ):
+        """Initialize environment"""
+        ACNetwork.__init__(self, environment, batch_size)
 
         self._rho = rho
         self._rms_epsilon = rms_epsilon
@@ -61,75 +78,98 @@ class MyACNetwork(ACNetwork):
         self._freeze_interval = freeze_interval
         self._double_Q = double_Q
         self._random_state = random_state
-        self._nActions=environment.nActions()
+        self._nActions = environment.nActions()
         self.update_counter = 0
-        
+
         self.sess = tf.Session()
         K.set_session(self.sess)
-        
-        Q_net = neural_network_critic(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, True)
-        
+
+        Q_net = neural_network_critic(
+            self._batch_size,
+            self._input_dimensions,
+            self._n_actions,
+            self._random_state,
+            True,
+        )
+
         self.q_vals, self.params, self.inputsQ = Q_net._buildDQN()
-        
-        if (update_rule=="sgd"):
-            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
-        elif (update_rule=="rmsprop"):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+
+        if update_rule == "sgd":
+            optimizer = SGD(
+                lr=self._lr,
+                momentum=self._momentum,
+                nesterov=False,
+                clipnorm=self._clip_norm,
+            )
+        elif update_rule == "rmsprop":
+            optimizer = RMSprop(
+                lr=self._lr,
+                rho=self._rho,
+                epsilon=self._rms_epsilon,
+                clipnorm=self._clip_norm,
+            )
         else:
-            raise Exception('The update_rule '+update_rule+ 'is not implemented.')
-        
-        self.q_vals.compile(optimizer=optimizer, loss='mse')
-       
+            raise Exception("The update_rule " + update_rule + "is not implemented.")
+
+        self.q_vals.compile(optimizer=optimizer, loss="mse")
+
         self.next_q_vals, self.next_params, self.next_inputsQ = Q_net._buildDQN()
-        self.next_q_vals.compile(optimizer='rmsprop', loss='mse') #The parameters do not matter since training is done on self.q_vals
+        self.next_q_vals.compile(
+            optimizer="rmsprop", loss="mse"
+        )  # The parameters do not matter since training is done on self.q_vals
 
         self._resetQHat()
-        
 
-        policy_net = neural_network_actor(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, False)
+        policy_net = neural_network_actor(
+            self._batch_size,
+            self._input_dimensions,
+            self._n_actions,
+            self._random_state,
+            False,
+        )
         self.policy, self.params_policy = policy_net._buildDQN()
-        self.policy.compile(optimizer=optimizer, loss='mse')
+        self.policy.compile(optimizer=optimizer, loss="mse")
         self.next_policy, self.next_params_policy = policy_net._buildDQN()
-        self.next_policy.compile(optimizer=optimizer, loss='mse')
-        
-        
-        
-        ### self.policy
-        self.action_grads = tf.gradients(self.q_vals.output,self.inputsQ[-1])  #GRADIENTS for policy update
-       
-        
-        self.sess.run(tf.initialize_all_variables())        
+        self.next_policy.compile(optimizer=optimizer, loss="mse")
 
+        ### self.policy
+        self.action_grads = tf.gradients(
+            self.q_vals.output, self.inputsQ[-1]
+        )  # GRADIENTS for policy update
+
+        self.sess.run(tf.initialize_all_variables())
 
     def getAllParams(self):
-        """ Get all parameters used by the learning algorithm
+        """Get all parameters used by the learning algorithm
 
         Returns
         -------
         Values of the parameters: list of numpy arrays
         """
-        params_value=[]
-        for i,p in enumerate(self.params):
+        params_value = []
+        for i, p in enumerate(self.params):
             params_value.append(K.get_value(p))
-        for i,p in enumerate(self.params_policy):
+        for i, p in enumerate(self.params_policy):
             params_value.append(K.get_value(p))
-        
+
         return params_value
 
     def setAllParams(self, list_of_values):
-        """ Set all parameters used by the learning algorithm
+        """Set all parameters used by the learning algorithm
 
         Arguments
         ---------
         list_of_values : list of numpy arrays
              list of the parameters to be set (same order than given by getAllParams()).
         """
-        for i,p in enumerate(self.params):
-            K.set_value(p,list_of_values[i])
-        for j,p in enumerate(self.params_policy):
-            K.set_value(p,list_of_values[j+i+1])
+        for i, p in enumerate(self.params):
+            K.set_value(p, list_of_values[i])
+        for j, p in enumerate(self.params_policy):
+            K.set_value(p, list_of_values[j + i + 1])
 
-    def train(self, states_val, actions_val, rewards_val, next_states_val, terminals_val):
+    def train(
+        self, states_val, actions_val, rewards_val, next_states_val, terminals_val
+    ):
         """
         Train the actor-critic algorithm from one batch of data.
 
@@ -157,73 +197,70 @@ class MyACNetwork(ACNetwork):
         """
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
-        
 
         ### Tain self.q_vals
-        next_actions_val=self.next_policy.predict(next_states_val.tolist())
+        next_actions_val = self.next_policy.predict(next_states_val.tolist())
 
-        ns_list=next_states_val.tolist()
-        ns_list.append( next_actions_val )
-        next_q_vals = self.next_q_vals.predict(  ns_list  )
-        
-        not_terminals=np.invert(terminals_val).astype(float)
-        
+        ns_list = next_states_val.tolist()
+        ns_list.append(next_actions_val)
+        next_q_vals = self.next_q_vals.predict(ns_list)
+
+        not_terminals = np.invert(terminals_val).astype(float)
+
         target = rewards_val + not_terminals * self._df * next_q_vals.reshape((-1))
-        
-        s_list=states_val.tolist()
-        s_list.append( np.array(actions_val.tolist())  )
-        
+
+        s_list = states_val.tolist()
+        s_list.append(np.array(actions_val.tolist()))
+
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
-        q_vals=self.q_vals.predict( s_list ).reshape((-1))
-        diff_q = - q_vals + target 
-        loss_ind_q=pow(diff_q,2)
-        
-        loss_q=self.q_vals.train_on_batch( s_list , target ) 
-        
-        
+        q_vals = self.q_vals.predict(s_list).reshape((-1))
+        diff_q = -q_vals + target
+        loss_ind_q = pow(diff_q, 2)
+
+        loss_q = self.q_vals.train_on_batch(s_list, target)
+
         ### Train self.policy
-        cur_action=self.policy.predict(states_val.tolist())
-        cur_action=self.clip_action(cur_action)
-        gg=self.gradients(states_val.tolist(),cur_action)
-        
-        target_action=self.clip_action(cur_action+gg)
-        
+        cur_action = self.policy.predict(states_val.tolist())
+        cur_action = self.clip_action(cur_action)
+        gg = self.gradients(states_val.tolist(), cur_action)
+
+        target_action = self.clip_action(cur_action + gg)
+
         # Calculation of the individual losses for the policy network
-        diff_policy = - cur_action + target_action
-        loss_ind_policy=np.sum(pow(diff_policy,2),axis=-1)
+        diff_policy = -cur_action + target_action
+        loss_ind_policy = np.sum(pow(diff_policy, 2), axis=-1)
 
-        loss_policy=self.policy.train_on_batch(states_val.tolist(), target_action)
-                        
-        self.update_counter += 1        
-        
-        
-        return loss_q+loss_policy,loss_ind_q+loss_ind_policy
+        loss_policy = self.policy.train_on_batch(states_val.tolist(), target_action)
 
+        self.update_counter += 1
+
+        return loss_q + loss_policy, loss_ind_q + loss_ind_policy
 
     def clip_action(self, action):
         """
         Clip the possible actions if it is outside the action space defined by self._nActions
         self._nActions is given as [[low_action1,high_action1],[low_action2,high_action2], ...]
         """
-        return np.clip(action,np.array(self._nActions)[:,0],np.array(self._nActions)[:,1])
-    
+        return np.clip(
+            action, np.array(self._nActions)[:, 0], np.array(self._nActions)[:, 1]
+        )
 
     def gradients(self, states, actions):
         """
         Returns the gradients on the Q-network for the different actions (used for policy update)
         """
-        feed_dict={}
-        for i,s in enumerate(states):
-            feed_dict[ self.inputsQ[i] ] = s
-        
-        feed_dict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
-        
-        out=self.sess.run(self.action_grads, feed_dict=feed_dict)[0]
-        
+        feed_dict = {}
+        for i, s in enumerate(states):
+            feed_dict[self.inputsQ[i]] = s
+
+        feed_dict[self.inputsQ[-1]] = actions  # np.expand_dims(actions,1)
+
+        out = self.sess.run(self.action_grads, feed_dict=feed_dict)[0]
+
         return out
 
     def chooseBestAction(self, state, *args, **kwargs):
-        """ Get the best action for a pseudo-state
+        """Get the best action for a pseudo-state
 
         Arguments
         ---------
@@ -233,17 +270,17 @@ class MyACNetwork(ACNetwork):
         -------
         best_action : float
         estim_value : float
-        """        
-        
-        best_action=self.policy.predict([np.expand_dims(s,axis=0) for s in state])
-        best_action=self.clip_action(best_action)
-        
-        the_list=[np.expand_dims(s,axis=0) for s in state]
-        the_list.append( best_action )
-        estim_value=(self.q_vals.predict(the_list)[0,0])
-        
-        return best_action[0],estim_value
-        
+        """
+
+        best_action = self.policy.predict([np.expand_dims(s, axis=0) for s in state])
+        best_action = self.clip_action(best_action)
+
+        the_list = [np.expand_dims(s, axis=0) for s in state]
+        the_list.append(best_action)
+        estim_value = self.q_vals.predict(the_list)[0, 0]
+
+        return best_action[0], estim_value
+
     def _resetQHat(self):
-        for i,(param,next_param) in enumerate(zip(self.params, self.next_params)):
-            K.set_value(next_param,K.get_value(param))
+        for i, (param, next_param) in enumerate(zip(self.params, self.next_params)):
+            K.set_value(next_param, K.get_value(param))

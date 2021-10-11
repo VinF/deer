@@ -1,35 +1,41 @@
-import numpy as np
 import copy
 
-from deer.base_classes import Environment
 import gym
+import numpy as np
+
+from deer.base_classes import Environment
+
 
 class MyEnv(Environment):
     def __init__(self, rng):
-        """ Initialize environment.
+        """Initialize environment.
 
         Arguments:
-            rng - the numpy random number generator            
+            rng - the numpy random number generator
         """
         # Defining the type of environment
-        self.env = gym.make('CartPole-v0')
+        self.env = gym.make("CartPole-v0")
         self._last_observation = self.env.reset()
-        self.is_terminal=False
-        self._input_dim = [(1,), (1,), (1,), (1,)]  # self.env.observation_space.shape is equal to 4 
-                                                    # and we use only the current observations in the pseudo-state
+        self.is_terminal = False
+        self._input_dim = [
+            (1,),
+            (1,),
+            (1,),
+            (1,),
+        ]  # self.env.observation_space.shape is equal to 4
+        # and we use only the current observations in the pseudo-state
 
     def act(self, action):
-        """ Simulate one time step in the environment.
-        """
-        
+        """Simulate one time step in the environment."""
+
         self._last_observation, reward, self.is_terminal, info = self.env.step(action)
-        if (self.mode==0): # Show the policy only at test time
+        if self.mode == 0:  # Show the policy only at test time
             self.env.render()
-            
+
         return reward
-                
+
     def reset(self, mode=0):
-        """ Reset environment for a new episode.
+        """Reset environment for a new episode.
 
         Arguments:
         Mode : int
@@ -37,31 +43,33 @@ class MyEnv(Environment):
         """
         # Reset initial observation to a random x and theta
         self._last_observation = self.env.reset()
-        self.is_terminal=False
-        self.mode=mode
+        self.is_terminal = False
+        self.mode = mode
 
         return self._last_observation
-                
+
     def inTerminalState(self):
-        """Tell whether the environment reached a terminal state after the last transition (i.e. the last transition 
+        """Tell whether the environment reached a terminal state after the last transition (i.e. the last transition
         that occured was terminal).
         """
         return self.is_terminal
 
     def inputDimensions(self):
-        return self._input_dim  
+        return self._input_dim
 
     def nActions(self):
-        return 2 #Would be useful to have this directly in gym : self.env.action_space.shape  
+        return 2  # Would be useful to have this directly in gym : self.env.action_space.shape
 
     def observe(self):
         return copy.deepcopy(self._last_observation)
-        
+
+
 def main():
     rng = np.random.RandomState(123456)
-    myenv=MyEnv(rng)
+    myenv = MyEnv(rng)
 
-    print (myenv.observe())
-    
+    print(myenv.observe())
+
+
 if __name__ == "__main__":
     main()

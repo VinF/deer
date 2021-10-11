@@ -36,3 +36,8 @@ Full Documentation
 ==================
 
 The documentation is available at : http://deer.readthedocs.io/
+
+Code Contributions
+==================
+
+Before you make a PR, run `make quality` and `make style` in the root repo directory.
