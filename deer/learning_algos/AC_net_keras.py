@@ -64,8 +64,8 @@ class MyACNetwork(ACNetwork):
         self._nActions=environment.nActions()
         self.update_counter = 0
         
-        self.sess = tf.Session()
-        K.set_session(self.sess)
+        # self.sess = tf.Session()
+        # K.set_session(self.sess)
         
         Q_net = neural_network_critic(self._batch_size, self._input_dimensions, self._n_actions, self._random_state, True)
         
@@ -95,10 +95,10 @@ class MyACNetwork(ACNetwork):
         
         
         ### self.policy
-        self.action_grads = tf.gradients(self.q_vals.output,self.inputsQ[-1])  #GRADIENTS for policy update
+        #self.action_grads = tf.gradients(self.q_vals.output,self.inputsQ[-1])  #GRADIENTS for policy update
        
         
-        self.sess.run(tf.initialize_all_variables())        
+        #self.sess.run(tf.initialize_all_variables())
 
 
     def getAllParams(self):
@@ -212,14 +212,21 @@ class MyACNetwork(ACNetwork):
         """
         Returns the gradients on the Q-network for the different actions (used for policy update)
         """
-        feed_dict={}
-        for i,s in enumerate(states):
-            feed_dict[ self.inputsQ[i] ] = s
-        
-        feed_dict[ self.inputsQ[-1] ] = actions#np.expand_dims(actions,1)
-        
-        out=self.sess.run(self.action_grads, feed_dict=feed_dict)[0]
-        
+        # combine state features with action
+        input_list = states.copy()
+        input_list.append(actions)
+
+        # inputs need to be tf.Variable to calculate gradients
+        input_list = [tf.Variable(input, dtype=tf.float32) for input in input_list]
+
+        with tf.GradientTape() as tape:
+            q_vals = self.q_vals(input_list)
+
+        grads = tape.gradient(q_vals, input_list)
+
+        #last entry in grads corresponds to the gradients of the q_vals with respect to the action
+        out = grads[-1].numpy()
+
         return out
 
     def chooseBestAction(self, state, *args, **kwargs):
