@@ -3,7 +3,6 @@ This module defines the base class for the learning algorithms.
 
 """
 
-import numpy as np
 
 class LearningAlgo(object):
     """ All the Q-networks, actor-critic networks, etc. should inherit this interface.
