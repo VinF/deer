@@ -143,5 +143,6 @@ if __name__ == "__main__":
         show_score=True,
         summarize_every=parameters.period_btw_summary_perfs))
         
+    print ("Starting the run of the agent for "+str(parameters.epochs)+" epochs, with "+str(parameters.steps_per_epoch)+" steps per epoch")
     # --- Run the experiment ---
     agent.run(parameters.epochs, parameters.steps_per_epoch)
