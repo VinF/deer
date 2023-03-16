@@ -194,9 +194,9 @@ class MyQNetwork(QNetwork):
         """
         
         if (self._update_rule=="sgd"):
-            optimizer = SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer = SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
         elif (self._update_rule=="rmsprop"):
-            optimizer = RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer = RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
         else:
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
@@ -212,4 +212,5 @@ class MyQNetwork(QNetwork):
 
         self._compile() # recompile to take into account new optimizer parameters that may have changed since
                         # self._compile() was called in __init__. FIXME: this call should ideally be done elsewhere
+                        # Not ideal to recompile everytime we change e.g. only the lr
 
