@@ -131,6 +131,8 @@ class MyEnv(Environment):
         par1.axis["right"].label.set_color(p2.get_color())
     
         plt.savefig("plot.png")
+        plt.close()
+        
         print ("A plot of the policy obtained has been saved under the name plot.png")
     
     def inputDimensions(self):

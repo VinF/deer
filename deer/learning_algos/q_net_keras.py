@@ -9,6 +9,7 @@ from tensorflow.keras.optimizers import SGD,RMSprop
 from tensorflow.keras import backend as K
 from ..base_classes import LearningAlgo as QNetwork
 from .NN_keras import NN # Default Neural network used
+import gc
 
 class MyQNetwork(QNetwork):
     """
@@ -118,10 +119,10 @@ class MyQNetwork(QNetwork):
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        next_q_vals = self.next_q_vals.predict(next_states_val.tolist())
+        next_q_vals = self.next_q_vals.predict(next_states_val.tolist(), verbose=0)
         
         if(self._double_Q==True):
-            next_q_vals_current_qnet=self.q_vals.predict(next_states_val.tolist())
+            next_q_vals_current_qnet=self.q_vals.predict(next_states_val.tolist(), verbose=0)
             argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
             max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
         else:
@@ -131,7 +132,7 @@ class MyQNetwork(QNetwork):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.q_vals.predict(states_val.tolist())
+        q_vals=self.q_vals.predict(states_val.tolist(), verbose=0)
 
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val]       
@@ -147,7 +148,9 @@ class MyQNetwork(QNetwork):
         loss=self.q_vals.train_on_batch(states_val.tolist() , q_vals ) 
                 
         self.update_counter += 1        
-
+        
+        gc.collect() #Clearing potential unused memory to avoid any memory leak
+        
         # loss*self._n_actions = np.average(loss_ind)
         return np.sqrt(loss),loss_ind
 
@@ -163,7 +166,9 @@ class MyQNetwork(QNetwork):
         -------
         The q values for the provided belief state
         """ 
-        return self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val])[0]
+        q_vals_pred=self.q_vals.predict([np.expand_dims(state,axis=0) for state in state_val], verbose=0)[0]
+        
+        return q_vals_pred
 
     def chooseBestAction(self, state, *args, **kwargs):
         """ Get the best action for a pseudo-state
@@ -177,8 +182,12 @@ class MyQNetwork(QNetwork):
         The best action : int
         """        
         q_vals = self.qValues(state)
+        
+        action_to_take=np.argmax(q_vals)
+        corresponding_q_val=np.max(q_vals)
+        gc.collect() #Clearing potential unused memory to avoid any memory leak
 
-        return np.argmax(q_vals),np.max(q_vals)
+        return action_to_take,corresponding_q_val
         
     def _compile(self):
         """ Compile self.q_vals
@@ -192,6 +201,7 @@ class MyQNetwork(QNetwork):
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
         
         self.q_vals.compile(optimizer=optimizer, loss='mse')
+        
 
     def _resetQHat(self):
         """ Set the target Q-network weights equal to the main Q-network weights
@@ -202,3 +212,4 @@ class MyQNetwork(QNetwork):
 
         self._compile() # recompile to take into account new optimizer parameters that may have changed since
                         # self._compile() was called in __init__. FIXME: this call should ideally be done elsewhere
+
