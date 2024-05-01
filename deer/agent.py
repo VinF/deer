@@ -177,7 +177,7 @@ class NeuralAgent(object):
     def train(self):
         """
         This function selects a random batch of data (with self._dataset.randomBatch) and performs a 
-        Q-learning iteration (with self._learning_algo.train).        
+        training iteration (with self._learning_algo.train).        
         """
         # We make sure that the number of elements in the replay memory
         # is strictly superior to self._replay_start_size before taking 
@@ -356,7 +356,7 @@ class NeuralAgent(object):
                 V, action, reward = self._step()
                 
                 self._Vs_on_last_episode.append(V)
-                if self._mode != -1:
+                if(self._mode != -1):
                     self._total_mode_reward += reward
                 
                 is_terminal = self._environment.inTerminalState()   # If the transition ends up in a terminal state, mark transition as terminal
