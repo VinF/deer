@@ -1,9 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |Python27|_ |Python36|_ |PyPi|_ |License|_
-
-.. |Travis| image:: https://travis-ci.org/VinF/deer.svg?branch=master
-.. _Travis: https://travis-ci.org/VinF/deer
+|Python27|_ |Python36|_ |PyPi|_ |License|_
 
 .. |Python27| image:: https://img.shields.io/badge/python-2.7-blue.svg
 .. _Python27: https://badge.fury.io/py/deer
