@@ -65,7 +65,7 @@ class NeuralAgent(object):
         self._random_state = random_state
         self._exp_priority = exp_priority
         self._only_full_history = only_full_history
-        self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, use_priority=self._exp_priority, only_full_history=self._only_full_history)
+        self._dataset = DataSet(environment, max_size=replay_memory_size, random_state=random_state, exp_priority=self._exp_priority, only_full_history=self._only_full_history)
         self._tmp_dataset = None # Will be created by startTesting() when necessary
         self._mode = -1
         self._totalModeNbrEpisode = 0
@@ -443,7 +443,7 @@ class AgentWarning(RuntimeWarning):
 class DataSet(object):
     """A replay memory consisting of circular buffers for observations, actions, rewards and terminals."""
 
-    def __init__(self, env, random_state=None, max_size=1000000, use_priority=False, only_full_history=True):
+    def __init__(self, env, random_state=None, max_size=1000000, exp_priority=0, only_full_history=True):
         """Initializer.
         Parameters
         -----------
@@ -455,12 +455,15 @@ class DataSet(object):
             If None, a new one is created with default numpy seed.
         max_size : float
             The replay memory maximum size. Default : 1000000
+        exp_priority : float
+            The exponent that determines how much prioritization is used, default is 0/False (uniform priority).
+            One may check out Schaul et al. (2016) - Prioritized Experience Replay.
         """
 
         self._batch_dimensions = env.inputDimensions()
         self._max_history_size = np.max([self._batch_dimensions[i][0] for i in range (len(self._batch_dimensions))])
         self._size = max_size
-        self._use_priority = use_priority
+        self._exp_priority = exp_priority
         self._only_full_history = only_full_history
         if ( isinstance(env.nActions(),int) ):
             self._actions      = CircularBuffer(max_size, dtype="int8")
@@ -468,7 +471,7 @@ class DataSet(object):
             self._actions      = CircularBuffer(max_size, dtype='object')
         self._rewards      = CircularBuffer(max_size)
         self._terminals    = CircularBuffer(max_size, dtype="bool")
-        if (self._use_priority):
+        if (self._exp_priority):
             self._prioritiy_tree = tree.SumTree(max_size) 
             self._translation_array = np.zeros(max_size)
 
@@ -520,7 +523,7 @@ class DataSet(object):
         for i in range( len(rndValidIndices) ):
             self._prioritiy_tree.update(rndValidIndices[i], priorities[i])
 
-    def randomBatch(self, batch_size, use_priority):
+    def randomBatch(self, batch_size, exp_priority):
         """Returns a batch of states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
         each s.
@@ -529,8 +532,9 @@ class DataSet(object):
         -----------
         batch_size : int
             Number of transitions to return.
-        use_priority : Boolean
-            Whether to use prioritized replay or not
+        exp_priority : float
+            The exponent that determines how much prioritization is used, default is 0/False (uniform priority).
+            One may check out Schaul et al. (2016) - Prioritized Experience Replay.
 
         Returns
         -------
@@ -562,7 +566,7 @@ class DataSet(object):
                 "complete state. {} elements in dataset; requires {}"
                 .format(self.n_elems, self._max_history_size))
 
-        if (self._use_priority):
+        if (self._exp_priority):
             #FIXME : take into account the case where self._only_full_history is false
             rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
             if (rndValidIndices.size == 0):
@@ -616,12 +620,12 @@ class DataSet(object):
                             next_states[input][i][-j-1]=slice[-j-1]
                     #next_states[input][i] = self._observations[input].getSlice(rndValidIndices[i]+2-min(self._batch_dimensions[input][0],first_terminal), rndValidIndices[i]+2)
         
-        if (self._use_priority):
+        if (self._exp_priority):
             return states, actions, rewards, next_states, terminals, [rndValidIndices, rndValidIndices_tree]
         else:
             return states, actions, rewards, next_states, terminals, rndValidIndices
 
-    def randomBatch_nstep(self, batch_size, nstep, use_priority):
+    def randomBatch_nstep(self, batch_size, nstep, exp_priority):
         """Return corresponding states, actions, rewards, terminal status, and next_states for a number batch_size of randomly
         chosen transitions. Note that if terminal[i] == True, then next_states[s][i] == np.zeros_like(states[s][i]) for
         each s.
@@ -632,8 +636,9 @@ class DataSet(object):
             Number of transitions to return.
         nstep : int
             Number of transitions to be considered for each element
-        use_priority : Boolean
-            Whether to use prioritized replay or not
+        exp_priority : float
+            The exponent that determines how much prioritization is used, default is 0/False (uniform priority).
+            One may check out Schaul et al. (2016) - Prioritized Experience Replay.
 
         Returns
         -------
@@ -665,7 +670,7 @@ class DataSet(object):
                 "complete state. {} elements in dataset; requires {}"
                 .format(self.n_elems, self._max_history_size))
 
-        if (self._use_priority):
+        if (self._exp_priority):
             #FIXME : take into account the case where self._only_full_history is false
             rndValidIndices, rndValidIndices_tree = self._randomPrioritizedBatch(batch_size)
             if (rndValidIndices.size == 0):
@@ -715,7 +720,7 @@ class DataSet(object):
                 if terminals[i][-1]:#rndValidIndices[i] >= self.n_elems - 1 or terminals[i]:
                     observations[input][rndValidIndices[i]:rndValidIndices[i]+self.sticky_action+1] = 0
         
-        if (self._use_priority):
+        if (self._exp_priority):
             return observations, actions, rewards, terminals, [rndValidIndices, rndValidIndices_tree]
         else:
             return observations, actions, rewards, terminals, rndValidIndices
@@ -784,7 +789,7 @@ class DataSet(object):
             self._observations[i].append(obs[i])
 
         # Update tree and translation table
-        if (self._use_priority):
+        if (self._exp_priority):
             index = self._actions.getIndex()
             if (index >= self._size):
                 ub = self._actions.getUpperBound()
