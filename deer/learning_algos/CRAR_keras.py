@@ -209,10 +209,10 @@ class CRAR(LearningAlgo):
         states_val=list(states_val)
         next_states_val=list(next_states_val)
             
-        Es_=self.encoder.predict(next_states_val)
-        Es=self.encoder.predict(states_val)
-        ETs=self.transition.predict([Es,onehot_actions])
-        R=self.R.predict([Es,onehot_actions])
+        Es_=self.encoder.predict(next_states_val, verbose=0)
+        Es=self.encoder.predict(states_val, verbose=0)
+        ETs=self.transition.predict([Es,onehot_actions], verbose=0)
+        R=self.R.predict([Es,onehot_actions], verbose=0)
                    
         if(self.update_counter%500==0):
             print ("Printing a few elements useful for debugging:")
@@ -295,10 +295,10 @@ class CRAR(LearningAlgo):
         if self.update_counter % self._freeze_interval == 0:
             self._resetQHat()
         
-        next_q_vals = self.full_Q_target.predict(next_states_val)
+        next_q_vals = self.full_Q_target.predict(next_states_val, verbose=0)
         
         if(self._double_Q==True):
-            next_q_vals_current_qnet=self.full_Q.predict(next_states_val)
+            next_q_vals_current_qnet=self.full_Q.predict(next_states_val, verbose=0)
             argmax_next_q_vals=np.argmax(next_q_vals_current_qnet, axis=1)
             max_next_q_vals=next_q_vals[np.arange(self._batch_size),argmax_next_q_vals].reshape((-1, 1))
         else:
@@ -308,7 +308,7 @@ class CRAR(LearningAlgo):
         
         target = rewards_val + not_terminals * self._df * max_next_q_vals.reshape((-1))
         
-        q_vals=self.full_Q.predict([states_val[0]])
+        q_vals=self.full_Q.predict([states_val[0]], verbose=0)
         
         # In order to obtain the individual losses, we predict the current Q_vals and calculate the diff
         q_val=q_vals[np.arange(self._batch_size), actions_val]#.reshape((-1, 1))        
@@ -349,7 +349,7 @@ class CRAR(LearningAlgo):
         """ 
         copy_state=copy.deepcopy(state_val) #Required!
 
-        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state])[0]
+        return self.full_Q.predict([np.expand_dims(state,axis=0) for state in copy_state], verbose=0)[0]
 
     def qValues_planning(self, state_val, R, gamma, T, Q, d=5):
         """ Get the average Q-values up to planning depth d for one pseudo-state.
@@ -374,7 +374,7 @@ class CRAR(LearningAlgo):
         -------
         The average q values with planning depth up to d for the provided pseudo-state
         """
-        encoded_x = self.encoder.predict(state_val)
+        encoded_x = self.encoder.predict(state_val, verbose=0)
 
 #        ## DEBUG PURPOSES
 #        print ( "self.full_Q.predict(state_val)[0]" )
@@ -457,9 +457,9 @@ class CRAR(LearningAlgo):
                          
         if (d==0):
             if(this_branching_factor<self._n_actions):
-                return np.partition(Q.predict([state_abstr_val]), -this_branching_factor)[:,-this_branching_factor:]
+                return np.partition(Q.predict([state_abstr_val], verbose=0), -this_branching_factor)[:,-this_branching_factor:]
             else:
-                return Q.predict([state_abstr_val]) # no change in the order of the actions
+                return Q.predict([state_abstr_val], verbose=0) # no change in the order of the actions
         else:
             if(this_branching_factor==self._n_actions):
                 # All actions are considered in the tree
@@ -474,20 +474,20 @@ class CRAR(LearningAlgo):
                     print ("error")
             else:
                 # A subset of the actions corresponding to the best estimated Q-values are considered et each branch 
-                estim_Q_values=Q.predict([state_abstr_val])
+                estim_Q_values=Q.predict([state_abstr_val], verbose=0)
                 ind = np.argpartition(estim_Q_values, -this_branching_factor)[:,-this_branching_factor:]
                 # Replacing ind if we want random branching
                 #ind = np.random.randint(0,self._n_actions,size=ind.shape)
                 repeat_identity=identity_matrix[ind].reshape(n*this_branching_factor,self._n_actions)
                 tile3_encoded_x=np.repeat(state_abstr_val,this_branching_factor,axis=0)
             
-            r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity]))
+            r_vals_d0=np.array(R.predict([tile3_encoded_x,repeat_identity], verbose=0))
             r_vals_d0=r_vals_d0.flatten()
             
-            gamma_vals_d0=np.array(gamma.predict([tile3_encoded_x,repeat_identity]))
+            gamma_vals_d0=np.array(gamma.predict([tile3_encoded_x,repeat_identity], verbose=0))
             gamma_vals_d0=gamma_vals_d0.flatten()
 
-            next_x_predicted=T.predict([tile3_encoded_x,repeat_identity])
+            next_x_predicted=T.predict([tile3_encoded_x,repeat_identity], verbose=0)
             return r_vals_d0+gamma_vals_d0*np.amax(self.qValues_planning_abstr(next_x_predicted,R,gamma,T,Q,d=d-1,branching_factor=branching_factor).reshape(len(state_abstr_val)*this_branching_factor,branching_factor[0]),axis=1).flatten()
 
     def chooseBestAction(self, state, mode, *args, **kwargs):
@@ -518,21 +518,23 @@ class CRAR(LearningAlgo):
         """ Compile all the optimizers for the different losses
         """
         if (self._update_rule=="sgd"):
-            optimizer=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
-            optimizer1=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # Different optimizers for each network; 
-            optimizer3=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # to possibly modify them separately
-            optimizer4=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
-            optimizer5=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
-            optimizer6=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
-            optimizer7=SGD(lr=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer1=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # Different optimizers for each network; 
+            optimizer2=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer3=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm) # to possibly modify them separately
+            optimizer4=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer5=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer6=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
+            optimizer7=SGD(learning_rate=self._lr, momentum=self._momentum, nesterov=False, clipnorm=self._clip_norm)
         elif (self._update_rule=="rmsprop"):
-            optimizer=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
-            optimizer1=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # Different optimizers for each network; 
-            optimizer3=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # to possibly modify them separately
-            optimizer4=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
-            optimizer5=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
-            optimizer6=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
-            optimizer7=RMSprop(lr=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer1=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # Different optimizers for each network; 
+            optimizer2=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer3=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm) # to possibly modify them separately
+            optimizer4=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer5=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer6=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
+            optimizer7=RMSprop(learning_rate=self._lr, rho=self._rho, epsilon=self._rms_epsilon, clipnorm=self._clip_norm)
 
         else:
             raise Exception('The update_rule '+self._update_rule+' is not implemented.')
@@ -542,7 +544,7 @@ class CRAR(LearningAlgo):
 
         self.diff_Tx_x_.compile(optimizer=optimizer1, loss='mse') # Fit transitions
         self.full_R.compile(optimizer=optimizer3, loss='mse') # Fit rewards
-        self.full_gamma.compile(optimizer=optimizer3, loss='mse') # Fit discount
+        self.full_gamma.compile(optimizer=optimizer2, loss='mse') # Fit discount
 
         self.encoder.compile(optimizer=optimizer4,
                   loss=mean_squared_error_p)
@@ -559,8 +561,8 @@ class CRAR(LearningAlgo):
     def _resetQHat(self):
         """ Set the target Q-network weights equal to the main Q-network weights
         """
-        for i,(param,next_param) in enumerate(zip(self.params, self.params_target)):
-            K.set_value(next_param,K.get_value(param))
+        for param, next_param in zip(self.params, self.params_target):
+            next_param.assign(param)
 
     def setLearningRate(self, lr):
         """ Setting the learning rate
@@ -573,28 +575,28 @@ class CRAR(LearningAlgo):
         self._lr = lr
         print ("New learning rate set to "+str(self._lr)+".")
         # Changing the learning rates (NB:recompiling seems to lead to memory leaks!)
-        K.set_value(self.full_Q.optimizer.lr, self._lr)
+        self.full_Q.optimizer.learning_rate.assign(self._lr)
 
-        K.set_value(self.full_R.optimizer.lr, self._lr)
-        K.set_value(self.full_gamma.optimizer.lr, self._lr)
-        K.set_value(self.diff_Tx_x_.optimizer.lr, self._lr)
-        
+        self.full_R.optimizer.learning_rate = self._lr
+        self.full_gamma.optimizer.learning_rate = self._lr
+        self.diff_Tx_x_.optimizer.learning_rate = self._lr
+
         if(self._high_int_dim==False):
-            K.set_value(self.force_features.optimizer.lr, 0)#self._lr)
+            self.force_features.optimizer.learning_rate = 0.0  # self._lr
 
-        K.set_value(self.encoder.optimizer.lr, self._lr)
-        K.set_value(self.encoder_diff.optimizer.lr, self._lr)
-        K.set_value(self.diff_s_s_.optimizer.lr, self._lr/self._div_entrop_loss) # /5. for simple laby or simple catcher; /1. for distrib of laby
+        self.encoder.optimizer.learning_rate = self._lr
+        self.encoder_diff.optimizer.learning_rate = self._lr
+        self.diff_s_s_.optimizer.learning_rate = self._lr/self._div_entrop_loss  # /5. for simple laby or simple catcher; /1. for distrib of laby
 
     def transfer(self, original, transfer, epochs=1):
         # First, make sure that the target network and the current network are the same
         self._resetQHat()
         # modify the loss of the encoder
-        optimizer4=RMSprop(lr=self._lr, rho=0.9, epsilon=1e-06)
+        optimizer4=RMSprop(learning_rate=self._lr, rho=0.9, epsilon=1e-06)
         self.encoder.compile(optimizer=optimizer4, loss='mse')
         
         # Then, train the encoder such that the original and transfer states are mapped into the same abstract representation
-        x_original=self.encoder.predict(original)#[0]
+        x_original=self.encoder.predict(original, verbose=0)#[0]
         print ("x_original[0:10]")
         print (x_original[0:10])
         for i in range(epochs):

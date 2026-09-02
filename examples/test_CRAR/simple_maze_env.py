@@ -134,9 +134,9 @@ class MyEnv(Environment):
         #np.savetxt('tsne_python/mazesH_X.txt',arr.reshape(arr.shape[0],-1))
         #np.savetxt('tsne_python/mazesH_labels.txt',np.array(labels_maze))
         
-        all_possib_inp=np.expand_dims(np.array(all_possib_inp,dtype='float'),axis=1)
+        all_possib_inp=np.expand_dims(np.array(all_possib_inp,dtype='float64'),axis=1)
 
-        all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp)
+        all_possib_abs_states=learning_algo.encoder.predict(all_possib_inp, verbose=0)
         if(all_possib_abs_states.ndim==4):
             all_possib_abs_states=np.transpose(all_possib_abs_states, (0, 3, 1, 2))    # data_format='channels_last' --> 'channels_first'
         
@@ -146,7 +146,7 @@ class MyEnv(Environment):
             historics.append(np.expand_dims(observ,axis=0))
         historics=np.array(historics)
 
-        abs_states=learning_algo.encoder.predict(historics)
+        abs_states=learning_algo.encoder.predict(historics, verbose=0)
         if(abs_states.ndim==4):
             abs_states=np.transpose(abs_states, (0, 3, 1, 2))    # data_format='channels_last' --> 'channels_first'
 
@@ -177,10 +177,10 @@ class MyEnv(Environment):
                     
         # Plot the estimated transitions
         for i in range(n-1):
-            predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0,0]])])
-            predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0,0]])])
-            predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1,0]])])
-            predicted4=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,0,1]])])
+            predicted1=learning_algo.transition.predict([abs_states[i:i+1],np.array([[1,0,0,0]])], verbose=0)
+            predicted2=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,1,0,0]])], verbose=0)
+            predicted3=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,1,0]])], verbose=0)
+            predicted4=learning_algo.transition.predict([abs_states[i:i+1],np.array([[0,0,0,1]])], verbose=0)
             if(self.intern_dim==2):
                 ax.plot(np.concatenate([x[i:i+1],predicted1[0,:1]]), np.concatenate([y[i:i+1],predicted1[0,1:2]]), color="0.9", alpha=0.75)
                 ax.plot(np.concatenate([x[i:i+1],predicted2[0,:1]]), np.concatenate([y[i:i+1],predicted2[0,1:2]]), color="0.65", alpha=0.75)
@@ -341,7 +341,7 @@ class MyEnv(Environment):
             return [(1,self._size_maze,self._size_maze)]
 
     def observationType(self, subject):
-        return np.float
+        return np.float64
 
     def nActions(self):
         return 4
